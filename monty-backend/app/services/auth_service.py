@@ -42,10 +42,11 @@ def validate_telegram_auth(init_data: str) -> Optional[dict]:
         print("[auth] hash from telegram:", hash_from_telegram)
         print("[auth] bot token length:", len(settings.TELEGRAM_BOT_TOKEN))
 
-        # Per Telegram Mini Apps documentation: secret_key = HMAC_SHA256(<bot_token>, "WebAppData")
+        # Per Telegram Mini Apps documentation: secret_key = HMAC_SHA256(bot_token, "WebAppData")
+        # In Python hmac.new(key, msg, digestmod), so key=bot_token, msg="WebAppData"
         secret_key = hmac.new(
-            "WebAppData".encode(), 
-            settings.TELEGRAM_BOT_TOKEN.encode(), 
+            settings.TELEGRAM_BOT_TOKEN.encode(),
+            "WebAppData".encode(),
             hashlib.sha256
         ).digest()
         hash_result = hmac.new(
