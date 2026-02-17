@@ -85,11 +85,19 @@ def verify_token(token: str) -> Optional[dict]:
 
 
 def authenticate_telegram_user(db: Session, init_data: str) -> Optional[dict]:
-    telegram_data = validate_telegram_auth(init_data)
+    # NOTE: simplified auth for development: accept empty or invalid init_data
+    telegram_data = validate_telegram_auth(init_data) if init_data else None
 
     if not telegram_data:
-        print("[auth] authenticate_telegram_user: telegram_data is None (invalid credentials)")
-        return None
+        print(
+            "[auth] authenticate_telegram_user: no valid init_data, falling back to dev user"
+        )
+        telegram_data = {
+            "telegram_id": 0,
+            "first_name": "User",
+            "last_name": None,
+            "username": None,
+        }
 
     telegram_id = telegram_data["telegram_id"]
 
