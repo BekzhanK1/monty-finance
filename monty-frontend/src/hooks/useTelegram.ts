@@ -36,12 +36,23 @@ export function useTelegram() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
+    console.log('[useTelegram] window.Telegram exists:', !!window.Telegram);
+    console.log('[useTelegram] window.Telegram.WebApp exists:', !!window.Telegram?.WebApp);
+    
     if (window.Telegram?.WebApp) {
       const tg = window.Telegram.WebApp;
       tg.ready();
       tg.expand();
+      
+      console.log('[useTelegram] initData length:', tg.initData.length);
+      console.log('[useTelegram] initData (first 100 chars):', tg.initData.substring(0, 100));
+      console.log('[useTelegram] initDataUnsafe.user:', tg.initDataUnsafe.user);
+      
       setInitData(tg.initData);
       setUser(tg.initDataUnsafe.user || null);
+      setIsReady(true);
+    } else {
+      console.warn('[useTelegram] Telegram WebApp not available!');
       setIsReady(true);
     }
   }, []);
