@@ -1,13 +1,22 @@
+import { useEffect } from 'react';
 import { Button, Center, Stack, Text, Title, ThemeIcon } from '@mantine/core';
 import { IconWallet } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTelegram } from '../hooks/useTelegram';
 
 export function LoginPage() {
-  const { login, isLoading, isReady, error } = useAuth();
+  const navigate = useNavigate();
+  const { login, isLoading, isReady, error, isAuthenticated } = useAuth();
   const { initData, user: telegramUser } = useTelegram();
 
   const initDataPreview = initData ? initData : '(пусто)';
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   return (
     <Center h="100vh" p="md">
