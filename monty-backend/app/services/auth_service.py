@@ -23,8 +23,11 @@ def parse_telegram_init_data(init_data: str) -> dict:
 def validate_telegram_auth(init_data: str) -> Optional[dict]:
     try:
         params = parse_telegram_init_data(init_data)
+        print("[auth] raw init_data length:", len(init_data))
+        print("[auth] parsed params keys:", sorted(list(params.keys())))
 
         if "hash" not in params:
+            print("[auth] validate_telegram_auth: no hash in params")
             return None
 
         hash_from_telegram = params.pop("hash")
@@ -37,10 +40,12 @@ def validate_telegram_auth(init_data: str) -> Optional[dict]:
         ).hexdigest()
 
         if hash_result != hash_from_telegram:
+            print("[auth] validate_telegram_auth: hash mismatch")
             return None
 
         auth_date = int(params.get("auth_date", 0))
         if datetime.now().timestamp() - auth_date > 86400:
+            print("[auth] validate_telegram_auth: auth_date too old")
             return None
 
         user_data = {}
@@ -55,6 +60,7 @@ def validate_telegram_auth(init_data: str) -> Optional[dict]:
             "username": user_data.get("username"),
         }
     except Exception:
+        print("[auth] validate_telegram_auth: exception while validating")
         return None
 
 
@@ -82,6 +88,7 @@ def authenticate_telegram_user(db: Session, init_data: str) -> Optional[dict]:
     telegram_data = validate_telegram_auth(init_data)
 
     if not telegram_data:
+        print("[auth] authenticate_telegram_user: telegram_data is None (invalid credentials)")
         return None
 
     telegram_id = telegram_data["telegram_id"]
