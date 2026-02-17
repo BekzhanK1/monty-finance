@@ -45,9 +45,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData);
     } catch (err) {
       console.error(err);
-      const status = (err as any)?.response?.status;
-      if (status === 403) {
-        setError('Доступ запрещён: этот Telegram‑аккаунт не в списке разрешённых.');
+      const axiosError = err as any;
+      const response = axiosError?.response;
+      const backendMessage =
+        response?.data?.detail ??
+        response?.data?.message ??
+        response?.data?.error ??
+        null;
+
+      if (backendMessage) {
+        setError(String(backendMessage));
+      } else if (axiosError?.message) {
+        setError(String(axiosError.message));
       } else {
         setError('Не удалось выполнить вход. Попробуйте ещё раз.');
       }
