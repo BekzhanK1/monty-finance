@@ -31,13 +31,23 @@ def validate_telegram_auth(init_data: str) -> Optional[dict]:
             return None
 
         hash_from_telegram = params.pop("hash")
+        
+        # Remove signature from validation (it's for third-party, not for bot validation)
+        params.pop("signature", None)
 
         data_check_string = "\n".join([f"{k}={v}" for k, v in sorted(params.items())])
+        
+        print("[auth] data_check_string (first 200 chars):", data_check_string[:200])
+        print("[auth] hash from telegram:", hash_from_telegram)
+        print("[auth] bot token length:", len(settings.TELEGRAM_BOT_TOKEN))
 
         secret_key = hashlib.sha256(settings.TELEGRAM_BOT_TOKEN.encode()).digest()
         hash_result = hmac.new(
             secret_key, data_check_string.encode(), hashlib.sha256
         ).hexdigest()
+        
+        print("[auth] calculated hash:", hash_result)
+        print("[auth] hashes match:", hash_result == hash_from_telegram)
 
         if hash_result != hash_from_telegram:
             print("[auth] validate_telegram_auth: hash mismatch")
