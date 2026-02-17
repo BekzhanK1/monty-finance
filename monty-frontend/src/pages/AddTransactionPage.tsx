@@ -8,7 +8,6 @@ import {
   Group,
   Stack,
   UnstyledButton,
-  NumberInput,
   LoadingOverlay,
 } from '@mantine/core';
 import { IconCheck, IconArrowLeft } from '@tabler/icons-react';
@@ -93,9 +92,8 @@ export function AddTransactionPage() {
       {/* Amount Display */}
       <Stack align="center" mb="xl">
         <Text
-          size={48}
           fw={700}
-          style={{ fontFamily: 'monospace', minHeight: 60 }}
+          style={{ fontFamily: 'monospace', fontSize: 48, minHeight: 60 }}
         >
           {amount || '0'} ₸
         </Text>

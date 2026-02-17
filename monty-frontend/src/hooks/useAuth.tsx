@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { authApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import type { User } from '../types';
@@ -6,6 +7,7 @@ import type { User } from '../types';
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isReady: boolean;
   isAuthenticated: boolean;
   login: () => Promise<void>;
   logout: () => void;
@@ -38,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    const response = await authApi.telegram(initData);
+    await authApi.telegram(initData);
     const userData = await authApi.me();
     setUser(userData);
   };
@@ -53,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isLoading,
+        isReady: !isLoading,
         isAuthenticated: !!user,
         login,
         logout,
