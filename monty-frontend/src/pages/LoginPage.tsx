@@ -1,9 +1,13 @@
 import { Button, Center, Stack, Text, Title, ThemeIcon } from '@mantine/core';
 import { IconWallet } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
+import { useTelegram } from '../hooks/useTelegram';
 
 export function LoginPage() {
   const { login, isLoading, isReady, error } = useAuth();
+  const { initData, user: telegramUser } = useTelegram();
+
+  const initDataPreview = initData ? initData : '(пусто)';
 
   return (
     <Center h="100vh" p="md">
@@ -16,6 +20,16 @@ export function LoginPage() {
         <Text c="dimmed" ta="center" maw={280}>
           Приватный финансовый трекер для пары
         </Text>
+
+        <Text c="dimmed" size="xs" ta="center" maw={280} style={{ wordBreak: 'break-all' }}>
+          initData: {initDataPreview}
+        </Text>
+
+        {telegramUser && (
+          <Text c="dimmed" size="xs" ta="center" maw={280}>
+            Telegram user: {telegramUser.first_name} (id: {telegramUser.id})
+          </Text>
+        )}
 
         {error && (
           <Text c="red" size="sm" ta="center" maw={280}>
