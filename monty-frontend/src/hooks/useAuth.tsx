@@ -7,6 +7,7 @@ import type { User } from '../types';
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  error: string | null;
   isReady: boolean;
   isAuthenticated: boolean;
   login: () => Promise<void>;
@@ -18,6 +19,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { initData } = useTelegram();
 
   useEffect(() => {
@@ -35,19 +37,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async () => {
+    setError(null);
+
     if (!initData) {
-      console.error('No initData from Telegram');
+      setError('Откройте приложение через Telegram (кнопка WebApp), а не в обычном браузере.');
       return;
     }
-    
-    await authApi.telegram(initData);
-    const userData = await authApi.me();
-    setUser(userData);
+
+    try {
+      await authApi.telegram(initData);
+      const userData = await authApi.me();
+      setUser(userData);
+    } catch (err) {
+      console.error(err);
+      const status = (err as any)?.response?.status;
+      if (status === 403) {
+        setError('Доступ запрещён: этот Telegram‑аккаунт не в списке разрешённых.');
+      } else {
+        setError('Не удалось выполнить вход. Попробуйте ещё раз.');
+      }
+    }
   };
 
   const logout = () => {
     localStorage.removeItem('access_token');
     setUser(null);
+    setError(null);
   };
 
   return (
@@ -55,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isLoading,
+        error,
         isReady: !isLoading,
         isAuthenticated: !!user,
         login,

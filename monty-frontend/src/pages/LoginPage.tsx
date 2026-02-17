@@ -3,7 +3,7 @@ import { IconWallet } from '@tabler/icons-react';
 import { useAuth } from '../hooks/useAuth';
 
 export function LoginPage() {
-  const { login, isLoading, isReady } = useAuth();
+  const { login, isLoading, isReady, error } = useAuth();
 
   return (
     <Center h="100vh" p="md">
@@ -16,6 +16,12 @@ export function LoginPage() {
         <Text c="dimmed" ta="center" maw={280}>
           Приватный финансовый трекер для пары
         </Text>
+
+        {error && (
+          <Text c="red" size="sm" ta="center" maw={280}>
+            {error}
+          </Text>
+        )}
 
         {!isReady ? (
           <Text c="dimmed" size="sm">Загрузка...</Text>
