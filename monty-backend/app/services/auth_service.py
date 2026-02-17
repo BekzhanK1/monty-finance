@@ -12,11 +12,12 @@ from sqlalchemy.orm import Session
 
 
 def parse_telegram_init_data(init_data: str) -> dict:
+    from urllib.parse import unquote
     params = {}
     for item in init_data.split("&"):
         if "=" in item:
             key, value = item.split("=", 1)
-            params[key] = value
+            params[key] = unquote(value)
     return params
 
 
