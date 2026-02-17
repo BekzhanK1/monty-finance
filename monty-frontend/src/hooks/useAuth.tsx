@@ -39,11 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async () => {
     setError(null);
 
-    if (!window.Telegram?.WebApp) {
-      setError('Откройте приложение через Telegram (кнопка WebApp), а не в обычном браузере.');
-      return;
-    }
-
     try {
       await authApi.telegram(initData);
       const userData = await authApi.me();
