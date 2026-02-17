@@ -33,24 +33,28 @@ def validate_telegram_auth(init_data: str) -> Optional[dict]:
 
         hash_from_telegram = params.pop("hash")
         
-        # Remove signature from validation (it's for third-party, not for bot validation)
+        # Remove signature from validation (used for asymmetric third-party auth, not bot hash validation)
         params.pop("signature", None)
 
+        # Build data check string
         data_check_string = "\n".join([f"{k}={v}" for k, v in sorted(params.items())])
         
         print("[auth] data_check_string (first 200 chars):", data_check_string[:200])
         print("[auth] hash from telegram:", hash_from_telegram)
         print("[auth] bot token length:", len(settings.TELEGRAM_BOT_TOKEN))
 
-        # Per Telegram Mini Apps documentation: secret_key = HMAC_SHA256(bot_token, "WebAppData")
-        # In Python hmac.new(key, msg, digestmod), so key=bot_token, msg="WebAppData"
+        # Fix: "WebAppData" is the HMAC key, bot token is the message
+        # Telegram's pseudocode HMAC_SHA256(<bot_token>, "WebAppData") is misleading!
         secret_key = hmac.new(
-            settings.TELEGRAM_BOT_TOKEN.encode(),
-            "WebAppData".encode(),
-            hashlib.sha256
+            key=b"WebAppData",
+            msg=settings.TELEGRAM_BOT_TOKEN.encode(),
+            digestmod=hashlib.sha256
         ).digest()
+        
         hash_result = hmac.new(
-            secret_key, data_check_string.encode(), hashlib.sha256
+            key=secret_key,
+            msg=data_check_string.encode(),
+            digestmod=hashlib.sha256
         ).hexdigest()
         
         print("[auth] calculated hash:", hash_result)
@@ -67,17 +71,16 @@ def validate_telegram_auth(init_data: str) -> Optional[dict]:
 
         user_data = {}
         if "user" in params:
-            user_json = params["user"]
-            user_data = json.loads(user_json)
+            user_data = json.loads(params["user"])
 
         return {
-            "telegram_id": int(params.get("user_id", 0)),
+            "telegram_id": int(user_data.get("id", 0)),  # Fixed: extract from user_data, not params
             "first_name": user_data.get("first_name", "User"),
             "last_name": user_data.get("last_name"),
             "username": user_data.get("username"),
         }
-    except Exception:
-        print("[auth] validate_telegram_auth: exception while validating")
+    except Exception as e:
+        print(f"[auth] validate_telegram_auth: exception while validating: {e}")
         return None
 
 
