@@ -35,13 +35,15 @@ def seed_initial_data(db: Session):
         Category(id=1, name="Зарплата", group=CategoryGroup.INCOME, type=TransactionType.INCOME, icon="💰"),
         Category(id=2, name="Продукты", group=CategoryGroup.BASE, type=TransactionType.EXPENSE, icon="🍎"),
         Category(id=3, name="Такси", group=CategoryGroup.COMFORT, type=TransactionType.EXPENSE, icon="🚕"),
-        Category(id=4, name="Кафе", group=CategoryGroup.COMFORT, type=TransactionType.EXPENSE, icon="☕️"),
+        Category(id=4, name="Покушать (кафе/доставка)", group=CategoryGroup.COMFORT, type=TransactionType.EXPENSE, icon="☕️"),
         Category(id=5, name="Бензин", group=CategoryGroup.BASE, type=TransactionType.EXPENSE, icon="⛽️"),
         Category(id=6, name="Одежда", group=CategoryGroup.COMFORT, type=TransactionType.EXPENSE, icon="👕"),
         Category(id=7, name="Депозит", group=CategoryGroup.SAVINGS, type=TransactionType.EXPENSE, icon="🏦"),
         Category(id=8, name="Коммуналка", group=CategoryGroup.BASE, type=TransactionType.EXPENSE, icon="🏠"),
-        Category(id=9, name="Развлечения", group=CategoryGroup.COMFORT, type=TransactionType.EXPENSE, icon="🎬"),
-        Category(id=10, name="Связь", group=CategoryGroup.BASE, type=TransactionType.EXPENSE, icon="📱"),
+        Category(id=9, name="Подписки", group=CategoryGroup.COMFORT, type=TransactionType.EXPENSE, icon="📱"),
+        Category(id=10, name="Долги", group=CategoryGroup.BASE, type=TransactionType.EXPENSE, icon="💳"),
+        Category(id=11, name="Мойка авто", group=CategoryGroup.COMFORT, type=TransactionType.EXPENSE, icon="🚗"),
+        Category(id=12, name="Стрижка", group=CategoryGroup.COMFORT, type=TransactionType.EXPENSE, icon="✂️"),
     ]
     
     for cat in categories:
@@ -51,20 +53,18 @@ def seed_initial_data(db: Session):
     salary_day = SettingsService.get_salary_day(db)
     period_start, _ = get_financial_period(salary_day=salary_day)
     
-    base_budget = int(SettingsService.get_setting(db, "base_budget") or 270000)
-    comfort_budget = int(SettingsService.get_setting(db, "comfort_budget") or 195000)
-    savings_budget = int(SettingsService.get_setting(db, "savings_budget") or 150000)
-    
     budgets = [
-        MonthlyBudget(category_id=2, period=period_start, limit_amount=80000),
-        MonthlyBudget(category_id=3, period=period_start, limit_amount=comfort_budget // 4),
-        MonthlyBudget(category_id=4, period=period_start, limit_amount=comfort_budget // 5),
-        MonthlyBudget(category_id=5, period=period_start, limit_amount=base_budget // 9),
-        MonthlyBudget(category_id=6, period=period_start, limit_amount=comfort_budget // 6),
-        MonthlyBudget(category_id=7, period=period_start, limit_amount=savings_budget),
-        MonthlyBudget(category_id=8, period=period_start, limit_amount=base_budget // 5),
-        MonthlyBudget(category_id=9, period=period_start, limit_amount=comfort_budget // 8),
-        MonthlyBudget(category_id=10, period=period_start, limit_amount=base_budget // 27),
+        MonthlyBudget(category_id=2, period=period_start, limit_amount=150_000),
+        MonthlyBudget(category_id=3, period=period_start, limit_amount=60_000),
+        MonthlyBudget(category_id=4, period=period_start, limit_amount=50_000),
+        MonthlyBudget(category_id=5, period=period_start, limit_amount=50_000),
+        MonthlyBudget(category_id=6, period=period_start, limit_amount=40_000),
+        MonthlyBudget(category_id=7, period=period_start, limit_amount=0),
+        MonthlyBudget(category_id=8, period=period_start, limit_amount=50_000),
+        MonthlyBudget(category_id=9, period=period_start, limit_amount=30_000),
+        MonthlyBudget(category_id=10, period=period_start, limit_amount=20_000),
+        MonthlyBudget(category_id=11, period=period_start, limit_amount=10_000),
+        MonthlyBudget(category_id=12, period=period_start, limit_amount=5_000),
     ]
     
     for budget in budgets:
@@ -72,7 +72,9 @@ def seed_initial_data(db: Session):
             MonthlyBudget.category_id == budget.category_id,
             MonthlyBudget.period == budget.period
         ).first()
-        if not existing:
+        if existing:
+            existing.limit_amount = budget.limit_amount
+        else:
             db.add(budget)
     
     db.commit()

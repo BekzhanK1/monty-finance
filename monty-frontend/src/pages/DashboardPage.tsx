@@ -63,14 +63,12 @@ export function DashboardPage() {
   const comfortBudgets = dashboard?.budgets.filter(b => b.group === 'COMFORT') || [];
   const savingsBudgets = dashboard?.budgets.filter(b => b.group === 'SAVINGS') || [];
 
-  const totalBudget = baseBudgets.reduce((sum, b) => sum + b.limit_amount, 0) + 
-                      comfortBudgets.reduce((sum, b) => sum + b.limit_amount, 0) +
-                      savingsBudgets.reduce((sum, b) => sum + b.limit_amount, 0);
-  const expensesSpent = baseBudgets.reduce((sum, b) => sum + b.spent, 0) + 
+  const expensesBudget = baseBudgets.reduce((sum, b) => sum + b.limit_amount, 0) +
+                         comfortBudgets.reduce((sum, b) => sum + b.limit_amount, 0);
+  const expensesSpent = baseBudgets.reduce((sum, b) => sum + b.spent, 0) +
                         comfortBudgets.reduce((sum, b) => sum + b.spent, 0);
   const savingsSpent = savingsBudgets.reduce((sum, b) => sum + b.spent, 0);
-  const totalSpent = expensesSpent + savingsSpent;
-  const totalRemaining = totalBudget - totalSpent;
+  const totalRemaining = expensesBudget - expensesSpent;
 
   return (
     <Container size="sm" p="md" pb={100}>
@@ -164,8 +162,10 @@ export function DashboardPage() {
 function BudgetCard({ budget, onBudgetChange }: { budget: DashboardResponse['budgets'][0]; onBudgetChange: (categoryId: number, limitAmount: number) => void }) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(budget.limit_amount);
-  const percent = (budget.spent / budget.limit_amount) * 100;
-  const isOverBudget = budget.remaining < 0;
+  const isSavings = budget.group === 'SAVINGS';
+
+  const percent = budget.limit_amount > 0 ? (budget.spent / budget.limit_amount) * 100 : 0;
+  const isOverBudget = !isSavings && budget.remaining < 0;
   const color = isOverBudget ? 'red' : percent > 80 ? 'yellow' : 'green';
 
   const handleSave = async () => {
@@ -174,6 +174,22 @@ function BudgetCard({ budget, onBudgetChange }: { budget: DashboardResponse['bud
     }
     setEditing(false);
   };
+
+  if (isSavings) {
+    return (
+      <Card shadow="xs" padding="sm" radius="md" withBorder>
+        <Group justify="space-between">
+          <Group gap="xs">
+            <Text size="lg">{budget.category_icon}</Text>
+            <Text fw={500} size="sm">{budget.category_name}</Text>
+          </Group>
+          <Text size="sm" fw={500} c="teal">
+            Отложено: {formatNumber(budget.spent)} ₸
+          </Text>
+        </Group>
+      </Card>
+    );
+  }
 
   return (
     <Card shadow="xs" padding="sm" radius="md" withBorder>

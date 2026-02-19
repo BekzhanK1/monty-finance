@@ -240,13 +240,17 @@ export function SettingsPage() {
         {['BASE', 'COMFORT', 'SAVINGS', 'INCOME'].map(group => {
           const items = groupedBudgets[group as keyof typeof groupedBudgets];
           if (items.length === 0) return null;
+          const isSavings = group === 'SAVINGS';
           const total = items.reduce((sum, b) => sum + b.limit_amount, 0);
           return (
             <Card key={group} shadow="sm" padding="md" radius="md" withBorder>
               <Group justify="space-between" mb="sm">
                 <Text fw={600}>{GROUP_LABELS[group]}</Text>
-                {group !== 'INCOME' && (
+                {group !== 'INCOME' && !isSavings && (
                   <Text size="sm" c="dimmed">{total.toLocaleString('ru-RU')} ₸</Text>
+                )}
+                {group !== 'INCOME' && isSavings && (
+                  <Text size="sm" c="dimmed">Без лимита</Text>
                 )}
               </Group>
               <Stack gap="xs">
@@ -255,9 +259,11 @@ export function SettingsPage() {
                     <Group gap="xs">
                       <Text size="lg">{budget.category_icon}</Text>
                       <Text size="sm">{budget.category_name}</Text>
-                      {budget.limit_amount > 0 && (
+                      {isSavings ? (
+                        <Text size="xs" c="dimmed">Без лимита</Text>
+                      ) : budget.limit_amount > 0 ? (
                         <Text size="xs" c="dimmed">{budget.limit_amount.toLocaleString('ru-RU')} ₸</Text>
-                      )}
+                      ) : null}
                     </Group>
                     <Group gap={4}>
                       <ActionIcon
