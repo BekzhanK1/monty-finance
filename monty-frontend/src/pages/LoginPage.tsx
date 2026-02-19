@@ -25,7 +25,7 @@ export function LoginPage() {
           <IconWallet size={40} />
         </ThemeIcon>
         
-        <Title order={2} ta="center">Джимми</Title>
+        <Title order={2} ta="center">Монти</Title>
         <Text c="dimmed" ta="center" maw={280}>
           Приватный финансовый трекер для пары
         </Text>

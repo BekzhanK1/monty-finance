@@ -5,13 +5,16 @@ from pydantic_settings import BaseSettings
 from typing import List
 
 class Settings(BaseSettings):
+    STAGE: str = "PROD"
     DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/monty"
+    DEV_DATABASE_URL: str = "sqlite:///./monty_dev.db"
     
     JWT_SECRET_KEY: str = "your-secret-key-change-in-production"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24 * 7
     
     TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
     OPENAI_API_KEY: str = ""
     
     ALLOWED_TELEGRAM_IDS: str = "[]"
@@ -28,7 +31,11 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
+if settings.STAGE == "DEV":
+    engine = create_engine(settings.DEV_DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

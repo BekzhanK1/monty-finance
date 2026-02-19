@@ -9,6 +9,7 @@ import {
   Stack,
   UnstyledButton,
   LoadingOverlay,
+  SegmentedControl,
 } from '@mantine/core';
 import { IconCheck, IconArrowLeft } from '@tabler/icons-react';
 import { categoriesApi, transactionsApi } from '../api';
@@ -23,10 +24,11 @@ export function AddTransactionPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [transactionType, setTransactionType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
 
   useEffect(() => {
     categoriesApi.getAll()
-      .then(cats => setCategories(cats.filter(c => c.type === 'EXPENSE')))
+      .then(cats => setCategories(cats))
       .finally(() => setLoading(false));
   }, []);
 
@@ -69,7 +71,7 @@ export function AddTransactionPage() {
     ['backspace', '0', 'clear'],
   ];
 
-  const expenseCategories = categories.filter(c => c.type === 'EXPENSE');
+  const filteredCategories = categories.filter(c => c.type === transactionType);
 
   if (loading) {
     return <LoadingOverlay visible />;
@@ -87,7 +89,21 @@ export function AddTransactionPage() {
         </Button>
       </Group>
 
-      <Title order={3} mb="md">Добавить расход</Title>
+      <SegmentedControl
+        fullWidth
+        mb="md"
+        value={transactionType}
+        onChange={(val) => {
+          setTransactionType(val as 'EXPENSE' | 'INCOME');
+          setSelectedCategory(null);
+        }}
+        data={[
+          { value: 'EXPENSE', label: 'Расход' },
+          { value: 'INCOME', label: 'Доход' },
+        ]}
+      />
+
+      <Title order={3} mb="md">{transactionType === 'EXPENSE' ? 'Добавить расход' : 'Добавить доход'}</Title>
 
       {/* Amount Display */}
       <Stack align="center" mb="xl">
@@ -122,7 +138,7 @@ export function AddTransactionPage() {
       <Stack gap="xs">
         <Text fw={600} size="sm">Категория</Text>
         <Group gap="xs">
-          {expenseCategories.map(cat => (
+          {filteredCategories.map(cat => (
             <UnstyledButton
               key={cat.id}
               onClick={() => handleCategoryClick(cat)}

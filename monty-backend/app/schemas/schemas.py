@@ -68,3 +68,25 @@ class DashboardResponse(BaseModel):
     total_savings_goal: int
     current_savings: int
     budgets: list[BudgetWithSpent]
+
+
+class CategoryCreate(BaseModel):
+    name: str
+    group: str
+    type: str
+    icon: str
+
+class CategoryUpdate(BaseModel):
+    name: Optional[str] = None
+    group: Optional[str] = None
+    type: Optional[str] = None
+    icon: Optional[str] = None
+
+
+class AnalyticsResponse(BaseModel):
+    total_income: int
+    total_expenses: int
+    balance: int
+    by_category: list[dict]
+    by_group: list[dict]
+    daily_data: list[dict]

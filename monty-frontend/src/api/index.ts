@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Category, DashboardResponse, Goal, Transaction, User, Settings } from '../types';
+import type { Category, DashboardResponse, Goal, Transaction, User, Settings, Analytics, BudgetConfig, CategoryInput } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -35,6 +35,18 @@ export const authApi = {
 export const categoriesApi = {
   getAll: async () => {
     const { data } = await api.get<Category[]>('/categories');
+    return data;
+  },
+  create: async (category: CategoryInput) => {
+    const { data } = await api.post<Category>('/categories', category);
+    return data;
+  },
+  update: async (id: number, category: Partial<CategoryInput>) => {
+    const { data } = await api.put<Category>(`/categories/${id}`, category);
+    return data;
+  },
+  delete: async (id: number) => {
+    const { data } = await api.delete(`/categories/${id}`);
     return data;
   },
 };
@@ -75,6 +87,25 @@ export const settingsApi = {
   },
   update: async (key: string, value: string) => {
     const { data } = await api.post('/settings', { key, value });
+    return data;
+  },
+  getBudgets: async () => {
+    const { data } = await api.get<BudgetConfig[]>('/settings/budgets');
+    return data;
+  },
+  updateBudget: async (categoryId: number, limitAmount: number) => {
+    const { data } = await api.post('/settings/budgets', { category_id: categoryId, limit_amount: limitAmount, period: new Date().toISOString().split('T')[0] });
+    return data;
+  },
+};
+
+export const analyticsApi = {
+  get: async (months: number = 3) => {
+    const { data } = await api.get<Analytics>('/analytics', { params: { months } });
+    return data;
+  },
+  getPeriod: async (startDate?: string, endDate?: string) => {
+    const { data } = await api.get<Analytics>('/analytics/period', { params: { start_date: startDate, end_date: endDate } });
     return data;
   },
 };

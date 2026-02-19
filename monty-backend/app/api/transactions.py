@@ -8,6 +8,7 @@ from app.models.models import User, Category, Transaction
 from app.schemas.schemas import TransactionCreate, TransactionResponse
 from app.middleware.auth import get_current_user
 from app.services.database import get_financial_period
+from app.services.digest_service import send_transaction_notification
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -35,6 +36,15 @@ def create_transaction(
     db.add(transaction)
     db.commit()
     db.refresh(transaction)
+    
+    send_transaction_notification(
+        db=db,
+        category_icon=category.icon,
+        category_name=category.name,
+        amount=transaction_data.amount,
+        user_name=current_user.first_name or "Пользователь",
+        comment=transaction_data.comment
+    )
     
     return transaction
 

@@ -35,3 +35,14 @@ logs/
 dist/
 build/
 *.local
+
+# sqlite database
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.db-trace
+*.db-trace-journal
+*.db-trace-shm
+*.db-trace-wal
+
