@@ -86,6 +86,7 @@ class CategoryUpdate(BaseModel):
 class AnalyticsResponse(BaseModel):
     total_income: int
     total_expenses: int
+    total_savings: int
     balance: int
     by_category: list[dict]
     by_group: list[dict]

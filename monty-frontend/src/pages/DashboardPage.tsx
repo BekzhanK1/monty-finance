@@ -55,9 +55,10 @@ export function DashboardPage() {
     return <LoadingOverlay visible />;
   }
 
-  const savingsProgress = goal 
-    ? Math.min(100, (goal.current_savings / goal.target_amount) * 100) 
+  const savingsProgress = goal != null
+    ? (goal.target_amount > 0 ? (goal.progress_percent ?? (goal.current_savings / goal.target_amount) * 100) : 0)
     : 0;
+  const progressValue = Math.min(100, Math.max(0, Number(savingsProgress)));
 
   const baseBudgets = dashboard?.budgets.filter(b => b.group === 'BASE') || [];
   const comfortBudgets = dashboard?.budgets.filter(b => b.group === 'COMFORT') || [];
@@ -81,11 +82,11 @@ export function DashboardPage() {
               <Text fw={600}>Цель</Text>
             </Group>
             <Badge color="green" variant="light">
-              {savingsProgress.toFixed(1)}%
+              {progressValue.toFixed(1)}%
             </Badge>
           </Group>
           <ProgressRoot size="lg" radius="xl">
-            <Progress value={savingsProgress} color="green" />
+            <Progress value={progressValue} color="green" />
           </ProgressRoot>
           <Group justify="space-between" mt="xs">
             <Text size="sm" c="dimmed">{formatNumber(goal?.current_savings || 0)} / {formatNumber(goal?.target_amount || 0)} ₸</Text>

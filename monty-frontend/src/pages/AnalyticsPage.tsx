@@ -9,7 +9,7 @@ import {
   SimpleGrid,
   SegmentedControl,
 } from '@mantine/core';
-import { IconArrowUpRight, IconArrowDownRight, IconWallet } from '@tabler/icons-react';
+import { IconArrowUpRight, IconArrowDownRight, IconWallet, IconPigMoney } from '@tabler/icons-react';
 import { analyticsApi } from '../api';
 import type { Analytics } from '../types';
 
@@ -58,8 +58,8 @@ export function AnalyticsPage() {
           fullWidth
         />
 
-        {/* Summary Cards */}
-        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+        {/* Summary Cards: доходы, траты (без накоплений), в накопления, баланс */}
+        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
           <SummaryCard
             title="Доходы"
             value={analytics?.total_income || 0}
@@ -73,10 +73,16 @@ export function AnalyticsPage() {
             color="#fa5252"
           />
           <SummaryCard
+            title="В накопления"
+            value={analytics?.total_savings ?? 0}
+            icon={<IconPigMoney size={24} color="#228be6" />}
+            color="#228be6"
+          />
+          <SummaryCard
             title="Баланс"
-            value={analytics?.balance || 0}
-            icon={<IconWallet size={24} color={analytics && analytics.balance >= 0 ? '#40c057' : '#fa5252'} />}
-            color={analytics && analytics.balance >= 0 ? '#40c057' : '#fa5252'}
+            value={analytics?.balance ?? 0}
+            icon={<IconWallet size={24} color={analytics != null && analytics.balance >= 0 ? '#40c057' : '#fa5252'} />}
+            color={analytics != null && analytics.balance >= 0 ? '#40c057' : '#fa5252'}
           />
         </SimpleGrid>
 

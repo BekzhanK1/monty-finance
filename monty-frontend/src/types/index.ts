@@ -59,6 +59,7 @@ export interface Settings {
 export interface Analytics {
   total_income: number;
   total_expenses: number;
+  total_savings: number;
   balance: number;
   by_category: { name: string; icon: string; amount: number }[];
   by_group: { group: string; amount: number }[];

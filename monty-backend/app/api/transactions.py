@@ -56,7 +56,7 @@ def get_transactions(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
+    query = db.query(Transaction)
     
     if category_id:
         query = query.filter(Transaction.category_id == category_id)

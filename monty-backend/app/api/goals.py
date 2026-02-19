@@ -27,7 +27,6 @@ def get_goals(
     
     if savings_category_ids:
         total_savings = db.query(func.coalesce(func.sum(Transaction.amount), 0)).filter(
-            Transaction.user_id == current_user.id,
             Transaction.category_id.in_(savings_category_ids)
         ).scalar() or 0
     else:
