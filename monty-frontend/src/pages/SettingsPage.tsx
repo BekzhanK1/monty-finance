@@ -164,9 +164,7 @@ export function SettingsPage() {
 
   const baseTotal = budgets.filter(b => b.group === 'BASE').reduce((sum, b) => sum + b.limit_amount, 0);
   const comfortTotal = budgets.filter(b => b.group === 'COMFORT').reduce((sum, b) => sum + b.limit_amount, 0);
-  const savingsTotal = budgets.filter(b => b.group === 'SAVINGS').reduce((sum, b) => sum + b.limit_amount, 0);
   const expensesTotal = baseTotal + comfortTotal; // только траты (база + комфорт)
-  const grandTotal = expensesTotal + savingsTotal; // весь бюджет (траты + накопления)
 
   const groupedBudgets = {
     BASE: budgets.filter(b => b.group === 'BASE'),
