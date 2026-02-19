@@ -22,6 +22,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      - STAGE=PROD
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/monty
     depends_on:
       db:
