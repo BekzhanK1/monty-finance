@@ -9,7 +9,6 @@ import {
   Stack,
   Badge,
   ActionIcon,
-  ProgressRoot,
   LoadingOverlay,
   SimpleGrid,
   NumberInput,
@@ -85,12 +84,18 @@ export function DashboardPage() {
               {progressValue.toFixed(1)}%
             </Badge>
           </Group>
-          <ProgressRoot size="lg" radius="xl">
-            <Progress value={progressValue} color="green" />
-          </ProgressRoot>
+          <Progress value={progressValue} color="green" size="lg" radius="xl" />
           <Group justify="space-between" mt="xs">
             <Text size="sm" c="dimmed">{formatNumber(goal?.current_savings || 0)} / {formatNumber(goal?.target_amount || 0)} ₸</Text>
-            <Text size="sm" c="dimmed">{goal?.days_remaining} дней</Text>
+            <Text size="sm" c="dimmed">
+              {goal && goal.days_remaining > 0
+                ? `Осталось ${goal.days_remaining} дн.`
+                : goal && goal.days_passed !== undefined && goal.days_passed > 0
+                  ? `Прошло ${goal.days_passed} дн. с цели`
+                  : goal?.days_remaining === 0
+                    ? 'Срок цели сегодня'
+                    : '—'}
+            </Text>
           </Group>
         </Card>
 
@@ -222,9 +227,7 @@ function BudgetCard({ budget, onBudgetChange }: { budget: DashboardResponse['bud
           </Text>
         )}
       </Group>
-      <ProgressRoot size="sm" radius="xl">
-        <Progress value={Math.min(percent, 100)} color={color} />
-      </ProgressRoot>
+      <Progress value={Math.min(100, Math.max(0, percent))} color={color} size="sm" radius="xl" />
       <Text size="xs" c="dimmed" mt={2}>
         {formatNumber(budget.spent)} / {formatNumber(budget.limit_amount)} ₸
       </Text>

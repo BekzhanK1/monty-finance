@@ -48,18 +48,35 @@ def get_analytics(
         else:
             by_category[cat_name]["expense"] += t.amount
 
-    by_category_list = [{"name": v["name"], "icon": v["icon"], "amount": v["expense"] or v["savings"] or v["income"]} for v in by_category.values()]
+    def _cat_type(v):
+        if v["income"] > 0:
+            return "income"
+        if v["savings"] > 0:
+            return "savings"
+        return "expense"
+
+    by_category_list = [
+        {"name": v["name"], "icon": v["icon"], "amount": v["expense"] or v["savings"] or v["income"], "type": _cat_type(v)}
+        for v in by_category.values()
+    ]
     by_category_list.sort(key=lambda x: x["amount"], reverse=True)
 
     by_group = {}
     for t in transactions:
         group = t.category.group.value
         if group not in by_group:
-            by_group[group] = {"group": group, "amount": 0}
-        if t.category.type == TransactionType.EXPENSE:
-            by_group[group]["amount"] += t.amount
+            by_group[group] = {"group": group, "income": 0, "expense": 0}
+        if t.category.type == TransactionType.INCOME:
+            by_group[group]["income"] += t.amount
+        else:
+            by_group[group]["expense"] += t.amount
 
-    by_group_list = list(by_group.values())
+    by_group_list = []
+    for g in by_group.values():
+        if g["income"] > 0:
+            by_group_list.append({"group": g["group"], "amount": g["income"], "type": "income"})
+        if g["expense"] > 0:
+            by_group_list.append({"group": g["group"], "amount": g["expense"], "type": "expense"})
     by_group_list.sort(key=lambda x: x["amount"], reverse=True)
 
     daily_data = {}
@@ -126,17 +143,34 @@ def get_analytics_for_period(
             by_category[cat_name]["savings"] += t.amount
         else:
             by_category[cat_name]["expense"] += t.amount
-    by_category_list = [{"name": v["name"], "icon": v["icon"], "amount": v["expense"] or v["savings"] or v["income"]} for v in by_category.values()]
+    def _cat_type(v):
+        if v["income"] > 0:
+            return "income"
+        if v["savings"] > 0:
+            return "savings"
+        return "expense"
+
+    by_category_list = [
+        {"name": v["name"], "icon": v["icon"], "amount": v["expense"] or v["savings"] or v["income"], "type": _cat_type(v)}
+        for v in by_category.values()
+    ]
     by_category_list.sort(key=lambda x: x["amount"], reverse=True)
 
     by_group = {}
     for t in transactions:
         group = t.category.group.value
         if group not in by_group:
-            by_group[group] = {"group": group, "amount": 0}
-        if t.category.type == TransactionType.EXPENSE:
-            by_group[group]["amount"] += t.amount
-    by_group_list = list(by_group.values())
+            by_group[group] = {"group": group, "income": 0, "expense": 0}
+        if t.category.type == TransactionType.INCOME:
+            by_group[group]["income"] += t.amount
+        else:
+            by_group[group]["expense"] += t.amount
+    by_group_list = []
+    for g in by_group.values():
+        if g["income"] > 0:
+            by_group_list.append({"group": g["group"], "amount": g["income"], "type": "income"})
+        if g["expense"] > 0:
+            by_group_list.append({"group": g["group"], "amount": g["expense"], "type": "expense"})
     by_group_list.sort(key=lambda x: x["amount"], reverse=True)
 
     daily_data = {}

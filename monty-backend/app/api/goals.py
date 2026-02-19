@@ -33,13 +33,15 @@ def get_goals(
         total_savings = 0
     
     days_remaining = (target_date - today).days if today < target_date else 0
+    days_passed = (today - target_date).days if today >= target_date else 0
     progress_percent = min(100, (total_savings / target_amount) * 100) if target_amount > 0 else 0
-    
+
     return {
         "target_amount": target_amount,
         "target_date": target_date.isoformat(),
         "current_savings": total_savings,
         "progress_percent": round(progress_percent, 1),
         "days_remaining": days_remaining,
+        "days_passed": days_passed,
         "daily_needed": round((target_amount - total_savings) / days_remaining) if days_remaining > 0 else 0
     }

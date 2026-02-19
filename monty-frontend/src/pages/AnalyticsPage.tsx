@@ -96,7 +96,9 @@ export function AnalyticsPage() {
                   <Text size="lg">{cat.icon}</Text>
                   <Text size="sm">{cat.name}</Text>
                 </Group>
-                <Text size="sm" fw={500}>{formatNumber(cat.amount)} ₸</Text>
+                <Text size="sm" fw={500} c={cat.type === 'income' ? 'green' : 'red'}>
+                  {cat.type === 'income' ? '+' : '−'}{formatNumber(cat.amount)} ₸
+                </Text>
               </Group>
             ))}
             {analytics?.by_category.length === 0 && (
@@ -112,7 +114,9 @@ export function AnalyticsPage() {
             {analytics?.by_group.map((group, idx) => (
               <Group key={idx} justify="space-between">
                 <Text size="sm">{group.group === 'BASE' ? 'База' : group.group === 'COMFORT' ? 'Комфорт' : group.group === 'SAVINGS' ? 'Накопления' : 'Доход'}</Text>
-                <Text size="sm" fw={500}>{formatNumber(group.amount)} ₸</Text>
+                <Text size="sm" fw={500} c={group.type === 'income' ? 'green' : 'red'}>
+                  {group.type === 'income' ? '+' : '−'}{formatNumber(group.amount)} ₸
+                </Text>
               </Group>
             ))}
             {analytics?.by_group.length === 0 && (

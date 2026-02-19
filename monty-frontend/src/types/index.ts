@@ -35,6 +35,7 @@ export interface Goal {
   current_savings: number;
   progress_percent: number;
   days_remaining: number;
+  days_passed?: number;
   daily_needed: number;
 }
 
@@ -61,8 +62,8 @@ export interface Analytics {
   total_expenses: number;
   total_savings: number;
   balance: number;
-  by_category: { name: string; icon: string; amount: number }[];
-  by_group: { group: string; amount: number }[];
+  by_category: { name: string; icon: string; amount: number; type: 'income' | 'expense' | 'savings' }[];
+  by_group: { group: string; amount: number; type: 'income' | 'expense' }[];
   daily_data: { date: string; income: number; expense: number }[];
 }
 
