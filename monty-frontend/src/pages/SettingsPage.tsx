@@ -41,6 +41,7 @@ export function SettingsPage() {
     budget: number;
   } | null>(null);
   const [isNewCategory, setIsNewCategory] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -142,13 +143,16 @@ export function SettingsPage() {
   };
 
   const handleDeleteCategory = async (id: number) => {
+    setDeleteError(null);
     setSaving(true);
     try {
       await categoriesApi.delete(id);
-      loadData();
+      await loadData();
       haptic('success');
-    } catch (e) {
+    } catch (e: unknown) {
       console.error(e);
+      const err = e as { response?: { data?: { detail?: string } } };
+      setDeleteError(err.response?.data?.detail ?? 'Не удалось удалить категорию');
     } finally {
       setSaving(false);
     }
@@ -174,6 +178,11 @@ export function SettingsPage() {
     <Container size="sm" pb={100}>
       <LoadingOverlay visible={saving} />
       <Stack gap="lg">
+        {deleteError && (
+          <Text c="red" size="sm" mb="md">
+            {deleteError}
+          </Text>
+        )}
         <Card shadow="sm" padding="md" radius="md" withBorder>
           <Text fw={600} mb="md">Цель</Text>
           <Stack gap="sm">

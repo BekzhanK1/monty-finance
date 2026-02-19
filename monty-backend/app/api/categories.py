@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.config import get_db
-from app.models.models import Category
+from app.models.models import Category, MonthlyBudget, Transaction
 from app.schemas.schemas import CategoryResponse, CategoryCreate, CategoryUpdate
 
 router = APIRouter(prefix="/categories", tags=["Categories"])
@@ -56,7 +56,9 @@ def delete_category(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found"
         )
-    
+    # Remove related records first (foreign key constraints)
+    db.query(MonthlyBudget).filter(MonthlyBudget.category_id == category_id).delete()
+    db.query(Transaction).filter(Transaction.category_id == category_id).delete()
     db.delete(category)
     db.commit()
     return None
