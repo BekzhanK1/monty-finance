@@ -165,7 +165,8 @@ export function SettingsPage() {
   const baseTotal = budgets.filter(b => b.group === 'BASE').reduce((sum, b) => sum + b.limit_amount, 0);
   const comfortTotal = budgets.filter(b => b.group === 'COMFORT').reduce((sum, b) => sum + b.limit_amount, 0);
   const savingsTotal = budgets.filter(b => b.group === 'SAVINGS').reduce((sum, b) => sum + b.limit_amount, 0);
-  const grandTotal = baseTotal + comfortTotal + savingsTotal;
+  const expensesTotal = baseTotal + comfortTotal; // только траты (база + комфорт)
+  const grandTotal = expensesTotal + savingsTotal; // весь бюджет (траты + накопления)
 
   const groupedBudgets = {
     BASE: budgets.filter(b => b.group === 'BASE'),
@@ -220,13 +221,9 @@ export function SettingsPage() {
               <Text size="sm" c="dimmed">Комфорт</Text>
               <Text size="sm" fw={500}>{comfortTotal.toLocaleString('ru-RU')} ₸</Text>
             </Group>
-            <Group justify="space-between">
-              <Text size="sm" c="dimmed">Накопления</Text>
-              <Text size="sm" fw={500}>{savingsTotal.toLocaleString('ru-RU')} ₸</Text>
-            </Group>
             <Group justify="space-between" pt="xs" style={{ borderTop: '1px solid #eee' }}>
-              <Text size="sm" fw={600}>Итого</Text>
-              <Text size="sm" fw={600}>{grandTotal.toLocaleString('ru-RU')} ₸</Text>
+              <Text size="sm" fw={500}>На траты</Text>
+              <Text size="sm" fw={500}>{expensesTotal.toLocaleString('ru-RU')} ₸</Text>
             </Group>
           </Stack>
         </Card>

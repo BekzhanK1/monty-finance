@@ -135,21 +135,22 @@ export function DashboardPage() {
         )}
       </Stack>
 
-      {/* FAB */}
+      {/* FAB — выше нижнего меню, по центру */}
       <ActionIcon
-        size={60}
+        size={56}
         radius="xl"
         variant="filled"
         color="blue"
         onClick={handleAddClick}
         style={{
           position: 'fixed',
-          bottom: 20,
-          right: 20,
+          bottom: 80,
+          left: '50%',
+          transform: 'translateX(-50%)',
           zIndex: 1000,
         }}
       >
-        <IconPlus size={30} />
+        <IconPlus size={28} />
       </ActionIcon>
     </Container>
   );
