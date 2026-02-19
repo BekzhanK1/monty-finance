@@ -21,14 +21,14 @@ def get_goals(
     
     today = date.today()
     
-    savings_category = db.query(Category).filter(
-        Category.group == CategoryGroup.SAVINGS
-    ).first()
+    savings_category_ids = [
+        c.id for c in db.query(Category).filter(Category.group == CategoryGroup.SAVINGS).all()
+    ]
     
-    if savings_category:
-        total_savings = db.query(func.sum(Transaction.amount)).filter(
+    if savings_category_ids:
+        total_savings = db.query(func.coalesce(func.sum(Transaction.amount), 0)).filter(
             Transaction.user_id == current_user.id,
-            Transaction.category_id == savings_category.id
+            Transaction.category_id.in_(savings_category_ids)
         ).scalar() or 0
     else:
         total_savings = 0

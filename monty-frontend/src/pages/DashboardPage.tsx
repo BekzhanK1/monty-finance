@@ -66,9 +66,10 @@ export function DashboardPage() {
   const totalBudget = baseBudgets.reduce((sum, b) => sum + b.limit_amount, 0) + 
                       comfortBudgets.reduce((sum, b) => sum + b.limit_amount, 0) +
                       savingsBudgets.reduce((sum, b) => sum + b.limit_amount, 0);
-  const totalSpent = baseBudgets.reduce((sum, b) => sum + b.spent, 0) + 
-                     comfortBudgets.reduce((sum, b) => sum + b.spent, 0) +
-                     savingsBudgets.reduce((sum, b) => sum + b.spent, 0);
+  const expensesSpent = baseBudgets.reduce((sum, b) => sum + b.spent, 0) + 
+                        comfortBudgets.reduce((sum, b) => sum + b.spent, 0);
+  const savingsSpent = savingsBudgets.reduce((sum, b) => sum + b.spent, 0);
+  const totalSpent = expensesSpent + savingsSpent;
   const totalRemaining = totalBudget - totalSpent;
 
   return (
@@ -94,15 +95,19 @@ export function DashboardPage() {
           </Group>
         </Card>
 
-        {/* Total Budget Summary */}
-        <SimpleGrid cols={2} spacing="sm">
+        {/* Total Budget Summary: траты отдельно от накоплений */}
+        <SimpleGrid cols={3} spacing="sm">
           <Card shadow="xs" padding="sm" radius="md" withBorder>
             <Text size="xs" c="dimmed">Потрачено</Text>
-            <Text fw={600} c={totalRemaining < 0 ? 'red' : 'inherit'}>{formatNumber(totalSpent)} ₸</Text>
+            <Text fw={600} size="sm">{formatNumber(expensesSpent)} ₸</Text>
+          </Card>
+          <Card shadow="xs" padding="sm" radius="md" withBorder>
+            <Text size="xs" c="dimmed">В накопления</Text>
+            <Text fw={600} size="sm" c="teal">{formatNumber(savingsSpent)} ₸</Text>
           </Card>
           <Card shadow="xs" padding="sm" radius="md" withBorder>
             <Text size="xs" c="dimmed">Осталось</Text>
-            <Text fw={600} c={totalRemaining < 0 ? 'red' : 'green'}>{formatNumber(totalRemaining)} ₸</Text>
+            <Text fw={600} size="sm" c={totalRemaining < 0 ? 'red' : 'green'}>{formatNumber(totalRemaining)} ₸</Text>
           </Card>
         </SimpleGrid>
 
