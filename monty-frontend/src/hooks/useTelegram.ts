@@ -24,6 +24,7 @@ declare global {
         };
         HapticFeedback: {
           impactOccurred: (style: 'light' | 'medium' | 'heavy') => void;
+          notificationOccurred?: (type: 'error' | 'success' | 'warning') => void;
         };
       };
     };
@@ -57,8 +58,14 @@ export function useTelegram() {
     }
   }, []);
 
-  const haptic = (style: 'light' | 'medium' | 'heavy' = 'light') => {
-    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred(style);
+  const haptic = (style: 'light' | 'medium' | 'heavy' | 'success' | 'error' | 'warning' = 'light') => {
+    const feedback = window.Telegram?.WebApp?.HapticFeedback;
+    if (!feedback) return;
+    if (style === 'success' || style === 'error' || style === 'warning') {
+      feedback.notificationOccurred?.(style);
+    } else {
+      feedback.impactOccurred(style);
+    }
   };
 
   return { initData, user, isReady, haptic };
