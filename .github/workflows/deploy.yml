@@ -1,0 +1,39 @@
+name: Deploy App (Optimized)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-app
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            cd ~/monty
+            
+            # Отменяем любые локальные изменения на сервере и жестко накатываем код
+            git fetch --all
+            git reset --hard origin/main
+
+            # Собираем новые образы (старые контейнеры продолжают работать, даунтайма нет)
+            docker compose build
+
+            # Плавно пересоздаем контейнеры. Роутер переключит трафик на новые, когда они поднимутся
+            docker compose up -d --remove-orphans
+
+            # Безопасно удаляем "висячие" старые образы (но оставляем кэш для быстрой сборки в будущем)
+            docker image prune -f
