@@ -84,6 +84,8 @@ export function DashboardPage() {
   const percentColor = (p: number) => (p >= 75 ? 'red' : p >= 50 ? 'yellow' : 'green');
 
   const budgetRemain = totalBudget > 0 ? totalBudget - expensesSpent : 0;
+  const budgetExpensePercent = totalBudget > 0 ? Math.round((expensesSpent / totalBudget) * 100) : 0;
+  const budgetRemainPercent = totalBudget > 0 ? Math.round((budgetRemain / totalBudget) * 100) : 0;
 
   return (
     <Container size="sm" p="md" pb={100}>
@@ -91,18 +93,30 @@ export function DashboardPage() {
         {/* Общий бюджет: сколько на расходы, сколько остаётся (в плюс) */}
         {totalBudget > 0 && (
           <Card shadow="sm" padding="md" radius="md" withBorder>
-            <Text fw={600} size="sm" c="dimmed" mb="xs">Общий бюджет</Text>
-            <Text fw={700} size="xl">{formatNumber(totalBudget)} ₸</Text>
-            <Group mt="sm" gap="md">
-              <Text size="sm" c="dimmed">Потрачено на расходы:</Text>
-              <Text size="sm" fw={600}>{formatNumber(expensesSpent)} ₸</Text>
+            <Group justify="space-between" mb="xs">
+              <Text fw={600} size="sm" c="dimmed">Общий бюджет</Text>
+              <Badge size="sm" variant="light" color="blue">{formatNumber(totalBudget)} ₸</Badge>
             </Group>
-            <Group gap="md" mt={4}>
-              <Text size="sm" c="dimmed">Остаётся:</Text>
-              <Text size="sm" fw={700} c={budgetRemain >= 0 ? 'green' : 'red'}>
-                {formatNumber(budgetRemain)} ₸
-              </Text>
-            </Group>
+            <Stack gap="sm">
+              <div>
+                <Group justify="space-between" mb={4}>
+                  <Text size="sm" c="dimmed">Потрачено на расходы</Text>
+                  <Text size="sm" fw={600}>{formatNumber(expensesSpent)} ₸ ({budgetExpensePercent}%)</Text>
+                </Group>
+                <Progress 
+                  value={budgetExpensePercent} 
+                  color={budgetExpensePercent >= 80 ? 'red' : budgetExpensePercent >= 60 ? 'yellow' : 'blue'} 
+                  size="sm" 
+                  radius="xl" 
+                />
+              </div>
+              <Group justify="space-between" p="xs" style={{ backgroundColor: budgetRemain >= 0 ? '#e6f7ed' : '#ffe6e6', borderRadius: '8px' }}>
+                <Text size="sm" fw={600}>Остаётся в итоге</Text>
+                <Text size="md" fw={700} c={budgetRemain >= 0 ? 'green' : 'red'}>
+                  {formatNumber(budgetRemain)} ₸ ({budgetRemainPercent}%)
+                </Text>
+              </Group>
+            </Stack>
           </Card>
         )}
 

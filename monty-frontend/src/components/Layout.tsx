@@ -10,6 +10,7 @@ import {
   Stack,
   ActionIcon,
   useMantineTheme,
+  Box,
 } from '@mantine/core';
 import {
   IconHome,
@@ -119,7 +120,8 @@ export function Layout() {
       </AppShell.Main>
 
       {/* Mobile Bottom Navigation */}
-      <Group
+      <Box
+        hiddenFrom="sm"
         style={{
           position: 'fixed',
           bottom: 0,
@@ -127,11 +129,12 @@ export function Layout() {
           right: 0,
           backgroundColor: 'white',
           borderTop: `1px solid ${theme.colors.gray[2]}`,
-          padding: '8px 16px',
-          justifyContent: 'space-around',
+          padding: '8px 4px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '4px',
           zIndex: 100,
         }}
-        hiddenFrom="sm"
       >
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -143,16 +146,29 @@ export function Layout() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                padding: '8px 16px',
+                padding: '6px 4px',
                 color: isActive ? theme.colors.blue[6] : theme.colors.gray[6],
+                minWidth: 0,
               }}
             >
-              <item.icon size={24} />
-              <Text size="xs" mt={4}>{item.label}</Text>
+              <item.icon size={22} />
+              <Text 
+                size="xs" 
+                mt={2}
+                style={{
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '100%',
+                  fontSize: '11px',
+                }}
+              >
+                {item.label}
+              </Text>
             </UnstyledButton>
           );
         })}
-      </Group>
+      </Box>
     </AppShell>
   );
 }
