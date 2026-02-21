@@ -9,6 +9,8 @@ import {
   SimpleGrid,
   SegmentedControl,
   Button,
+  Progress,
+  Box,
 } from '@mantine/core';
 import { IconArrowUpRight, IconArrowDownRight, IconWallet, IconPigMoney } from '@tabler/icons-react';
 import { analyticsApi } from '../api';
@@ -132,12 +134,14 @@ export function AnalyticsPage() {
                 value={analytics.total_expenses || 0}
                 icon={<IconArrowDownRight size={24} color="#fa5252" />}
                 color="#fa5252"
+                subtitle={analytics.total_income > 0 ? `${Math.round((analytics.total_expenses / analytics.total_income) * 100)}% от дохода` : undefined}
               />
               <SummaryCard
                 title="В накопления"
                 value={analytics.total_savings ?? 0}
                 icon={<IconPigMoney size={24} color="#228be6" />}
                 color="#228be6"
+                subtitle={analytics.total_income > 0 ? `${Math.round((analytics.total_savings / analytics.total_income) * 100)}% от дохода` : undefined}
               />
               <SummaryCard
                 title="Баланс"
@@ -147,20 +151,62 @@ export function AnalyticsPage() {
               />
             </SimpleGrid>
 
+            {/* Сводка: доля расходов/дохода/накоплений */}
+            {analytics.total_income > 0 && (
+              <Card shadow="sm" padding="md" radius="md" withBorder>
+                <Text fw={600} mb="sm">Структура</Text>
+                <Stack gap="xs">
+                  <Box>
+                    <Group justify="space-between" mb={4}>
+                      <Text size="xs" c="dimmed">Расходы</Text>
+                      <Text size="xs" fw={500}>{Math.round((analytics.total_expenses / analytics.total_income) * 100)}%</Text>
+                    </Group>
+                    <Progress value={Math.min(100, (analytics.total_expenses / analytics.total_income) * 100)} color="red" size="sm" radius="xl" />
+                  </Box>
+                  <Box>
+                    <Group justify="space-between" mb={4}>
+                      <Text size="xs" c="dimmed">В накопления</Text>
+                      <Text size="xs" fw={500}>{Math.round((analytics.total_savings / analytics.total_income) * 100)}%</Text>
+                    </Group>
+                    <Progress value={Math.min(100, (analytics.total_savings / analytics.total_income) * 100)} color="blue" size="sm" radius="xl" />
+                  </Box>
+                  <Box>
+                    <Group justify="space-between" mb={4}>
+                      <Text size="xs" c="dimmed">Свободно (баланс)</Text>
+                      <Text size="xs" fw={500}>{Math.round(Math.max(0, (analytics.balance / analytics.total_income) * 100))}%</Text>
+                    </Group>
+                    <Progress value={Math.max(0, Math.min(100, (analytics.balance / analytics.total_income) * 100))} color="green" size="sm" radius="xl" />
+                  </Box>
+                </Stack>
+              </Card>
+            )}
+
             <Card shadow="sm" padding="md" radius="md" withBorder>
               <Text fw={600} mb="md">По категориям</Text>
-              <Stack gap="xs">
-                {analytics.by_category.map((cat, idx) => (
-                  <Group key={idx} justify="space-between">
-                    <Group>
-                      <Text size="lg">{cat.icon}</Text>
-                      <Text size="sm">{cat.name}</Text>
-                    </Group>
-                    <Text size="sm" fw={500} c={cat.type === 'income' ? 'green' : 'red'}>
-                      {cat.type === 'income' ? '+' : '−'}{formatNumber(cat.amount)} ₸
-                    </Text>
-                  </Group>
-                ))}
+              <Stack gap="sm">
+                {analytics.by_category.length > 0 && (() => {
+                  const maxAmount = Math.max(...analytics.by_category.map(c => c.amount));
+                  const totalForPct = analytics.total_income + analytics.total_expenses + analytics.total_savings;
+                  return analytics.by_category.map((cat, idx) => {
+                    const barPct = maxAmount > 0 ? (cat.amount / maxAmount) * 100 : 0;
+                    const sharePct = totalForPct > 0 ? ((cat.amount / totalForPct) * 100) : 0;
+                    return (
+                      <Box key={idx}>
+                        <Group justify="space-between" mb={4}>
+                          <Group gap="xs">
+                            <Text size="lg">{cat.icon}</Text>
+                            <Text size="sm">{cat.name}</Text>
+                          </Group>
+                          <Text size="sm" fw={500} c={cat.type === 'income' ? 'green' : 'red'}>
+                            {cat.type === 'income' ? '+' : '−'}{formatNumber(cat.amount)} ₸
+                            <Text span size="xs" c="dimmed" ml={4}>({sharePct.toFixed(0)}%)</Text>
+                          </Text>
+                        </Group>
+                        <Progress value={barPct} color={cat.type === 'income' ? 'green' : 'red'} size="sm" radius="xl" />
+                      </Box>
+                    );
+                  });
+                })()}
                 {analytics.by_category.length === 0 && (
                   <Text c="dimmed" ta="center">Нет данных</Text>
                 )}
@@ -169,15 +215,28 @@ export function AnalyticsPage() {
 
             <Card shadow="sm" padding="md" radius="md" withBorder>
               <Text fw={600} mb="md">По группам</Text>
-              <Stack gap="xs">
-                {analytics.by_group.map((group, idx) => (
-                  <Group key={idx} justify="space-between">
-                    <Text size="sm">{group.group === 'BASE' ? 'База' : group.group === 'COMFORT' ? 'Комфорт' : group.group === 'SAVINGS' ? 'Накопления' : 'Доход'}</Text>
-                    <Text size="sm" fw={500} c={group.type === 'income' ? 'green' : 'red'}>
-                      {group.type === 'income' ? '+' : '−'}{formatNumber(group.amount)} ₸
-                    </Text>
-                  </Group>
-                ))}
+              <Stack gap="sm">
+                {analytics.by_group.length > 0 && (() => {
+                  const maxGroupAmount = Math.max(...analytics.by_group.map(g => g.amount));
+                  const totalGroup = analytics.by_group.reduce((s, g) => s + g.amount, 0);
+                  return analytics.by_group.map((group, idx) => {
+                    const barPct = maxGroupAmount > 0 ? (group.amount / maxGroupAmount) * 100 : 0;
+                    const sharePct = totalGroup > 0 ? ((group.amount / totalGroup) * 100) : 0;
+                    const label = group.group === 'BASE' ? 'База' : group.group === 'COMFORT' ? 'Комфорт' : group.group === 'SAVINGS' ? 'Накопления' : 'Доход';
+                    return (
+                      <Box key={idx}>
+                        <Group justify="space-between" mb={4}>
+                          <Text size="sm" fw={500}>{label}</Text>
+                          <Text size="sm" fw={500} c={group.type === 'income' ? 'green' : 'red'}>
+                            {group.type === 'income' ? '+' : '−'}{formatNumber(group.amount)} ₸
+                            <Text span size="xs" c="dimmed" ml={4}>({sharePct.toFixed(0)}%)</Text>
+                          </Text>
+                        </Group>
+                        <Progress value={barPct} color={group.type === 'income' ? 'green' : 'red'} size="sm" radius="xl" />
+                      </Box>
+                    );
+                  });
+                })()}
                 {analytics.by_group.length === 0 && (
                   <Text c="dimmed" ta="center">Нет данных</Text>
                 )}
@@ -208,7 +267,7 @@ export function AnalyticsPage() {
   );
 }
 
-function SummaryCard({ title, value, icon, color }: { title: string; value: number; icon: React.ReactNode; color: string }) {
+function SummaryCard({ title, value, icon, color, subtitle }: { title: string; value: number; icon: React.ReactNode; color: string; subtitle?: string }) {
   return (
     <Card shadow="sm" padding="md" radius="md" withBorder>
       <Group justify="space-between" mb="xs">
@@ -218,6 +277,7 @@ function SummaryCard({ title, value, icon, color }: { title: string; value: numb
       <Text fw={700} size="lg" style={{ color }}>
         {formatNumber(value)} ₸
       </Text>
+      {subtitle && <Text size="xs" c="dimmed" mt={4}>{subtitle}</Text>}
     </Card>
   );
 }

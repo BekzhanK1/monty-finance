@@ -69,6 +69,17 @@ export function DashboardPage() {
                         comfortBudgets.reduce((sum, b) => sum + b.spent, 0);
   const savingsSpent = savingsBudgets.reduce((sum, b) => sum + b.spent, 0);
   const totalRemaining = expensesBudget - expensesSpent;
+  const spentPercent = expensesBudget > 0 ? Math.round((expensesSpent / expensesBudget) * 100) : 0;
+  const remainingPercent = expensesBudget > 0 ? Math.round((totalRemaining / expensesBudget) * 100) : 0;
+
+  const baseTotal = baseBudgets.reduce((s, b) => s + b.limit_amount, 0);
+  const baseSpent = baseBudgets.reduce((s, b) => s + b.spent, 0);
+  const basePercent = baseTotal > 0 ? (baseSpent / baseTotal) * 100 : 0;
+  const comfortTotal = comfortBudgets.reduce((s, b) => s + b.limit_amount, 0);
+  const comfortSpent = comfortBudgets.reduce((s, b) => s + b.spent, 0);
+  const comfortPercent = comfortTotal > 0 ? (comfortSpent / comfortTotal) * 100 : 0;
+
+  const percentColor = (p: number) => (p >= 75 ? 'red' : p >= 50 ? 'yellow' : 'green');
 
   return (
     <Container size="sm" p="md" pb={100}>
@@ -99,11 +110,12 @@ export function DashboardPage() {
           </Group>
         </Card>
 
-        {/* Total Budget Summary: траты отдельно от накоплений */}
+        {/* Total Budget Summary: траты + % от бюджета, осталось + % */}
         <SimpleGrid cols={3} spacing="sm">
           <Card shadow="xs" padding="sm" radius="md" withBorder>
             <Text size="xs" c="dimmed">Потрачено</Text>
             <Text fw={600} size="sm">{formatNumber(expensesSpent)} ₸</Text>
+            <Text size="xs" c="dimmed">из {formatNumber(expensesBudget)} ₸ · {spentPercent}%</Text>
           </Card>
           <Card shadow="xs" padding="sm" radius="md" withBorder>
             <Text size="xs" c="dimmed">В накопления</Text>
@@ -112,13 +124,19 @@ export function DashboardPage() {
           <Card shadow="xs" padding="sm" radius="md" withBorder>
             <Text size="xs" c="dimmed">Осталось</Text>
             <Text fw={600} size="sm" c={totalRemaining < 0 ? 'red' : 'green'}>{formatNumber(totalRemaining)} ₸</Text>
+            <Text size="xs" c="dimmed">{remainingPercent}% от бюджета</Text>
           </Card>
         </SimpleGrid>
 
         {/* Budget Categories */}
         {baseBudgets.length > 0 && (
           <Stack gap="xs">
-            <Text fw={600} size="sm" c="dimmed">База</Text>
+            <Group justify="space-between" wrap="nowrap">
+              <Text fw={600} size="sm" c="dimmed">База</Text>
+              <Text size="sm" fw={500} c={percentColor(basePercent)}>
+                {formatNumber(baseSpent)} / {formatNumber(baseTotal)} ₸ · {basePercent.toFixed(0)}%
+              </Text>
+            </Group>
             {baseBudgets.map(budget => (
               <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} />
             ))}
@@ -127,7 +145,12 @@ export function DashboardPage() {
 
         {comfortBudgets.length > 0 && (
           <Stack gap="xs">
-            <Text fw={600} size="sm" c="dimmed">Комфорт</Text>
+            <Group justify="space-between" wrap="nowrap">
+              <Text fw={600} size="sm" c="dimmed">Комфорт</Text>
+              <Text size="sm" fw={500} c={percentColor(comfortPercent)}>
+                {formatNumber(comfortSpent)} / {formatNumber(comfortTotal)} ₸ · {comfortPercent.toFixed(0)}%
+              </Text>
+            </Group>
             {comfortBudgets.map(budget => (
               <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} />
             ))}
@@ -172,7 +195,7 @@ function BudgetCard({ budget, onBudgetChange }: { budget: DashboardResponse['bud
 
   const percent = budget.limit_amount > 0 ? (budget.spent / budget.limit_amount) * 100 : 0;
   const isOverBudget = !isSavings && budget.remaining < 0;
-  const color = isOverBudget ? 'red' : percent > 80 ? 'yellow' : 'green';
+  const color = isOverBudget ? 'red' : percent >= 75 ? 'red' : percent >= 50 ? 'yellow' : 'green';
 
   const handleSave = async () => {
     if (editValue !== budget.limit_amount) {
