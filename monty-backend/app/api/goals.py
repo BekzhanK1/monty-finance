@@ -17,8 +17,14 @@ def get_goals(
 ):
     target_amount = SettingsService.get_target_amount(db)
     target_date_str = SettingsService.get_target_date(db)
-    target_date = date.fromisoformat(target_date_str)
-    
+    if not target_date_str:
+        target_date = date.today()
+    else:
+        try:
+            target_date = date.fromisoformat(target_date_str)
+        except ValueError:
+            target_date = date.today()
+
     today = date.today()
     
     savings_category_ids = [

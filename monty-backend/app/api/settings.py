@@ -19,9 +19,7 @@ class SettingsResponse(BaseModel):
     target_amount: str
     target_date: str
     salary_day: str
-    base_budget: str
-    comfort_budget: str
-    savings_budget: str
+    total_budget: str
 
 
 class BudgetConfig(BaseModel):
@@ -51,9 +49,7 @@ def update_setting(setting: SettingUpdate, db: Session = Depends(get_db)):
         "target_amount",
         "target_date",
         "salary_day",
-        "base_budget",
-        "comfort_budget",
-        "savings_budget",
+        "total_budget",
     ]
 
     if setting.key not in allowed_keys:

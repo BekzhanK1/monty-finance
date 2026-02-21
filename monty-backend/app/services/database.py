@@ -1,8 +1,16 @@
 from datetime import date
 from sqlalchemy.orm import Session
-from app.models.models import Category, MonthlyBudget, User, CategoryGroup, TransactionType
+from app.models.models import Category, MonthlyBudget, User, CategoryGroup, TransactionType, Settings
 from app.core.config import Base, engine
 from app.services.settings_service import SettingsService
+
+# Начальные значения настроек — пишутся в БД только при первом запуске (если записей ещё нет).
+INITIAL_SETTINGS = {
+    "target_amount": "1500000",
+    "target_date": "2025-07-01",
+    "salary_day": "10",
+    "total_budget": "465000",
+}
 
 def init_db():
     Base.metadata.create_all(bind=engine)
@@ -49,7 +57,12 @@ def seed_initial_data(db: Session):
     for cat in categories:
         db.merge(cat)
     db.commit()
-    
+
+    for key in SettingsService.SETTINGS_KEYS:
+        if db.query(Settings).filter(Settings.key == key).first() is None:
+            db.add(Settings(key=key, value=INITIAL_SETTINGS.get(key, "")))
+    db.commit()
+
     salary_day = SettingsService.get_salary_day(db)
     period_start, _ = get_financial_period(salary_day=salary_day)
     
