@@ -67,7 +67,7 @@ export function TransactionsPage() {
   const [editComment, setEditComment] = useState('');
 
   useEffect(() => {
-    const t = setTimeout(() => setSearchDebounced(search), 400);
+    const t = setTimeout(() => setSearchDebounced(search), 1500);
     return () => clearTimeout(t);
   }, [search]);
 
