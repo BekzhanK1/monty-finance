@@ -13,6 +13,7 @@ import {
   Box,
 } from '@mantine/core';
 import { IconArrowUpRight, IconArrowDownRight, IconWallet, IconPigMoney } from '@tabler/icons-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { analyticsApi } from '../api';
 import type { Analytics } from '../types';
 
@@ -244,14 +245,42 @@ export function AnalyticsPage() {
             </Card>
 
             <Card shadow="sm" padding="md" radius="md" withBorder>
-              <Text fw={600} mb="md">По дням</Text>
+              <Text fw={600} mb="md">По дням (график)</Text>
+              {analytics.daily_data.length > 0 ? (
+                <Box style={{ width: '100%', height: 280 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[...analytics.daily_data].reverse().map(d => ({
+                        date: new Date(d.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+                        Доходы: d.income,
+                        Расходы: d.expense,
+                      }))}
+                      margin={{ top: 8, right: 8, left: 0, bottom: 8 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--mantine-color-default-border)" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(v: number | undefined) => [v != null ? formatNumber(v) + ' ₸' : '', '']} labelFormatter={(label) => label} />
+                      <Legend />
+                      <Bar dataKey="Доходы" fill="#40c057" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Расходы" fill="#fa5252" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              ) : (
+                <Text c="dimmed" ta="center" py="xl">Нет данных</Text>
+              )}
+            </Card>
+
+            <Card shadow="sm" padding="md" radius="md" withBorder>
+              <Text fw={600} mb="md">По дням (список)</Text>
               <Stack gap="xs">
                 {analytics.daily_data.slice(-10).reverse().map((day, idx) => (
                   <Group key={idx} justify="space-between">
                     <Text size="sm" c="dimmed">{new Date(day.date).toLocaleDateString('ru-RU')}</Text>
                     <Group gap="sm">
                       <Text size="xs" c="green">{formatNumber(day.income)}</Text>
-                      <Text size="xs" c="red">-{formatNumber(day.expense)}</Text>
+                      <Text size="xs" c="red">−{formatNumber(day.expense)}</Text>
                     </Group>
                   </Group>
                 ))}

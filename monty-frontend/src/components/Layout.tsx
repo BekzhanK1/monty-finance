@@ -16,11 +16,13 @@ import {
   IconChartBar,
   IconSettings,
   IconPlus,
+  IconList,
 } from '@tabler/icons-react';
 import { useTelegram } from '../hooks/useTelegram';
 
 const navItems = [
   { icon: IconHome, label: 'Главная', path: '/' },
+  { icon: IconList, label: 'История', path: '/transactions' },
   { icon: IconChartBar, label: 'Аналитика', path: '/analytics' },
   { icon: IconSettings, label: 'Настройки', path: '/settings' },
 ];

@@ -205,6 +205,14 @@ export function SettingsPage() {
           <Text fw={600} mb="md">Бюджет</Text>
           <Stack gap="sm">
             <NumberInput
+              label="Общий семейный бюджет (₸)"
+              description="Сумма на месяц, может меняться от заработка"
+              value={parseInt(settings?.total_budget || '0')}
+              onChange={(val) => handleSettingChange('total_budget', String(val))}
+              thousandSeparator=" "
+              suffix=" ₸"
+            />
+            <NumberInput
               label="День зарплаты"
               value={parseInt(settings?.salary_day || '10')}
               onChange={(val) => handleSettingChange('salary_day', String(val))}

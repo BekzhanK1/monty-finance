@@ -27,13 +27,15 @@ export function DashboardPage() {
   const { haptic } = useTelegram();
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [goal, setGoal] = useState<Goal | null>(null);
+  const [totalBudget, setTotalBudget] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([budgetsApi.current(), goalsApi.get()])
-      .then(([dash, g]) => {
+    Promise.all([budgetsApi.current(), goalsApi.get(), settingsApi.get()])
+      .then(([dash, g, settings]) => {
         setDashboard(dash);
         setGoal(g);
+        setTotalBudget(parseInt(settings?.total_budget || '0', 10));
       })
       .finally(() => setLoading(false));
   }, []);
@@ -81,9 +83,29 @@ export function DashboardPage() {
 
   const percentColor = (p: number) => (p >= 75 ? 'red' : p >= 50 ? 'yellow' : 'green');
 
+  const budgetRemain = totalBudget > 0 ? totalBudget - expensesSpent : 0;
+
   return (
     <Container size="sm" p="md" pb={100}>
       <Stack gap="md">
+        {/* Общий бюджет: сколько на расходы, сколько остаётся (в плюс) */}
+        {totalBudget > 0 && (
+          <Card shadow="sm" padding="md" radius="md" withBorder>
+            <Text fw={600} size="sm" c="dimmed" mb="xs">Общий бюджет</Text>
+            <Text fw={700} size="xl">{formatNumber(totalBudget)} ₸</Text>
+            <Group mt="sm" gap="md">
+              <Text size="sm" c="dimmed">Потрачено на расходы:</Text>
+              <Text size="sm" fw={600}>{formatNumber(expensesSpent)} ₸</Text>
+            </Group>
+            <Group gap="md" mt={4}>
+              <Text size="sm" c="dimmed">Остаётся:</Text>
+              <Text size="sm" fw={700} c={budgetRemain >= 0 ? 'green' : 'red'}>
+                {formatNumber(budgetRemain)} ₸
+              </Text>
+            </Group>
+          </Card>
+        )}
+
         {/* Goal Progress */}
         <Card shadow="sm" padding="md" radius="md" withBorder>
           <Group justify="space-between" mb="xs">
@@ -110,60 +132,62 @@ export function DashboardPage() {
           </Group>
         </Card>
 
-        {/* Total Budget Summary: траты + % от бюджета, осталось + % */}
+        {/* Total Budget Summary: короткие подписи, крупнее цифры */}
         <SimpleGrid cols={3} spacing="sm">
-          <Card shadow="xs" padding="sm" radius="md" withBorder>
+          <Card shadow="sm" padding="md" radius="md" withBorder>
             <Text size="xs" c="dimmed">Потрачено</Text>
-            <Text fw={600} size="sm">{formatNumber(expensesSpent)} ₸</Text>
-            <Text size="xs" c="dimmed">из {formatNumber(expensesBudget)} ₸ · {spentPercent}%</Text>
+            <Text fw={700} size="lg">{formatNumber(expensesSpent)} ₸</Text>
+            <Text size="xs" c="dimmed">{spentPercent}%</Text>
           </Card>
-          <Card shadow="xs" padding="sm" radius="md" withBorder>
-            <Text size="xs" c="dimmed">В накопления</Text>
-            <Text fw={600} size="sm" c="teal">{formatNumber(savingsSpent)} ₸</Text>
+          <Card shadow="sm" padding="md" radius="md" withBorder>
+            <Text size="xs" c="dimmed">Накопления</Text>
+            <Text fw={700} size="lg" c="teal">{formatNumber(savingsSpent)} ₸</Text>
           </Card>
-          <Card shadow="xs" padding="sm" radius="md" withBorder>
+          <Card shadow="sm" padding="md" radius="md" withBorder>
             <Text size="xs" c="dimmed">Осталось</Text>
-            <Text fw={600} size="sm" c={totalRemaining < 0 ? 'red' : 'green'}>{formatNumber(totalRemaining)} ₸</Text>
-            <Text size="xs" c="dimmed">{remainingPercent}% от бюджета</Text>
+            <Text fw={700} size="lg" c={totalRemaining < 0 ? 'red' : 'green'}>{formatNumber(totalRemaining)} ₸</Text>
+            <Text size="xs" c="dimmed">{remainingPercent}%</Text>
           </Card>
         </SimpleGrid>
 
         {/* Budget Categories */}
         {baseBudgets.length > 0 && (
-          <Stack gap="xs">
-            <Group justify="space-between" wrap="nowrap">
+          <Card shadow="xs" padding="sm" radius="md" withBorder>
+            <Group justify="space-between" mb="xs">
               <Text fw={600} size="sm" c="dimmed">База</Text>
-              <Text size="sm" fw={500} c={percentColor(basePercent)}>
-                {formatNumber(baseSpent)} / {formatNumber(baseTotal)} ₸ · {basePercent.toFixed(0)}%
-              </Text>
+              <Badge size="xs" color={percentColor(basePercent)} variant="light">{basePercent.toFixed(0)}%</Badge>
             </Group>
-            {baseBudgets.map(budget => (
-              <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} />
-            ))}
-          </Stack>
+            <Stack gap="xs">
+              {baseBudgets.map(budget => (
+                <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} onOpenHistory={() => { haptic('light'); navigate(`/transactions?category_id=${budget.category_id}`); }} />
+              ))}
+            </Stack>
+          </Card>
         )}
 
         {comfortBudgets.length > 0 && (
-          <Stack gap="xs">
-            <Group justify="space-between" wrap="nowrap">
+          <Card shadow="xs" padding="sm" radius="md" withBorder>
+            <Group justify="space-between" mb="xs">
               <Text fw={600} size="sm" c="dimmed">Комфорт</Text>
-              <Text size="sm" fw={500} c={percentColor(comfortPercent)}>
-                {formatNumber(comfortSpent)} / {formatNumber(comfortTotal)} ₸ · {comfortPercent.toFixed(0)}%
-              </Text>
+              <Badge size="xs" color={percentColor(comfortPercent)} variant="light">{comfortPercent.toFixed(0)}%</Badge>
             </Group>
-            {comfortBudgets.map(budget => (
-              <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} />
-            ))}
-          </Stack>
+            <Stack gap="xs">
+              {comfortBudgets.map(budget => (
+                <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} onOpenHistory={() => { haptic('light'); navigate(`/transactions?category_id=${budget.category_id}`); }} />
+              ))}
+            </Stack>
+          </Card>
         )}
 
         {savingsBudgets.length > 0 && (
-          <Stack gap="xs">
-            <Text fw={600} size="sm" c="dimmed">Накопления</Text>
-            {savingsBudgets.map(budget => (
-              <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} />
-            ))}
-          </Stack>
+          <Card shadow="xs" padding="sm" radius="md" withBorder>
+            <Text fw={600} size="sm" c="dimmed" mb="xs">Накопления</Text>
+            <Stack gap="xs">
+              {savingsBudgets.map(budget => (
+                <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} onOpenHistory={() => { haptic('light'); navigate(`/transactions?category_id=${budget.category_id}`); }} />
+              ))}
+            </Stack>
+          </Card>
         )}
       </Stack>
 
@@ -188,7 +212,7 @@ export function DashboardPage() {
   );
 }
 
-function BudgetCard({ budget, onBudgetChange }: { budget: DashboardResponse['budgets'][0]; onBudgetChange: (categoryId: number, limitAmount: number) => void }) {
+function BudgetCard({ budget, onBudgetChange, onOpenHistory }: { budget: DashboardResponse['budgets'][0]; onBudgetChange: (categoryId: number, limitAmount: number) => void; onOpenHistory?: () => void }) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(budget.limit_amount);
   const isSavings = budget.group === 'SAVINGS';
@@ -206,26 +230,24 @@ function BudgetCard({ budget, onBudgetChange }: { budget: DashboardResponse['bud
 
   if (isSavings) {
     return (
-      <Card shadow="xs" padding="sm" radius="md" withBorder>
+      <Card withBorder padding="xs" radius="md" style={{ borderColor: 'var(--mantine-color-teal-3)', cursor: onOpenHistory ? 'pointer' : undefined }} onClick={onOpenHistory}>
         <Group justify="space-between">
           <Group gap="xs">
-            <Text size="lg">{budget.category_icon}</Text>
+            <Text size="md">{budget.category_icon}</Text>
             <Text fw={500} size="sm">{budget.category_name}</Text>
           </Group>
-          <Text size="sm" fw={500} c="teal">
-            Отложено: {formatNumber(budget.spent)} ₸
-          </Text>
+          <Text fw={600} size="sm" c="teal">{formatNumber(budget.spent)} ₸</Text>
         </Group>
       </Card>
     );
   }
 
   return (
-    <Card shadow="xs" padding="sm" radius="md" withBorder>
-      <Group justify="space-between" mb={4}>
-        <Group gap="xs">
-          <Text size="lg">{budget.category_icon}</Text>
-          <Text fw={500} size="sm">{budget.category_name}</Text>
+    <Card withBorder padding="xs" radius="md" style={{ cursor: onOpenHistory ? 'pointer' : undefined }} onClick={!editing ? onOpenHistory : undefined}>
+      <Group justify="space-between" wrap="nowrap" gap="xs" mb={2}>
+        <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
+          <Text size="md">{budget.category_icon}</Text>
+          <Text fw={500} size="sm" lineClamp={1}>{budget.category_name}</Text>
         </Group>
         {editing ? (
           <NumberInput
@@ -235,25 +257,25 @@ function BudgetCard({ budget, onBudgetChange }: { budget: DashboardResponse['bud
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             thousandSeparator=" "
             suffix=" ₸"
-            w={120}
+            w={100}
             size="xs"
             autoFocus
+            onClick={(e) => e.stopPropagation()}
           />
         ) : (
           <Text
             size="sm"
+            fw={600}
             c={isOverBudget ? 'red' : 'dimmed'}
-            style={{ cursor: 'pointer' }}
-            onClick={() => setEditing(true)}
+            style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
+            onClick={(e) => { e.stopPropagation(); setEditing(true); }}
           >
-            {formatNumber(budget.remaining)} ₸
+            {isOverBudget ? `−${formatNumber(-budget.remaining)}` : formatNumber(budget.remaining)} ₸
           </Text>
         )}
       </Group>
-      <Progress value={Math.min(100, Math.max(0, percent))} color={color} size="sm" radius="xl" />
-      <Text size="xs" c="dimmed" mt={2}>
-        {formatNumber(budget.spent)} / {formatNumber(budget.limit_amount)} ₸
-      </Text>
+      <Text size="xs" c="dimmed">Потрачено {formatNumber(budget.spent)} ₸</Text>
+      <Progress value={Math.min(100, Math.max(0, percent))} color={color} size={4} radius="xl" mt={4} />
     </Card>
   );
 }

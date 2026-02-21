@@ -5,6 +5,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AddTransactionPage } from './pages/AddTransactionPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
+import { TransactionsPage } from './pages/TransactionsPage';
 import { Layout } from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -34,6 +35,7 @@ function App() {
         }
       >
         <Route index element={<DashboardPage />} />
+        <Route path="transactions" element={<TransactionsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
       </Route>

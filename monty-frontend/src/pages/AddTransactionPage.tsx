@@ -10,6 +10,7 @@ import {
   UnstyledButton,
   LoadingOverlay,
   SegmentedControl,
+  TextInput,
 } from '@mantine/core';
 import { IconCheck, IconArrowLeft } from '@tabler/icons-react';
 import { categoriesApi, transactionsApi } from '../api';
@@ -21,6 +22,7 @@ export function AddTransactionPage() {
   const { haptic } = useTelegram();
   const [categories, setCategories] = useState<Category[]>([]);
   const [amount, setAmount] = useState<string>('');
+  const [comment, setComment] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -55,7 +57,7 @@ export function AddTransactionPage() {
     haptic('heavy');
     
     try {
-      await transactionsApi.create(selectedCategory.id, parseInt(amount));
+      await transactionsApi.create(selectedCategory.id, parseInt(amount), comment.trim() || undefined);
       navigate('/');
     } catch (error) {
       console.error(error);
@@ -133,6 +135,15 @@ export function AddTransactionPage() {
           </Group>
         ))}
       </Stack>
+
+      {/* Comment (optional) */}
+      <TextInput
+        label="Комментарий (необязательно)"
+        placeholder="На что потрачено, для уведомлений и анализа"
+        value={comment}
+        onChange={(e) => setComment(e.target.value)}
+        mb="md"
+      />
 
       {/* Categories */}
       <Stack gap="xs">

@@ -52,9 +52,7 @@ export interface Settings {
   target_amount: string;
   target_date: string;
   salary_day: string;
-  base_budget: string;
-  comfort_budget: string;
-  savings_budget: string;
+  total_budget: string;
 }
 
 export interface Analytics {
