@@ -15,7 +15,6 @@ import {
   Modal,
   NumberInput,
   Select,
-  Box,
 } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight, IconSearch, IconDownload, IconEdit, IconTrash } from '@tabler/icons-react';
 import { transactionsApi, categoriesApi } from '../api';
