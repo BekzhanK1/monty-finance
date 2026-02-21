@@ -152,6 +152,72 @@ export function AnalyticsPage() {
               />
             </SimpleGrid>
 
+            {/* Сравнение с предыдущим периодом */}
+            {analytics.comparison_previous_period && (
+              <Card shadow="sm" padding="md" radius="md" withBorder>
+                <Text fw={600} mb="sm">Сравнение с предыдущим периодом</Text>
+                <SimpleGrid cols={3} spacing="xs">
+                  <Box>
+                    <Text size="xs" c="dimmed">Доходы</Text>
+                    <Text size="sm" fw={500} c="green">
+                      {formatNumber(analytics.comparison_previous_period.total_income)} ₸
+                    </Text>
+                  </Box>
+                  <Box>
+                    <Text size="xs" c="dimmed">Расходы</Text>
+                    <Text size="sm" fw={500} c="red">
+                      {formatNumber(analytics.comparison_previous_period.total_expenses)} ₸
+                    </Text>
+                  </Box>
+                  <Box>
+                    <Text size="xs" c="dimmed">Баланс</Text>
+                    <Text size="sm" fw={500} c={analytics.comparison_previous_period.balance >= 0 ? 'green' : 'red'}>
+                      {formatNumber(analytics.comparison_previous_period.balance)} ₸
+                    </Text>
+                  </Box>
+                </SimpleGrid>
+              </Card>
+            )}
+
+            {/* Топ расходов */}
+            {analytics.top_expenses && analytics.top_expenses.length > 0 && (
+              <Card shadow="sm" padding="md" radius="md" withBorder>
+                <Text fw={600} mb="sm">Топ расходов</Text>
+                <Stack gap="xs">
+                  {analytics.top_expenses.map((item, idx) => (
+                    <Group key={idx} justify="space-between">
+                      <Group gap="xs">
+                        <Text size="lg">{item.icon}</Text>
+                        <Text size="sm">{item.name}</Text>
+                      </Group>
+                      <Text size="sm" fw={500} c="red">−{formatNumber(item.amount)} ₸</Text>
+                    </Group>
+                  ))}
+                </Stack>
+              </Card>
+            )}
+
+            {/* Кто сколько потратил */}
+            {analytics.by_user && analytics.by_user.length > 0 && (
+              <Card shadow="sm" padding="md" radius="md" withBorder>
+                <Text fw={600} mb="sm">Кто сколько потратил</Text>
+                <Stack gap="xs">
+                  {analytics.by_user.map((u) => (
+                    <Group key={u.user_id} justify="space-between">
+                      <Text size="sm" fw={500}>{u.user_name}</Text>
+                      <Group gap="md">
+                        <Text size="xs" c="green">+{formatNumber(u.income)}</Text>
+                        <Text size="xs" c="red">−{formatNumber(u.expense)}</Text>
+                        {u.savings > 0 && (
+                          <Text size="xs" c="blue">накопл. {formatNumber(u.savings)}</Text>
+                        )}
+                      </Group>
+                    </Group>
+                  ))}
+                </Stack>
+              </Card>
+            )}
+
             {/* Сводка: доля расходов/дохода/накоплений */}
             {analytics.total_income > 0 && (
               <Card shadow="sm" padding="md" radius="md" withBorder>

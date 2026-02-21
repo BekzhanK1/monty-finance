@@ -60,9 +60,28 @@ export const transactionsApi = {
     });
     return data;
   },
-  getAll: async (params?: { category_id?: number; start_date?: string; end_date?: string }) => {
+  getAll: async (params?: { category_id?: number; start_date?: string; end_date?: string; search?: string }) => {
     const { data } = await api.get<Transaction[]>('/transactions', { params });
     return data;
+  },
+  update: async (id: string, payload: { category_id?: number; amount?: number; comment?: string }) => {
+    const { data } = await api.patch<Transaction>(`/transactions/${id}`, payload);
+    return data;
+  },
+  delete: async (id: string) => {
+    await api.delete(`/transactions/${id}`);
+  },
+  exportCsv: async (start_date?: string, end_date?: string) => {
+    const { data } = await api.get<Blob>('/transactions/export/csv', {
+      params: { start_date, end_date },
+      responseType: 'blob',
+    });
+    const url = URL.createObjectURL(data);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `transactions_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   },
 };
 

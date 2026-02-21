@@ -18,8 +18,11 @@ import {
   IconSettings,
   IconPlus,
   IconList,
+  IconSun,
+  IconMoon,
 } from '@tabler/icons-react';
 import { useTelegram } from '../hooks/useTelegram';
+import { useMantineColorScheme } from '@mantine/core';
 
 const navItems = [
   { icon: IconHome, label: 'Главная', path: '/' },
@@ -34,6 +37,7 @@ export function Layout() {
   const location = useLocation();
   const { haptic } = useTelegram();
   const theme = useMantineTheme();
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
   const handleNavClick = (path: string) => {
     haptic('light');
@@ -57,7 +61,7 @@ export function Layout() {
       padding="md"
       styles={{
         main: {
-          backgroundColor: theme.colors.gray[0],
+          backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0],
           minHeight: '100vh',
         },
       }}
@@ -73,16 +77,27 @@ export function Layout() {
             />
             <Text fw={700} size="lg">Monty</Text>
           </Group>
-          <ActionIcon
-            size="lg"
-            radius="xl"
-            variant="filled"
-            color="blue"
-            onClick={handleAddClick}
-            visibleFrom="sm"
-          >
-            <IconPlus size={20} />
-          </ActionIcon>
+          <Group gap="xs">
+            <ActionIcon
+              size="lg"
+              radius="xl"
+              variant="subtle"
+              onClick={() => { haptic('light'); toggleColorScheme(); }}
+              aria-label={colorScheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+            >
+              {colorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
+            </ActionIcon>
+            <ActionIcon
+              size="lg"
+              radius="xl"
+              variant="filled"
+              color="blue"
+              onClick={handleAddClick}
+              visibleFrom="sm"
+            >
+              <IconPlus size={20} />
+            </ActionIcon>
+          </Group>
         </Group>
       </AppShell.Header>
 
@@ -95,12 +110,12 @@ export function Layout() {
                 <UnstyledButton
                   key={item.path}
                   onClick={() => handleNavClick(item.path)}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    backgroundColor: isActive ? theme.colors.blue[0] : 'transparent',
-                    color: isActive ? theme.colors.blue[7] : theme.colors.gray[7],
-                  }}
+                style={{
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  backgroundColor: isActive ? (colorScheme === 'dark' ? theme.colors.blue[9] : theme.colors.blue[0]) : 'transparent',
+                  color: isActive ? theme.colors.blue[6] : (colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[7]),
+                }}
                 >
                   <Group>
                     <item.icon size={20} />
@@ -127,8 +142,8 @@ export function Layout() {
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: 'white',
-          borderTop: `1px solid ${theme.colors.gray[2]}`,
+          backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : 'white',
+          borderTop: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]}`,
           padding: '8px 4px',
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
@@ -147,7 +162,7 @@ export function Layout() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 padding: '6px 4px',
-                color: isActive ? theme.colors.blue[6] : theme.colors.gray[6],
+                color: isActive ? theme.colors.blue[6] : (colorScheme === 'dark' ? theme.colors.gray[5] : theme.colors.gray[6]),
                 minWidth: 0,
               }}
             >

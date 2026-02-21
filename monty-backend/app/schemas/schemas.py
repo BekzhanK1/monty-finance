@@ -47,6 +47,13 @@ class TransactionBase(BaseModel):
 class TransactionCreate(TransactionBase):
     pass
 
+
+class TransactionUpdate(BaseModel):
+    category_id: Optional[int] = None
+    amount: Optional[int] = None
+    comment: Optional[str] = None
+
+
 class TransactionResponse(TransactionBase):
     id: str
     user_id: int
@@ -91,3 +98,6 @@ class AnalyticsResponse(BaseModel):
     by_category: list[dict]
     by_group: list[dict]
     daily_data: list[dict]
+    top_expenses: list[dict] = []
+    by_user: list[dict] = []
+    comparison_previous_period: Optional[dict] = None
