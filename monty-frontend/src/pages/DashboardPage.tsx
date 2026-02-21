@@ -86,11 +86,12 @@ export function DashboardPage() {
   const budgetRemain = totalBudget > 0 ? totalBudget - expensesSpent : 0;
   const budgetExpensePercent = totalBudget > 0 ? Math.round((expensesSpent / totalBudget) * 100) : 0;
   const budgetRemainPercent = totalBudget > 0 ? Math.round((budgetRemain / totalBudget) * 100) : 0;
+  const afterPlannedSpending = totalBudget > 0 ? totalBudget - expensesBudget : 0;
 
   return (
     <Container size="sm" p="md" pb={100}>
       <Stack gap="md">
-        {/* Общий бюджет: сколько на расходы, сколько остаётся (в плюс) */}
+        {/* Общий бюджет: запланировано на траты, текущий баланс, что останется после трат по бюджету */}
         {totalBudget > 0 && (
           <Card shadow="sm" padding="md" radius="md" withBorder>
             <Group justify="space-between" mb="xs">
@@ -98,6 +99,10 @@ export function DashboardPage() {
               <Badge size="sm" variant="light" color="blue">{formatNumber(totalBudget)} ₸</Badge>
             </Group>
             <Stack gap="sm">
+              <Group justify="space-between">
+                <Text size="sm" c="dimmed">Запланировано на траты</Text>
+                <Text size="sm" fw={600}>{formatNumber(expensesBudget)} ₸</Text>
+              </Group>
               <div>
                 <Group justify="space-between" mb={4}>
                   <Text size="sm" c="dimmed">Потрачено на расходы</Text>
@@ -111,9 +116,15 @@ export function DashboardPage() {
                 />
               </div>
               <Group justify="space-between" p="xs" style={{ backgroundColor: budgetRemain >= 0 ? '#e6f7ed' : '#ffe6e6', borderRadius: '8px' }}>
-                <Text size="sm" fw={600}>Остаётся в итоге</Text>
+                <Text size="sm" fw={600}>Текущий баланс</Text>
                 <Text size="md" fw={700} c={budgetRemain >= 0 ? 'green' : 'red'}>
                   {formatNumber(budgetRemain)} ₸ ({budgetRemainPercent}%)
+                </Text>
+              </Group>
+              <Group justify="space-between" p="xs" style={{ backgroundColor: '#e6f4ff', borderRadius: '8px' }}>
+                <Text size="sm" fw={600}>После трат по бюджету останется</Text>
+                <Text size="md" fw={700} c={afterPlannedSpending >= 0 ? 'blue' : 'red'}>
+                  {formatNumber(afterPlannedSpending)} ₸
                 </Text>
               </Group>
             </Stack>
