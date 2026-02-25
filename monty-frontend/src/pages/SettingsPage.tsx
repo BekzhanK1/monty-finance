@@ -107,18 +107,14 @@ export function SettingsPage() {
     setSaving(true);
     try {
       if (isNewCategory) {
-        await categoriesApi.create({
+        const newCat = await categoriesApi.create({
           name: editingCategory.name,
           icon: editingCategory.icon,
           group: editingCategory.group as any,
           type: editingCategory.type as any,
         });
         if (editingCategory.budget > 0) {
-          const newBudgets = await settingsApi.getBudgets();
-          const newCat = newBudgets.find(b => b.category_name === editingCategory.name);
-          if (newCat) {
-            await settingsApi.updateBudget(newCat.category_id, editingCategory.budget);
-          }
+          await settingsApi.updateBudget(newCat.id, editingCategory.budget);
         }
       } else {
         await categoriesApi.update(editingCategory.id, {

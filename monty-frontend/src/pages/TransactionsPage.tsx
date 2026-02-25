@@ -178,9 +178,13 @@ export function TransactionsPage() {
   }, 0);
   const expense = transactions.reduce((s, tx) => {
     const cat = categoryMap[tx.category_id];
-    return s + (cat?.type === 'EXPENSE' ? tx.amount : 0);
+    return s + (cat?.type === 'EXPENSE' && cat?.group !== 'SAVINGS' ? tx.amount : 0);
   }, 0);
-  const balance = income - expense;
+  const savings = transactions.reduce((s, tx) => {
+    const cat = categoryMap[tx.category_id];
+    return s + (cat?.group === 'SAVINGS' ? tx.amount : 0);
+  }, 0);
+  const balance = income - expense - savings;
 
   if (loading) {
     return <LoadingOverlay visible />;
@@ -196,13 +200,19 @@ export function TransactionsPage() {
 
       <Group grow mb="md">
         <Card withBorder padding="xs" radius="md">
-          <Text size="xs" c="dimmed">Расход</Text>
-          <Text fw={600} size="sm" c="red">{formatNumber(expense)} ₸</Text>
-        </Card>
-        <Card withBorder padding="xs" radius="md">
           <Text size="xs" c="dimmed">Доход</Text>
           <Text fw={600} size="sm" c="green">{formatNumber(income)} ₸</Text>
         </Card>
+        <Card withBorder padding="xs" radius="md">
+          <Text size="xs" c="dimmed">Расход</Text>
+          <Text fw={600} size="sm" c="red">{formatNumber(expense)} ₸</Text>
+        </Card>
+        {savings > 0 && (
+          <Card withBorder padding="xs" radius="md">
+            <Text size="xs" c="dimmed">Накопления</Text>
+            <Text fw={600} size="sm" c="blue">{formatNumber(savings)} ₸</Text>
+          </Card>
+        )}
         <Card withBorder padding="xs" radius="md">
           <Text size="xs" c="dimmed">Баланс</Text>
           <Text fw={600} size="sm" c={balance >= 0 ? 'green' : 'red'}>{formatNumber(balance)} ₸</Text>
@@ -259,6 +269,9 @@ export function TransactionsPage() {
           transactions.map((tx) => {
             const cat = categoryMap[tx.category_id];
             const isIncome = cat?.type === 'INCOME';
+            const isSavings = cat?.group === 'SAVINGS';
+            const badgeColor = isIncome ? 'green' : isSavings ? 'blue' : 'red';
+            const badgePrefix = isIncome ? '+' : '−';
             return (
               <Card
                 key={tx.id}
@@ -281,8 +294,8 @@ export function TransactionsPage() {
                     </Stack>
                   </Group>
                   <Group gap="xs" wrap="nowrap">
-                    <Badge color={isIncome ? 'green' : 'red'} variant="light" size="lg">
-                      {isIncome ? '+' : '−'}{formatNumber(tx.amount)} ₸
+                    <Badge color={badgeColor} variant="light" size="lg">
+                      {badgePrefix}{formatNumber(tx.amount)} ₸
                     </Badge>
                     <ActionIcon variant="subtle" size="sm" onClick={(e) => { e.stopPropagation(); openEditModal(tx); }} aria-label="Редактировать">
                       <IconEdit size={14} />

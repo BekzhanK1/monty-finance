@@ -1,35 +1,38 @@
 from contextlib import asynccontextmanager
+
+from app.api import (
+    analytics,
+    auth,
+    budgets,
+    categories,
+    digest,
+    goals,
+    settings,
+    transactions,
+)
+from app.core.config import Base, engine
+from app.services.scheduler import scheduler, setup_scheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.config import Base, engine
-from app.api import auth, categories, transactions, budgets, goals, digest, settings, analytics
-from app.services.scheduler import setup_scheduler, scheduler
-from app.services.database import seed_initial_data
-from app.core.config import SessionLocal
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    
-    db = SessionLocal()
-    try:
-        seed_initial_data(db)
-    finally:
-        db.close()
-    
+
     setup_scheduler()
     scheduler.start()
-    
+
     yield
-    
+
     scheduler.shutdown()
+
 
 app = FastAPI(
     title="Monty API",
     version="1.0.0",
     description="Financial tracker API for couple",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -49,9 +52,11 @@ app.include_router(digest.router)
 app.include_router(settings.router)
 app.include_router(analytics.router)
 
+
 @app.get("/")
 def root():
     return {"status": "ok", "message": "Monty API is running"}
+
 
 @app.get("/health")
 def health():

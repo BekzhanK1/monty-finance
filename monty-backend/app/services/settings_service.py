@@ -1,11 +1,12 @@
 from typing import Optional
-from sqlalchemy.orm import Session
 
 from app.models.models import Settings
+from sqlalchemy.orm import Session
+
 
 class SettingsService:
     # Список ключей настройки — всё хранится только в БД (таблица settings).
-    # Начальные значения задаются при сиде (seed_initial_data), в коде дефолтов нет.
+    # Значения задаются через UI (настройки), в коде дефолтов нет.
     SETTINGS_KEYS = ("target_amount", "target_date", "salary_day", "total_budget")
 
     @staticmethod
