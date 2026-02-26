@@ -6,6 +6,7 @@ import {
   Stack,
   Card,
   Group,
+  SimpleGrid,
   LoadingOverlay,
   Badge,
   ActionIcon,
@@ -184,7 +185,7 @@ export function TransactionsPage() {
     const cat = categoryMap[tx.category_id];
     return s + (cat?.group === 'SAVINGS' ? tx.amount : 0);
   }, 0);
-  const balance = income - expense - savings;
+  const balance = income - expense;
 
   if (loading) {
     return <LoadingOverlay visible />;
@@ -198,26 +199,26 @@ export function TransactionsPage() {
     <Container size="sm" pb={100}>
       <Text fw={700} size="lg" mb="md">{title}</Text>
 
-      <Group grow mb="md">
-        <Card withBorder padding="xs" radius="md">
+      <SimpleGrid cols={2} spacing="xs" mb="md">
+        <Card withBorder padding="sm" radius="md">
           <Text size="xs" c="dimmed">Доход</Text>
           <Text fw={600} size="sm" c="green">{formatNumber(income)} ₸</Text>
         </Card>
-        <Card withBorder padding="xs" radius="md">
+        <Card withBorder padding="sm" radius="md">
           <Text size="xs" c="dimmed">Расход</Text>
           <Text fw={600} size="sm" c="red">{formatNumber(expense)} ₸</Text>
         </Card>
         {savings > 0 && (
-          <Card withBorder padding="xs" radius="md">
+          <Card withBorder padding="sm" radius="md">
             <Text size="xs" c="dimmed">Накопления</Text>
             <Text fw={600} size="sm" c="blue">{formatNumber(savings)} ₸</Text>
           </Card>
         )}
-        <Card withBorder padding="xs" radius="md">
+        <Card withBorder padding="sm" radius="md">
           <Text size="xs" c="dimmed">Баланс</Text>
           <Text fw={600} size="sm" c={balance >= 0 ? 'green' : 'red'}>{formatNumber(balance)} ₸</Text>
         </Card>
-      </Group>
+      </SimpleGrid>
 
       <TextInput
         placeholder="Поиск по комментарию или категории"

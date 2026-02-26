@@ -24,7 +24,7 @@ function formatNumber(num: number): string {
 export function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('3');
+  const [period, setPeriod] = useState('current');
   const [viewMode, setViewMode] = useState<'preset' | 'custom'>('preset');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
@@ -38,7 +38,28 @@ export function AnalyticsPage() {
   const loadAnalyticsByPeriod = async () => {
     setLoading(true);
     try {
-      const data = await analyticsApi.get(parseInt(period));
+      let data: Analytics;
+      if (period === 'current') {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const day = now.getDate();
+        let start: Date;
+        if (day >= 19) {
+          start = new Date(year, month, 19);
+        } else {
+          if (month === 0) {
+            start = new Date(year - 1, 11, 19);
+          } else {
+            start = new Date(year, month - 1, 19);
+          }
+        }
+        const startStr = start.toISOString().split('T')[0];
+        const endStr = now.toISOString().split('T')[0];
+        data = await analyticsApi.getPeriod(startStr, endStr);
+      } else {
+        data = await analyticsApi.get(parseInt(period, 10));
+      }
       setAnalytics(data);
     } catch (e) {
       console.error(e);
@@ -80,6 +101,7 @@ export function AnalyticsPage() {
             value={period}
             onChange={setPeriod}
             data={[
+              { value: 'current', label: 'Этот месяц' },
               { value: '1', label: 'Месяц' },
               { value: '3', label: '3 месяца' },
               { value: '6', label: '6 месяцев' },
@@ -135,14 +157,12 @@ export function AnalyticsPage() {
                 value={analytics.total_expenses || 0}
                 icon={<IconArrowDownRight size={24} color="#fa5252" />}
                 color="#fa5252"
-                subtitle={analytics.total_income > 0 ? `${Math.round((analytics.total_expenses / analytics.total_income) * 100)}% от дохода` : undefined}
               />
               <SummaryCard
                 title="В накопления"
                 value={analytics.total_savings ?? 0}
                 icon={<IconPigMoney size={24} color="#228be6" />}
                 color="#228be6"
-                subtitle={analytics.total_income > 0 ? `${Math.round((analytics.total_savings / analytics.total_income) * 100)}% от дохода` : undefined}
               />
               <SummaryCard
                 title="Баланс"
@@ -221,36 +241,6 @@ export function AnalyticsPage() {
                       </Group>
                     </Group>
                   ))}
-                </Stack>
-              </Card>
-            )}
-
-            {/* Сводка: доля расходов/дохода/накоплений */}
-            {analytics.total_income > 0 && (
-              <Card shadow="sm" padding="md" radius="md" withBorder>
-                <Text fw={600} mb="sm">Структура</Text>
-                <Stack gap="xs">
-                  <Box>
-                    <Group justify="space-between" mb={4}>
-                      <Text size="xs" c="dimmed">Расходы</Text>
-                      <Text size="xs" fw={500}>{Math.round((analytics.total_expenses / analytics.total_income) * 100)}%</Text>
-                    </Group>
-                    <Progress value={Math.min(100, (analytics.total_expenses / analytics.total_income) * 100)} color="red" size="sm" radius="xl" />
-                  </Box>
-                  <Box>
-                    <Group justify="space-between" mb={4}>
-                      <Text size="xs" c="dimmed">В накопления</Text>
-                      <Text size="xs" fw={500}>{Math.round((analytics.total_savings / analytics.total_income) * 100)}%</Text>
-                    </Group>
-                    <Progress value={Math.min(100, (analytics.total_savings / analytics.total_income) * 100)} color="blue" size="sm" radius="xl" />
-                  </Box>
-                  <Box>
-                    <Group justify="space-between" mb={4}>
-                      <Text size="xs" c="dimmed">Свободно (баланс)</Text>
-                      <Text size="xs" fw={500}>{Math.round(Math.max(0, (analytics.balance / analytics.total_income) * 100))}%</Text>
-                    </Group>
-                    <Progress value={Math.max(0, Math.min(100, (analytics.balance / analytics.total_income) * 100))} color="green" size="sm" radius="xl" />
-                  </Box>
                 </Stack>
               </Card>
             )}
