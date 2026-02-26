@@ -65,9 +65,11 @@ def get_analytics(
     for t in transactions:
         group = t.category.group.value
         if group not in by_group:
-            by_group[group] = {"group": group, "income": 0, "expense": 0}
+            by_group[group] = {"group": group, "income": 0, "expense": 0, "savings": 0}
         if t.category.type == TransactionType.INCOME:
             by_group[group]["income"] += t.amount
+        elif t.category.group == CategoryGroup.SAVINGS:
+            by_group[group]["savings"] += t.amount
         else:
             by_group[group]["expense"] += t.amount
 
@@ -77,6 +79,8 @@ def get_analytics(
             by_group_list.append({"group": g["group"], "amount": g["income"], "type": "income"})
         if g["expense"] > 0:
             by_group_list.append({"group": g["group"], "amount": g["expense"], "type": "expense"})
+        if g["savings"] > 0:
+            by_group_list.append({"group": g["group"], "amount": g["savings"], "type": "savings"})
     by_group_list.sort(key=lambda x: x["amount"], reverse=True)
 
     daily_data = {}
@@ -192,9 +196,11 @@ def get_analytics_for_period(
     for t in transactions:
         group = t.category.group.value
         if group not in by_group:
-            by_group[group] = {"group": group, "income": 0, "expense": 0}
+            by_group[group] = {"group": group, "income": 0, "expense": 0, "savings": 0}
         if t.category.type == TransactionType.INCOME:
             by_group[group]["income"] += t.amount
+        elif t.category.group == CategoryGroup.SAVINGS:
+            by_group[group]["savings"] += t.amount
         else:
             by_group[group]["expense"] += t.amount
     by_group_list = []
@@ -203,6 +209,8 @@ def get_analytics_for_period(
             by_group_list.append({"group": g["group"], "amount": g["income"], "type": "income"})
         if g["expense"] > 0:
             by_group_list.append({"group": g["group"], "amount": g["expense"], "type": "expense"})
+        if g["savings"] > 0:
+            by_group_list.append({"group": g["group"], "amount": g["savings"], "type": "savings"})
     by_group_list.sort(key=lambda x: x["amount"], reverse=True)
 
     daily_data = {}

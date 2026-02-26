@@ -179,20 +179,27 @@ export function AnalyticsPage() {
               </Card>
             )}
 
-            {/* Топ расходов */}
+            {/* Топ расходов и накоплений */}
             {analytics.top_expenses && analytics.top_expenses.length > 0 && (
               <Card shadow="sm" padding="md" radius="md" withBorder>
-                <Text fw={600} mb="sm">Топ расходов</Text>
+                <Text fw={600} mb="sm">Топ расходов и накоплений</Text>
                 <Stack gap="xs">
-                  {analytics.top_expenses.map((item, idx) => (
-                    <Group key={idx} justify="space-between">
-                      <Group gap="xs">
-                        <Text size="lg">{item.icon}</Text>
-                        <Text size="sm">{item.name}</Text>
+                  {analytics.top_expenses.map((item, idx) => {
+                    const isSavings = item.type === 'savings';
+                    const color = isSavings ? 'blue' : 'red';
+                    const prefix = isSavings ? '' : '−';
+                    return (
+                      <Group key={idx} justify="space-between">
+                        <Group gap="xs">
+                          <Text size="lg">{item.icon}</Text>
+                          <Text size="sm">{item.name}</Text>
+                        </Group>
+                        <Text size="sm" fw={500} c={color}>
+                          {prefix}{formatNumber(item.amount)} ₸
+                        </Text>
                       </Group>
-                      <Text size="sm" fw={500} c="red">−{formatNumber(item.amount)} ₸</Text>
-                    </Group>
-                  ))}
+                    );
+                  })}
                 </Stack>
               </Card>
             )}
@@ -255,6 +262,10 @@ export function AnalyticsPage() {
                   const maxAmount = Math.max(...analytics.by_category.map(c => c.amount));
                   const totalForPct = analytics.total_income + analytics.total_expenses + analytics.total_savings;
                   return analytics.by_category.map((cat, idx) => {
+                    const isIncome = cat.type === 'income';
+                    const isSavings = cat.type === 'savings';
+                    const color = isIncome ? 'green' : isSavings ? 'blue' : 'red';
+                    const prefix = isIncome ? '+' : isSavings ? '' : '−';
                     const barPct = maxAmount > 0 ? (cat.amount / maxAmount) * 100 : 0;
                     const sharePct = totalForPct > 0 ? ((cat.amount / totalForPct) * 100) : 0;
                     return (
@@ -264,8 +275,8 @@ export function AnalyticsPage() {
                             <Text size="lg">{cat.icon}</Text>
                             <Text size="sm">{cat.name}</Text>
                           </Group>
-                          <Text size="sm" fw={500} c={cat.type === 'income' ? 'green' : 'red'}>
-                            {cat.type === 'income' ? '+' : '−'}{formatNumber(cat.amount)} ₸
+                          <Text size="sm" fw={500} c={color}>
+                            {prefix}{formatNumber(cat.amount)} ₸
                             <Text span size="xs" c="dimmed" ml={4}>({sharePct.toFixed(0)}%)</Text>
                           </Text>
                         </Group>
@@ -287,6 +298,10 @@ export function AnalyticsPage() {
                   const maxGroupAmount = Math.max(...analytics.by_group.map(g => g.amount));
                   const totalGroup = analytics.by_group.reduce((s, g) => s + g.amount, 0);
                   return analytics.by_group.map((group, idx) => {
+                    const isIncome = group.type === 'income';
+                    const isSavings = group.type === 'savings';
+                    const color = isIncome ? 'green' : isSavings ? 'blue' : 'red';
+                    const prefix = isIncome ? '+' : isSavings ? '' : '−';
                     const barPct = maxGroupAmount > 0 ? (group.amount / maxGroupAmount) * 100 : 0;
                     const sharePct = totalGroup > 0 ? ((group.amount / totalGroup) * 100) : 0;
                     const label = group.group === 'BASE' ? 'База' : group.group === 'COMFORT' ? 'Комфорт' : group.group === 'SAVINGS' ? 'Накопления' : 'Доход';
@@ -294,12 +309,12 @@ export function AnalyticsPage() {
                       <Box key={idx}>
                         <Group justify="space-between" mb={4}>
                           <Text size="sm" fw={500}>{label}</Text>
-                          <Text size="sm" fw={500} c={group.type === 'income' ? 'green' : 'red'}>
-                            {group.type === 'income' ? '+' : '−'}{formatNumber(group.amount)} ₸
+                          <Text size="sm" fw={500} c={color}>
+                            {prefix}{formatNumber(group.amount)} ₸
                             <Text span size="xs" c="dimmed" ml={4}>({sharePct.toFixed(0)}%)</Text>
                           </Text>
                         </Group>
-                        <Progress value={barPct} color={group.type === 'income' ? 'green' : 'red'} size="sm" radius="xl" />
+                        <Progress value={barPct} color={color} size="sm" radius="xl" />
                       </Box>
                     );
                   });
