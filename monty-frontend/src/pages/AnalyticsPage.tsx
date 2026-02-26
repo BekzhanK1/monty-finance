@@ -299,7 +299,7 @@ export function AnalyticsPage() {
                   const totalGroup = analytics.by_group.reduce((s, g) => s + g.amount, 0);
                   return analytics.by_group.map((group, idx) => {
                     const isIncome = group.type === 'income';
-                    const isSavings = group.type === 'savings';
+                    const isSavings = group.group === 'SAVINGS';
                     const color = isIncome ? 'green' : isSavings ? 'blue' : 'red';
                     const prefix = isIncome ? '+' : isSavings ? '' : '−';
                     const barPct = maxGroupAmount > 0 ? (group.amount / maxGroupAmount) * 100 : 0;
