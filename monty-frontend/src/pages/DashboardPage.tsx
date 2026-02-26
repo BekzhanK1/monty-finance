@@ -12,9 +12,7 @@ import {
   LoadingOverlay,
   SimpleGrid,
   NumberInput,
-  Box,
 } from '@mantine/core';
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { IconPlus, IconTarget } from '@tabler/icons-react';
 import { budgetsApi, goalsApi, settingsApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
@@ -105,6 +103,12 @@ export function DashboardPage() {
                 <Text size="sm" c="dimmed">Запланировано на траты</Text>
                 <Text size="sm" fw={600}>{formatNumber(expensesBudget)} ₸</Text>
               </Group>
+              <Group justify="space-between">
+                <Text size="sm" c="dimmed">Остаток по бюджету</Text>
+                <Text size="sm" fw={600} c={totalRemaining < 0 ? 'red' : 'green'}>
+                  {formatNumber(totalRemaining)} ₸
+                </Text>
+              </Group>
               <div>
                 <Group justify="space-between" mb={4}>
                   <Text size="sm" c="dimmed">Потрачено на расходы</Text>
@@ -130,38 +134,6 @@ export function DashboardPage() {
                 </Text>
               </Group>
             </Stack>
-          </Card>
-        )}
-
-        {totalBudget > 0 && expensesBudget > 0 && (
-          <Card shadow="sm" padding="md" radius="md" withBorder>
-            <Text fw={600} size="sm" c="dimmed" mb="xs">Общий бюджет (колесо)</Text>
-            <Box style={{ width: '100%', height: 220 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: 'Потрачено', value: Math.min(expensesSpent, expensesBudget, totalBudget) },
-                      { name: 'Остаток по бюджету', value: Math.max(Math.min(expensesBudget, totalBudget) - Math.min(expensesSpent, expensesBudget, totalBudget), 0) },
-                      { name: 'Не запланировано', value: Math.max(totalBudget - Math.min(expensesBudget, totalBudget), 0) },
-                    ]}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={2}
-                  >
-                    <Cell fill="#fa5252" />
-                    <Cell fill="#fab005" />
-                    <Cell fill="#228be6" />
-                  </Pie>
-                  <Tooltip formatter={(v) => (typeof v === 'number' ? `${formatNumber(v)} ₸` : '')} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
           </Card>
         )}
 
