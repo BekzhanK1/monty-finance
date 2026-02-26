@@ -78,8 +78,9 @@ def authenticate_telegram_user(db: Session, init_data: str) -> Optional[dict]:
     telegram_id = telegram_data["telegram_id"]
 
     # TODO: FIX THIS FOR PRODUCTION
-    # if telegram_id not in settings.allowed_telegram_ids:
-    #     return None
+    if telegram_id not in settings.allowed_telegram_ids:
+        print(f"[auth] authenticate_telegram_user: user {telegram_id} not in allowed_telegram_ids")
+        return None
 
     user = db.query(User).filter(User.telegram_id == telegram_id).first()
 
