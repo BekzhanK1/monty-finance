@@ -20,44 +20,68 @@ def get_current_budgets(
 ):
     salary_day = SettingsService.get_salary_day(db)
     period_start, period_end = get_financial_period(salary_day=salary_day)
-    
-    budgets = db.query(MonthlyBudget).filter(
-        MonthlyBudget.period == period_start
-    ).all()
-    
-    spent_query = db.query(
-        Transaction.category_id,
-        func.coalesce(func.sum(Transaction.amount), 0).label('spent')
-    ).filter(
-        Transaction.transaction_date >= period_start,
-        Transaction.transaction_date < period_end.replace(day=period_end.day + 1)
-    ).group_by(Transaction.category_id).all()
-    
+
+    # Бюджет: константный лимит на категорию (игнорируем period)
+    latest_budgets_subquery = (
+        db.query(
+            MonthlyBudget.category_id,
+            func.max(MonthlyBudget.period).label("max_period"),
+        )
+        .group_by(MonthlyBudget.category_id)
+        .subquery()
+    )
+
+    budgets = (
+        db.query(MonthlyBudget)
+        .join(
+            latest_budgets_subquery,
+            (MonthlyBudget.category_id == latest_budgets_subquery.c.category_id)
+            & (MonthlyBudget.period == latest_budgets_subquery.c.max_period),
+        )
+        .all()
+    )
+
+    # Траты: только за текущий финансовый период
+    spent_query = (
+        db.query(
+            Transaction.category_id,
+            func.coalesce(func.sum(Transaction.amount), 0).label("spent"),
+        )
+        .filter(
+            Transaction.transaction_date >= period_start,
+            Transaction.transaction_date < period_end.replace(day=period_end.day + 1),
+        )
+        .group_by(Transaction.category_id)
+        .all()
+    )
+
     spent_by_category = {s.category_id: s.spent for s in spent_query}
-    
-    budget_items = []
+
+    budget_items: List[BudgetWithSpent] = []
     for budget in budgets:
         category = budget.category
         spent = spent_by_category.get(budget.category_id, 0)
         remaining = budget.limit_amount - spent
-        
-        budget_items.append(BudgetWithSpent(
-            category_id=category.id,
-            category_name=category.name,
-            category_icon=category.icon,
-            group=category.group.value,
-            limit_amount=budget.limit_amount,
-            spent=spent,
-            remaining=remaining
-        ))
-    
+
+        budget_items.append(
+            BudgetWithSpent(
+                category_id=category.id,
+                category_name=category.name,
+                category_icon=category.icon,
+                group=category.group.value,
+                limit_amount=budget.limit_amount,
+                spent=spent,
+                remaining=remaining,
+            )
+        )
+
     savings_deposit = next((b for b in budget_items if b.group == "SAVINGS"), None)
     current_savings = savings_deposit.spent if savings_deposit else 0
-    
+
     target_amount = SettingsService.get_target_amount(db)
-    
+
     return DashboardResponse(
         total_savings_goal=target_amount,
         current_savings=current_savings,
-        budgets=budget_items
+        budgets=budget_items,
     )

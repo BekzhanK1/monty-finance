@@ -5,6 +5,7 @@ from app.services.database import get_financial_period
 from app.services.settings_service import SettingsService
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
@@ -25,7 +26,6 @@ class SettingsResponse(BaseModel):
 class BudgetConfig(BaseModel):
     category_id: int
     limit_amount: int
-    period: str
 
 
 class BudgetConfigResponse(BaseModel):
@@ -62,12 +62,27 @@ def update_setting(setting: SettingUpdate, db: Session = Depends(get_db)):
 
 @router.get("/budgets", response_model=list[BudgetConfigResponse])
 def get_budget_config(db: Session = Depends(get_db)):
-    salary_day = SettingsService.get_salary_day(db)
-    period_start, _ = get_financial_period(salary_day=salary_day)
+    # Постоянные лимиты: берём по одному бюджетному лимиту на категорию (последний по period)
+    latest_budgets_subquery = (
+        db.query(
+            MonthlyBudget.category_id,
+            func.max(MonthlyBudget.period).label("max_period"),
+        )
+        .group_by(MonthlyBudget.category_id)
+        .subquery()
+    )
 
-    budgets = db.query(MonthlyBudget).filter(MonthlyBudget.period == period_start).all()
+    budgets = (
+        db.query(MonthlyBudget)
+        .join(
+            latest_budgets_subquery,
+            (MonthlyBudget.category_id == latest_budgets_subquery.c.category_id)
+            & (MonthlyBudget.period == latest_budgets_subquery.c.max_period),
+        )
+        .all()
+    )
 
-    result = []
+    result: list[BudgetConfigResponse] = []
     for budget in budgets:
         result.append(
             BudgetConfigResponse(
@@ -85,24 +100,23 @@ def get_budget_config(db: Session = Depends(get_db)):
 
 @router.post("/budgets")
 def update_budget_config(config: BudgetConfig, db: Session = Depends(get_db)):
-    salary_day = SettingsService.get_salary_day(db)
-    period_start, _ = get_financial_period(salary_day=salary_day)
-
-    budget = (
+    # Обновляем/создаём один актуальный лимит на категорию (игнорируя период как текущий)
+    latest_budget = (
         db.query(MonthlyBudget)
-        .filter(
-            MonthlyBudget.category_id == config.category_id,
-            MonthlyBudget.period == period_start,
-        )
+        .filter(MonthlyBudget.category_id == config.category_id)
+        .order_by(MonthlyBudget.period.desc())
         .first()
     )
 
-    if budget:
-        budget.limit_amount = config.limit_amount
+    if latest_budget:
+        latest_budget.limit_amount = config.limit_amount
     else:
+        # Используем сегодняшнюю дату как period для совместимости, но далее period не имеет значения
+        from datetime import date
+
         budget = MonthlyBudget(
             category_id=config.category_id,
-            period=period_start,
+            period=date.today(),
             limit_amount=config.limit_amount,
         )
         db.add(budget)

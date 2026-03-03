@@ -24,21 +24,18 @@ def create_category(category_data: CategoryCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(category)
 
-    # Automatically create a budget entry for the new category in the current period
-    salary_day = SettingsService.get_salary_day(db)
-    period_start, _ = get_financial_period(salary_day=salary_day)
+    # Automatically create a budget entry for the new category with zero limit (constant budget per category)
+    from datetime import date
+
     existing_budget = (
         db.query(MonthlyBudget)
-        .filter(
-            MonthlyBudget.category_id == category.id,
-            MonthlyBudget.period == period_start,
-        )
+        .filter(MonthlyBudget.category_id == category.id)
         .first()
     )
     if not existing_budget:
         budget = MonthlyBudget(
             category_id=category.id,
-            period=period_start,
+            period=date.today(),
             limit_amount=0,
         )
         db.add(budget)
