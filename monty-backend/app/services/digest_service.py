@@ -21,18 +21,22 @@ def get_today_transactions_summary(db: Session) -> str:
     start_of_day = datetime.combine(today, datetime.min.time())
     end_of_day = datetime.combine(today, datetime.max.time())
     
-    transactions = db.query(
-        Category.name,
-        Category.icon,
-        func.sum(Transaction.amount).label('total')
-    ).join(
-        Transaction, Transaction.category_id == Category.id
-    ).filter(
-        Transaction.transaction_date >= start_of_day,
-        Transaction.transaction_date <= end_of_day
-    ).group_by(
-        Category.id, Category.name, Category.icon
-    ).all()
+    transactions = (
+        db.query(
+            Category.name,
+            Category.icon,
+            func.sum(Transaction.amount).label("total"),
+        )
+        .join(Transaction, Transaction.category_id == Category.id)
+        .filter(
+            Transaction.transaction_date >= start_of_day,
+            Transaction.transaction_date <= end_of_day,
+            Category.type == "EXPENSE",
+            Category.group != "SAVINGS",
+        )
+        .group_by(Category.id, Category.name, Category.icon)
+        .all()
+    )
     
     if not transactions:
         return "Сегодня пока нет трат 💤"
@@ -90,10 +94,17 @@ def get_today_total(db: Session) -> int:
     start_of_day = datetime.combine(today, datetime.min.time())
     end_of_day = datetime.combine(today, datetime.max.time())
     
-    total = db.query(func.sum(Transaction.amount)).filter(
-        Transaction.transaction_date >= start_of_day,
-        Transaction.transaction_date <= end_of_day
-    ).scalar()
+    total = (
+        db.query(func.sum(Transaction.amount))
+        .join(Category)
+        .filter(
+            Transaction.transaction_date >= start_of_day,
+            Transaction.transaction_date <= end_of_day,
+            Category.type == "EXPENSE",
+            Category.group != "SAVINGS",
+        )
+        .scalar()
+    )
     
     return total or 0
 
@@ -102,10 +113,16 @@ def get_today_transactions_detail(db: Session) -> list:
     start_of_day = datetime.combine(today, datetime.min.time())
     end_of_day = datetime.combine(today, datetime.max.time())
     
-    transactions = db.query(Transaction).join(Category).filter(
-        Transaction.transaction_date >= start_of_day,
-        Transaction.transaction_date <= end_of_day
-    ).order_by(Transaction.transaction_date.desc()).all()
+    transactions = (
+        db.query(Transaction)
+        .join(Category)
+        .filter(
+            Transaction.transaction_date >= start_of_day,
+            Transaction.transaction_date <= end_of_day,
+        )
+        .order_by(Transaction.transaction_date.desc())
+        .all()
+    )
     
     return [
         {
@@ -113,6 +130,7 @@ def get_today_transactions_detail(db: Session) -> list:
             "name": t.category.name,
             "amount": t.amount,
             "type": t.category.type.value,
+            "group": t.category.group.value,
             "comment": t.comment
         }
         for t in transactions
@@ -160,7 +178,10 @@ def send_daily_summary() -> bool:
         today_total = get_today_total(db)
         transactions = get_today_transactions_detail(db)
         
-        expenses = [t for t in transactions if t["type"] == "EXPENSE"]
+        expenses = [
+            t for t in transactions
+            if t["type"] == "EXPENSE" and t.get("group") != "SAVINGS"
+        ]
         incomes = [t for t in transactions if t["type"] == "INCOME"]
         total_expenses = sum(t["amount"] for t in expenses)
         total_income = sum(t["amount"] for t in incomes)
