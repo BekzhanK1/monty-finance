@@ -12,10 +12,10 @@ import {
   Progress,
   Box,
 } from '@mantine/core';
-import { IconArrowUpRight, IconArrowDownRight, IconWallet, IconPigMoney } from '@tabler/icons-react';
+import { IconArrowUpRight, IconArrowDownRight, IconWallet, IconPigMoney, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { analyticsApi } from '../api';
-import type { Analytics } from '../types';
+import { analyticsApi, settingsApi } from '../api';
+import type { Analytics, Settings } from '../types';
 
 function formatNumber(num: number): string {
   return new Intl.NumberFormat('ru-RU').format(num);
@@ -28,37 +28,95 @@ export function AnalyticsPage() {
   const [viewMode, setViewMode] = useState<'preset' | 'custom'>('preset');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+   const [settings, setSettings] = useState<Settings | null>(null);
+   const [financialOffset, setFinancialOffset] = useState(0); // 0 — текущий фин. период, -1 — прошлый и т.д.
+   const [financialLabel, setFinancialLabel] = useState<string | null>(null);
+
+   const salaryDay = settings?.salary_day ? parseInt(settings.salary_day, 10) || 19 : 19;
+
+   function getFinancialPeriod(refDate: Date, salaryDayLocal: number): { start: Date; end: Date } {
+     const year = refDate.getFullYear();
+     const month = refDate.getMonth();
+     const day = refDate.getDate();
+     let start: Date;
+     let end: Date;
+
+     if (day >= salaryDayLocal) {
+       start = new Date(year, month, salaryDayLocal);
+       if (month === 11) {
+         end = new Date(year + 1, 0, salaryDayLocal - 1);
+       } else {
+         end = new Date(year, month + 1, salaryDayLocal - 1);
+       }
+     } else {
+       if (month === 0) {
+         start = new Date(year - 1, 11, salaryDayLocal);
+       } else {
+         start = new Date(year, month - 1, salaryDayLocal);
+       }
+       end = new Date(year, month, salaryDayLocal - 1);
+     }
+
+     return { start, end };
+   }
+
+   function getFinancialPeriodWithOffset(offset: number, salaryDayLocal: number): { start: Date; end: Date } {
+     let ref = new Date();
+     if (offset === 0) {
+       return getFinancialPeriod(ref, salaryDayLocal);
+     }
+     if (offset < 0) {
+       for (let i = 0; i > offset; i--) {
+         const { start } = getFinancialPeriod(ref, salaryDayLocal);
+         const prevRef = new Date(start);
+         prevRef.setDate(prevRef.getDate() - 1);
+         ref = prevRef;
+       }
+     } else {
+       for (let i = 0; i < offset; i++) {
+         const { end } = getFinancialPeriod(ref, salaryDayLocal);
+         const nextRef = new Date(end);
+         nextRef.setDate(nextRef.getDate() + 1);
+         ref = nextRef;
+       }
+     }
+     return getFinancialPeriod(ref, salaryDayLocal);
+   }
+
+  useEffect(() => {
+    // загрузка настроек (salary_day)
+    settingsApi
+      .get()
+      .then((data) => setSettings(data))
+      .catch((e) => console.error(e));
+  }, []);
+
+  useEffect(() => {
+    if (viewMode === 'preset') {
+      setFinancialOffset(0);
+    }
+  }, [viewMode, period]);
 
   useEffect(() => {
     if (viewMode === 'preset') {
       loadAnalyticsByPeriod();
     }
-  }, [period, viewMode]);
+  }, [period, viewMode, financialOffset, salaryDay]);
 
   const loadAnalyticsByPeriod = async () => {
     setLoading(true);
     try {
       let data: Analytics;
       if (period === 'current') {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = now.getMonth();
-        const day = now.getDate();
-        let start: Date;
-        if (day >= 19) {
-          start = new Date(year, month, 19);
-        } else {
-          if (month === 0) {
-            start = new Date(year - 1, 11, 19);
-          } else {
-            start = new Date(year, month - 1, 19);
-          }
-        }
+        const { start, end } = getFinancialPeriodWithOffset(financialOffset, salaryDay);
         const startStr = start.toISOString().split('T')[0];
-        const endStr = now.toISOString().split('T')[0];
+        const endStr = end.toISOString().split('T')[0];
         data = await analyticsApi.getPeriod(startStr, endStr);
+        const formatter = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' });
+        setFinancialLabel(`${formatter.format(start)} – ${formatter.format(end)}`);
       } else {
         data = await analyticsApi.get(parseInt(period, 10));
+        setFinancialLabel(null);
       }
       setAnalytics(data);
     } catch (e) {
@@ -97,18 +155,53 @@ export function AnalyticsPage() {
         />
 
         {viewMode === 'preset' ? (
-          <SegmentedControl
-            value={period}
-            onChange={setPeriod}
-            data={[
-              { value: 'current', label: 'Этот месяц' },
-              { value: '1', label: 'Месяц' },
-              { value: '3', label: '3 месяца' },
-              { value: '6', label: '6 месяцев' },
-              { value: '12', label: 'Год' },
-            ]}
-            fullWidth
-          />
+          <>
+            <SegmentedControl
+              value={period}
+              onChange={(val) => {
+                setPeriod(val);
+                setFinancialOffset(0);
+              }}
+              data={[
+                { value: 'current', label: 'Фин. период' },
+                { value: '1', label: 'Календарный месяц' },
+                { value: '3', label: '3 месяца' },
+                { value: '6', label: '6 месяцев' },
+                { value: '12', label: 'Год' },
+              ]}
+              fullWidth
+            />
+            {period === 'current' && (
+              <Group justify="space-between">
+                <Group gap="xs">
+                  <IconChevronLeft
+                    size={18}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setFinancialOffset((prev) => prev - 1)}
+                  />
+                  <Stack gap={0}>
+                    <Text size="sm" fw={500}>
+                      {financialOffset === 0 ? 'Текущий фин. период' : `${-financialOffset}-й период назад`}
+                    </Text>
+                    {financialLabel && (
+                      <Text size="xs" c="dimmed">
+                        {financialLabel}
+                      </Text>
+                    )}
+                  </Stack>
+                </Group>
+                <IconChevronRight
+                  size={18}
+                  style={{ cursor: financialOffset < 0 ? 'pointer' : 'default', opacity: financialOffset < 0 ? 1 : 0.3 }}
+                  onClick={() => {
+                    if (financialOffset < 0) {
+                      setFinancialOffset((prev) => prev + 1);
+                    }
+                  }}
+                />
+              </Group>
+            )}
+          </>
         ) : (
           <Stack gap="xs">
             <Group grow>

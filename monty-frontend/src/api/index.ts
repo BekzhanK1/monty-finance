@@ -113,7 +113,7 @@ export const settingsApi = {
     return data;
   },
   updateBudget: async (categoryId: number, limitAmount: number) => {
-    const { data } = await api.post('/settings/budgets', { category_id: categoryId, limit_amount: limitAmount, period: new Date().toISOString().split('T')[0] });
+    const { data } = await api.post('/settings/budgets', { category_id: categoryId, limit_amount: limitAmount });
     return data;
   },
 };
