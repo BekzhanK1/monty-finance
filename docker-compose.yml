@@ -5,7 +5,7 @@ services:
     image: postgres:15
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: bekzhan2004
       POSTGRES_DB: monty
     ports:
       - "5432:5432"
