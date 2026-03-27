@@ -23,7 +23,7 @@ services:
       - "8000:8000"
     environment:
       - STAGE=PROD
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/monty
+      - DATABASE_URL=postgresql://postgres:bekzhan2004@db:5432/monty
     depends_on:
       db:
         condition: service_healthy
