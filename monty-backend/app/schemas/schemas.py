@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class UserBase(BaseModel):
     telegram_id: int
@@ -101,3 +101,7 @@ class AnalyticsResponse(BaseModel):
     top_expenses: list[dict] = []
     by_user: list[dict] = []
     comparison_previous_period: Optional[dict] = None
+    period_start: str = ""
+    period_end: str = ""
+    large_one_off_total: int = 0
+    budgets_with_spent: list[BudgetWithSpent] = Field(default_factory=list)

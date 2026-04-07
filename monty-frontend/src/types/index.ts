@@ -66,6 +66,10 @@ export interface Analytics {
   top_expenses?: { name: string; icon: string; amount: number; type: string }[];
   by_user?: { user_id: number; user_name: string; income: number; expense: number; savings: number }[];
   comparison_previous_period?: { total_income: number; total_expenses: number; balance: number };
+  period_start?: string;
+  period_end?: string;
+  large_one_off_total?: number;
+  budgets_with_spent?: BudgetWithSpent[];
 }
 
 export interface BudgetConfig {

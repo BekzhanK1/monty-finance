@@ -1,15 +1,13 @@
-from datetime import datetime
-from typing import List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from app.core.config import get_db
-from app.models.models import User, Category, MonthlyBudget, Transaction, CategoryGroup
-from app.schemas.schemas import BudgetWithSpent, DashboardResponse
+from app.models.models import User
+from app.schemas.schemas import DashboardResponse
 from app.middleware.auth import get_current_user
 from app.services.database import get_financial_period
 from app.services.settings_service import SettingsService
+from app.services.budget_period_service import build_budgets_with_spent, date_range_to_datetimes
 
 router = APIRouter(prefix="/budgets", tags=["Budgets"])
 
@@ -20,60 +18,8 @@ def get_current_budgets(
 ):
     salary_day = SettingsService.get_salary_day(db)
     period_start, period_end = get_financial_period(salary_day=salary_day)
-
-    # Бюджет: константный лимит на категорию (игнорируем period)
-    latest_budgets_subquery = (
-        db.query(
-            MonthlyBudget.category_id,
-            func.max(MonthlyBudget.period).label("max_period"),
-        )
-        .group_by(MonthlyBudget.category_id)
-        .subquery()
-    )
-
-    budgets = (
-        db.query(MonthlyBudget)
-        .join(
-            latest_budgets_subquery,
-            (MonthlyBudget.category_id == latest_budgets_subquery.c.category_id)
-            & (MonthlyBudget.period == latest_budgets_subquery.c.max_period),
-        )
-        .all()
-    )
-
-    # Траты: только за текущий финансовый период
-    spent_query = (
-        db.query(
-            Transaction.category_id,
-            func.coalesce(func.sum(Transaction.amount), 0).label("spent"),
-        )
-        .filter(
-            Transaction.transaction_date >= period_start,
-            Transaction.transaction_date < period_end.replace(day=period_end.day + 1),
-        )
-        .group_by(Transaction.category_id)
-        .all()
-    )
-
-    spent_by_category = {s.category_id: s.spent for s in spent_query}
-
-    budget_items: List[BudgetWithSpent] = []
-    for budget in budgets:
-        category = budget.category
-        spent = spent_by_category.get(budget.category_id, 0)
-        remaining = budget.limit_amount - spent
-
-        budget_items.append(
-            BudgetWithSpent(
-                category_id=category.id,
-                category_name=category.name,
-                category_icon=category.icon,
-                group=category.group.value,
-                limit_amount=budget.limit_amount,
-                spent=spent,
-                remaining=remaining,
-            )
-        )
+    window_start, window_end = date_range_to_datetimes(period_start, period_end)
+    budget_items = build_budgets_with_spent(db, window_start, window_end)
 
     savings_deposit = next((b for b in budget_items if b.group == "SAVINGS"), None)
     current_savings = savings_deposit.spent if savings_deposit else 0
