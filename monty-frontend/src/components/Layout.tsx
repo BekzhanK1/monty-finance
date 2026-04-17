@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppShell,
@@ -39,6 +39,14 @@ export function Layout() {
   const theme = useMantineTheme();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
 
+  useEffect(() => {
+    const index = navItems.findIndex(item => item.path === location.pathname);
+    if (index !== -1) {
+      // Track active index for potential future use
+      console.debug('Active nav index:', index);
+    }
+  }, [location.pathname]);
+
   const handleNavClick = (path: string) => {
     haptic('light');
     navigate(path);
@@ -48,6 +56,11 @@ export function Layout() {
   const handleAddClick = () => {
     haptic('medium');
     navigate('/add');
+  };
+
+  const handleThemeToggle = () => {
+    haptic('light');
+    toggleColorScheme();
   };
 
   return (
@@ -61,39 +74,68 @@ export function Layout() {
       padding="md"
       styles={{
         main: {
-          backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.colors.gray[0],
+          background: colorScheme === 'dark' 
+            ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
+            : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
           minHeight: '100vh',
         },
       }}
     >
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
+      <AppShell.Header
+        style={{
+          background: colorScheme === 'dark'
+            ? 'rgba(26, 26, 46, 0.8)'
+            : 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: `1px solid ${colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+        }}
+      >
+        <Group h="100%" px="md" justify="space-between" className="animate-slide-down">
           <Group>
             <Burger
               opened={opened}
-              onClick={() => setOpened((o) => !o)}
+              onClick={() => {
+                haptic('light');
+                setOpened((o) => !o);
+              }}
               hiddenFrom="sm"
               size="sm"
             />
-            <Text fw={700} size="lg">Monty</Text>
+            <Text 
+              fw={700} 
+              size="xl"
+              className="gradient-text"
+              style={{
+                background: colorScheme === 'dark'
+                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+            >
+              Monty
+            </Text>
           </Group>
           <Group gap="xs">
             <ActionIcon
               size="lg"
               radius="xl"
               variant="subtle"
-              onClick={() => { haptic('light'); toggleColorScheme(); }}
+              onClick={handleThemeToggle}
               aria-label={colorScheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+              className="hover-scale"
             >
               {colorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
             </ActionIcon>
             <ActionIcon
               size="lg"
               radius="xl"
-              variant="filled"
-              color="blue"
+              variant="gradient"
+              gradient={{ from: 'blue', to: 'violet', deg: 135 }}
               onClick={handleAddClick}
               visibleFrom="sm"
+              className="hover-scale"
             >
               <IconPlus size={20} />
             </ActionIcon>
@@ -101,7 +143,16 @@ export function Layout() {
         </Group>
       </AppShell.Header>
 
-      <AppShell.Navbar p="md">
+      <AppShell.Navbar 
+        p="md"
+        style={{
+          background: colorScheme === 'dark'
+            ? 'rgba(26, 26, 46, 0.8)'
+            : 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(10px)',
+          borderRight: `1px solid ${colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+        }}
+      >
         <ScrollArea h="100%">
           <Stack gap="xs">
             {navItems.map((item) => {
@@ -110,12 +161,19 @@ export function Layout() {
                 <UnstyledButton
                   key={item.path}
                   onClick={() => handleNavClick(item.path)}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  backgroundColor: isActive ? (colorScheme === 'dark' ? theme.colors.blue[9] : theme.colors.blue[0]) : 'transparent',
-                  color: isActive ? theme.colors.blue[6] : (colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[7]),
-                }}
+                  className="transition-all"
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    background: isActive 
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      : 'transparent',
+                    color: isActive 
+                      ? '#ffffff' 
+                      : (colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[7]),
+                    transform: isActive ? 'scale(1.02)' : 'scale(1)',
+                    boxShadow: isActive ? '0 4px 12px rgba(102, 126, 234, 0.3)' : 'none',
+                  }}
                 >
                   <Group>
                     <item.icon size={20} />
@@ -131,10 +189,12 @@ export function Layout() {
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <Outlet />
+        <div className="animate-fade-in">
+          <Outlet />
+        </div>
       </AppShell.Main>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Enhanced Mobile Bottom Navigation */}
       <Box
         hiddenFrom="sm"
         style={{
@@ -142,13 +202,17 @@ export function Layout() {
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : 'white',
-          borderTop: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[2]}`,
-          padding: '8px 4px',
+          background: colorScheme === 'dark' 
+            ? 'rgba(26, 26, 46, 0.95)' 
+            : 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderTop: `1px solid ${colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+          padding: '8px 4px 8px 4px',
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '4px',
           zIndex: 100,
+          boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.1)',
         }}
       >
         {navItems.map((item) => {
@@ -157,19 +221,41 @@ export function Layout() {
             <UnstyledButton
               key={item.path}
               onClick={() => handleNavClick(item.path)}
+              className="transition-all"
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                padding: '6px 4px',
-                color: isActive ? theme.colors.blue[6] : (colorScheme === 'dark' ? theme.colors.gray[5] : theme.colors.gray[6]),
+                padding: '8px 4px',
+                borderRadius: '12px',
+                color: isActive 
+                  ? '#667eea' 
+                  : (colorScheme === 'dark' ? theme.colors.gray[5] : theme.colors.gray[6]),
                 minWidth: 0,
+                position: 'relative',
+                transform: isActive ? 'translateY(-4px)' : 'translateY(0)',
               }}
             >
-              <item.icon size={22} />
+              {isActive && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '32px',
+                    height: '3px',
+                    borderRadius: '0 0 3px 3px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  }}
+                  className="animate-scale-in"
+                />
+              )}
+              <item.icon size={22} style={{ marginTop: isActive ? '4px' : '0' }} />
               <Text 
                 size="xs" 
                 mt={2}
+                fw={isActive ? 600 : 400}
                 style={{
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',

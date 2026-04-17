@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { MantineProvider, ColorSchemeScript, localStorageColorSchemeManager } from '@mantine/core';
 import { BrowserRouter } from 'react-router-dom';
 import '@mantine/core/styles.css';
+import './index.css';
+import './styles/animations.css';
 import App from './App';
 import { AuthProvider } from './hooks/useAuth';
 

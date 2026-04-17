@@ -8,14 +8,15 @@ import {
   Group,
   Stack,
   Badge,
-  ActionIcon,
   LoadingOverlay,
   SimpleGrid,
   NumberInput,
+  useMantineColorScheme,
 } from '@mantine/core';
-import { IconPlus, IconTarget } from '@tabler/icons-react';
+import { IconTarget, IconTrendingUp, IconWallet, IconPigMoney } from '@tabler/icons-react';
 import { budgetsApi, goalsApi, settingsApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
+import { FloatingActionButton } from '../components/FloatingActionButton';
 import type { DashboardResponse, Goal } from '../types';
 
 function formatNumber(num: number): string {
@@ -25,6 +26,7 @@ function formatNumber(num: number): string {
 export function DashboardPage() {
   const navigate = useNavigate();
   const { haptic } = useTelegram();
+  const { colorScheme } = useMantineColorScheme();
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [totalBudget, setTotalBudget] = useState<number>(0);
@@ -39,11 +41,6 @@ export function DashboardPage() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  const handleAddClick = () => {
-    haptic('medium');
-    navigate('/add');
-  };
 
   const handleBudgetChange = async (categoryId: number, limitAmount: number) => {
     await settingsApi.updateBudget(categoryId, limitAmount);
@@ -85,72 +82,141 @@ export function DashboardPage() {
 
   const budgetRemain = totalBudget > 0 ? totalBudget - expensesSpent : 0;
   const budgetExpensePercent = totalBudget > 0 ? Math.round((expensesSpent / totalBudget) * 100) : 0;
-  const budgetRemainPercent = totalBudget > 0 ? Math.round((budgetRemain / totalBudget) * 100) : 0;
   const afterPlannedSpending = totalBudget > 0 ? totalBudget - expensesBudget : 0;
 
   return (
     <Container size="sm" p="md" pb={100}>
-      <Stack gap="md">
-        {/* Общий бюджет: запланировано на траты, текущий баланс, что останется после трат по бюджету */}
+      <Stack gap="lg">
+        {/* Общий бюджет */}
         {totalBudget > 0 && (
-          <Card shadow="sm" padding="md" radius="md" withBorder>
-            <Group justify="space-between" mb="xs">
-              <Text fw={600} size="sm" c="dimmed">Общий бюджет</Text>
-              <Badge size="sm" variant="light" color="blue">{formatNumber(totalBudget)} ₸</Badge>
+          <Card 
+            shadow="lg" 
+            padding="lg" 
+            radius="xl" 
+            withBorder
+            className="stagger-item hover-lift"
+            style={{
+              background: colorScheme === 'dark'
+                ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)'
+                : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%)',
+              backdropFilter: 'blur(10px)',
+              border: colorScheme === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.05)',
+            }}
+          >
+            <Group justify="space-between" mb="md">
+              <Group gap="xs">
+                <IconWallet size={24} style={{ color: '#667eea' }} />
+                <Text fw={700} size="lg">Общий бюджет</Text>
+              </Group>
+              <Badge 
+                size="lg" 
+                variant="gradient" 
+                gradient={{ from: 'blue', to: 'violet', deg: 135 }}
+                style={{ fontSize: '14px', padding: '8px 12px' }}
+              >
+                {formatNumber(totalBudget)} ₸
+              </Badge>
             </Group>
-            <Stack gap="sm">
+            <Stack gap="md">
               <Group justify="space-between">
                 <Text size="sm" c="dimmed">Запланировано на траты</Text>
                 <Text size="sm" fw={600}>{formatNumber(expensesBudget)} ₸</Text>
               </Group>
-              <Group justify="space-between">
-                <Text size="sm" c="dimmed">Остаток по бюджету</Text>
-                <Text size="sm" fw={600} c={totalRemaining < 0 ? 'red' : 'green'}>
-                  {formatNumber(totalRemaining)} ₸
-                </Text>
-              </Group>
               <div>
-                <Group justify="space-between" mb={4}>
+                <Group justify="space-between" mb={8}>
                   <Text size="sm" c="dimmed">Потрачено на расходы</Text>
                   <Text size="sm" fw={600}>{formatNumber(expensesSpent)} ₸ ({budgetExpensePercent}%)</Text>
                 </Group>
                 <Progress 
                   value={budgetExpensePercent} 
                   color={budgetExpensePercent >= 80 ? 'red' : budgetExpensePercent >= 60 ? 'yellow' : 'blue'} 
-                  size="sm" 
-                  radius="xl" 
+                  size="lg" 
+                  radius="xl"
+                  className="progress-animated"
+                  style={{
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                  }}
                 />
               </div>
-              <Group justify="space-between" p="xs" style={{ backgroundColor: budgetRemain >= 0 ? '#e6f7ed' : '#ffe6e6', borderRadius: '8px' }}>
-                <Text size="sm" fw={600}>Текущий баланс</Text>
-                <Text size="md" fw={700} c={budgetRemain >= 0 ? 'green' : 'red'}>
-                  {formatNumber(budgetRemain)} ₸ ({budgetRemainPercent}%)
-                </Text>
-              </Group>
-              <Group justify="space-between" p="xs" style={{ backgroundColor: '#e6f4ff', borderRadius: '8px' }}>
-                <Text size="sm" fw={600}>После трат по бюджету останется</Text>
-                <Text size="md" fw={700} c={afterPlannedSpending >= 0 ? 'blue' : 'red'}>
-                  {formatNumber(afterPlannedSpending)} ₸
-                </Text>
-              </Group>
+              <Card
+                padding="md"
+                radius="lg"
+                style={{
+                  background: budgetRemain >= 0 
+                    ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%)'
+                    : 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)',
+                  border: budgetRemain >= 0 
+                    ? '1px solid rgba(34, 197, 94, 0.2)'
+                    : '1px solid rgba(239, 68, 68, 0.2)',
+                }}
+              >
+                <Group justify="space-between">
+                  <Text size="sm" fw={600}>Текущий баланс</Text>
+                  <Text size="xl" fw={700} c={budgetRemain >= 0 ? 'green' : 'red'}>
+                    {formatNumber(budgetRemain)} ₸
+                  </Text>
+                </Group>
+              </Card>
+              <Card
+                padding="md"
+                radius="lg"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                }}
+              >
+                <Group justify="space-between">
+                  <Text size="sm" fw={600}>После трат по бюджету</Text>
+                  <Text size="lg" fw={700} c={afterPlannedSpending >= 0 ? 'blue' : 'red'}>
+                    {formatNumber(afterPlannedSpending)} ₸
+                  </Text>
+                </Group>
+              </Card>
             </Stack>
           </Card>
         )}
 
         {/* Goal Progress */}
-        <Card shadow="sm" padding="md" radius="md" withBorder>
-          <Group justify="space-between" mb="xs">
+        <Card 
+          shadow="lg" 
+          padding="lg" 
+          radius="xl" 
+          withBorder
+          className="stagger-item hover-lift"
+          style={{
+            background: colorScheme === 'dark'
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)'
+              : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(236, 253, 245, 0.95) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: colorScheme === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(16, 185, 129, 0.2)',
+          }}
+        >
+          <Group justify="space-between" mb="md">
             <Group gap="xs">
-              <IconTarget size={20} />
-              <Text fw={600}>Цель</Text>
+              <IconTarget size={24} style={{ color: '#10b981' }} />
+              <Text fw={700} size="lg">Цель</Text>
             </Group>
-            <Badge color="green" variant="light">
+            <Badge 
+              size="lg" 
+              variant="gradient" 
+              gradient={{ from: 'teal', to: 'green', deg: 135 }}
+              style={{ fontSize: '14px', padding: '8px 12px' }}
+            >
               {progressValue.toFixed(1)}%
             </Badge>
           </Group>
-          <Progress value={progressValue} color="green" size="lg" radius="xl" />
-          <Group justify="space-between" mt="xs">
-            <Text size="sm" c="dimmed">{formatNumber(goal?.current_savings || 0)} / {formatNumber(goal?.target_amount || 0)} ₸</Text>
+          <Progress 
+            value={progressValue} 
+            color="green" 
+            size="xl" 
+            radius="xl"
+            className="progress-animated"
+            style={{
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.2)',
+            }}
+          />
+          <Group justify="space-between" mt="md">
+            <Text size="md" fw={600}>{formatNumber(goal?.current_savings || 0)} / {formatNumber(goal?.target_amount || 0)} ₸</Text>
             <Text size="sm" c="dimmed">
               {goal && goal.days_remaining > 0
                 ? `Осталось ${goal.days_remaining} дн.`
@@ -163,82 +229,139 @@ export function DashboardPage() {
           </Group>
         </Card>
 
-        {/* Total Budget Summary: короткие подписи, крупнее цифры */}
-        <SimpleGrid cols={3} spacing="sm">
-          <Card shadow="sm" padding="md" radius="md" withBorder>
-            <Text size="xs" c="dimmed">Потрачено</Text>
-            <Text fw={700} size="lg">{formatNumber(expensesSpent)} ₸</Text>
-            <Text size="xs" c="dimmed">{spentPercent}%</Text>
+        {/* Total Budget Summary */}
+        <SimpleGrid cols={3} spacing="md">
+          <Card 
+            shadow="md" 
+            padding="md" 
+            radius="xl" 
+            withBorder
+            className="stagger-item hover-lift"
+            style={{
+              background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <IconTrendingUp size={20} style={{ color: '#ef4444', marginBottom: '8px' }} />
+            <Text size="xs" c="dimmed" mb={4}>Потрачено</Text>
+            <Text fw={700} size="xl">{formatNumber(expensesSpent)} ₸</Text>
+            <Text size="xs" c="dimmed" mt={4}>{spentPercent}%</Text>
           </Card>
-          <Card shadow="sm" padding="md" radius="md" withBorder>
-            <Text size="xs" c="dimmed">Накопления</Text>
-            <Text fw={700} size="lg" c="teal">{formatNumber(savingsSpent)} ₸</Text>
+          <Card 
+            shadow="md" 
+            padding="md" 
+            radius="xl" 
+            withBorder
+            className="stagger-item hover-lift"
+            style={{
+              background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <IconPigMoney size={20} style={{ color: '#14b8a6', marginBottom: '8px' }} />
+            <Text size="xs" c="dimmed" mb={4}>Накопления</Text>
+            <Text fw={700} size="xl" c="teal">{formatNumber(savingsSpent)} ₸</Text>
           </Card>
-          <Card shadow="sm" padding="md" radius="md" withBorder>
-            <Text size="xs" c="dimmed">Осталось</Text>
-            <Text fw={700} size="lg" c={totalRemaining < 0 ? 'red' : 'green'}>{formatNumber(totalRemaining)} ₸</Text>
-            <Text size="xs" c="dimmed">{remainingPercent}%</Text>
+          <Card 
+            shadow="md" 
+            padding="md" 
+            radius="xl" 
+            withBorder
+            className="stagger-item hover-lift"
+            style={{
+              background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <IconWallet size={20} style={{ color: totalRemaining < 0 ? '#ef4444' : '#10b981', marginBottom: '8px' }} />
+            <Text size="xs" c="dimmed" mb={4}>Осталось</Text>
+            <Text fw={700} size="xl" c={totalRemaining < 0 ? 'red' : 'green'}>{formatNumber(totalRemaining)} ₸</Text>
+            <Text size="xs" c="dimmed" mt={4}>{remainingPercent}%</Text>
           </Card>
         </SimpleGrid>
 
         {/* Budget Categories */}
         {baseBudgets.length > 0 && (
-          <Card shadow="xs" padding="sm" radius="md" withBorder>
-            <Group justify="space-between" mb="xs">
-              <Text fw={600} size="sm" c="dimmed">База</Text>
-              <Badge size="xs" color={percentColor(basePercent)} variant="light">{basePercent.toFixed(0)}%</Badge>
+          <Card 
+            shadow="md" 
+            padding="lg" 
+            radius="xl" 
+            withBorder
+            className="stagger-item"
+            style={{
+              background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Group justify="space-between" mb="md">
+              <Text fw={700} size="md">База</Text>
+              <Badge size="md" color={percentColor(basePercent)} variant="light">
+                {basePercent.toFixed(0)}%
+              </Badge>
             </Group>
-            <Stack gap="xs">
-              {baseBudgets.map(budget => (
-                <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} onOpenHistory={() => { haptic('light'); navigate(`/transactions?category_id=${budget.category_id}`); }} />
+            <Stack gap="sm">
+              {baseBudgets.map((budget, index) => (
+                <div key={budget.category_id} className="stagger-item" style={{ animationDelay: `${0.05 * (index + 1)}s` }}>
+                  <BudgetCard budget={budget} onBudgetChange={handleBudgetChange} onOpenHistory={() => { haptic('light'); navigate(`/transactions?category_id=${budget.category_id}`); }} />
+                </div>
               ))}
             </Stack>
           </Card>
         )}
 
         {comfortBudgets.length > 0 && (
-          <Card shadow="xs" padding="sm" radius="md" withBorder>
-            <Group justify="space-between" mb="xs">
-              <Text fw={600} size="sm" c="dimmed">Комфорт</Text>
-              <Badge size="xs" color={percentColor(comfortPercent)} variant="light">{comfortPercent.toFixed(0)}%</Badge>
+          <Card 
+            shadow="md" 
+            padding="lg" 
+            radius="xl" 
+            withBorder
+            className="stagger-item"
+            style={{
+              background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Group justify="space-between" mb="md">
+              <Text fw={700} size="md">Комфорт</Text>
+              <Badge size="md" color={percentColor(comfortPercent)} variant="light">
+                {comfortPercent.toFixed(0)}%
+              </Badge>
             </Group>
-            <Stack gap="xs">
-              {comfortBudgets.map(budget => (
-                <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} onOpenHistory={() => { haptic('light'); navigate(`/transactions?category_id=${budget.category_id}`); }} />
+            <Stack gap="sm">
+              {comfortBudgets.map((budget, index) => (
+                <div key={budget.category_id} className="stagger-item" style={{ animationDelay: `${0.05 * (index + 1)}s` }}>
+                  <BudgetCard budget={budget} onBudgetChange={handleBudgetChange} onOpenHistory={() => { haptic('light'); navigate(`/transactions?category_id=${budget.category_id}`); }} />
+                </div>
               ))}
             </Stack>
           </Card>
         )}
 
         {savingsBudgets.length > 0 && (
-          <Card shadow="xs" padding="sm" radius="md" withBorder>
-            <Text fw={600} size="sm" c="dimmed" mb="xs">Накопления</Text>
-            <Stack gap="xs">
-              {savingsBudgets.map(budget => (
-                <BudgetCard key={budget.category_id} budget={budget} onBudgetChange={handleBudgetChange} onOpenHistory={() => { haptic('light'); navigate(`/transactions?category_id=${budget.category_id}`); }} />
+          <Card 
+            shadow="md" 
+            padding="lg" 
+            radius="xl" 
+            withBorder
+            className="stagger-item"
+            style={{
+              background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Text fw={700} size="md" mb="md">Накопления</Text>
+            <Stack gap="sm">
+              {savingsBudgets.map((budget, index) => (
+                <div key={budget.category_id} className="stagger-item" style={{ animationDelay: `${0.05 * (index + 1)}s` }}>
+                  <BudgetCard budget={budget} onBudgetChange={handleBudgetChange} onOpenHistory={() => { haptic('light'); navigate(`/transactions?category_id=${budget.category_id}`); }} />
+                </div>
               ))}
             </Stack>
           </Card>
         )}
       </Stack>
 
-      {/* FAB — выше нижнего меню, по центру */}
-      <ActionIcon
-        size={56}
-        radius="xl"
-        variant="filled"
-        color="blue"
-        onClick={handleAddClick}
-        style={{
-          position: 'fixed',
-          bottom: 80,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 1000,
-        }}
-      >
-        <IconPlus size={28} />
-      </ActionIcon>
+      <FloatingActionButton />
     </Container>
   );
 }
@@ -246,6 +369,8 @@ export function DashboardPage() {
 function BudgetCard({ budget, onBudgetChange, onOpenHistory }: { budget: DashboardResponse['budgets'][0]; onBudgetChange: (categoryId: number, limitAmount: number) => void; onOpenHistory?: () => void }) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(budget.limit_amount);
+  const { haptic } = useTelegram();
+  const { colorScheme } = useMantineColorScheme();
   const isSavings = budget.group === 'SAVINGS';
 
   const percent = budget.limit_amount > 0 ? (budget.spent / budget.limit_amount) * 100 : 0;
@@ -259,26 +384,55 @@ function BudgetCard({ budget, onBudgetChange, onOpenHistory }: { budget: Dashboa
     setEditing(false);
   };
 
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    haptic('light');
+    setEditing(true);
+  };
+
   if (isSavings) {
     return (
-      <Card withBorder padding="xs" radius="md" style={{ borderColor: 'var(--mantine-color-teal-3)', cursor: onOpenHistory ? 'pointer' : undefined }} onClick={onOpenHistory}>
+      <Card 
+        withBorder 
+        padding="md" 
+        radius="lg"
+        className="hover-lift transition-all"
+        style={{ 
+          borderColor: 'var(--mantine-color-teal-3)', 
+          cursor: onOpenHistory ? 'pointer' : undefined,
+          background: colorScheme === 'dark' 
+            ? 'rgba(20, 184, 166, 0.1)' 
+            : 'rgba(20, 184, 166, 0.05)',
+        }} 
+        onClick={onOpenHistory}
+      >
         <Group justify="space-between">
-          <Group gap="xs">
-            <Text size="md">{budget.category_icon}</Text>
-            <Text fw={500} size="sm">{budget.category_name}</Text>
+          <Group gap="sm">
+            <Text size="xl">{budget.category_icon}</Text>
+            <Text fw={600} size="md">{budget.category_name}</Text>
           </Group>
-          <Text fw={600} size="sm" c="teal">{formatNumber(budget.spent)} ₸</Text>
+          <Text fw={700} size="lg" c="teal">{formatNumber(budget.spent)} ₸</Text>
         </Group>
       </Card>
     );
   }
 
   return (
-    <Card withBorder padding="xs" radius="md" style={{ cursor: onOpenHistory ? 'pointer' : undefined }} onClick={!editing ? onOpenHistory : undefined}>
-      <Group justify="space-between" wrap="nowrap" gap="xs" mb={2}>
-        <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-          <Text size="md">{budget.category_icon}</Text>
-          <Text fw={500} size="sm" lineClamp={1}>{budget.category_name}</Text>
+    <Card 
+      withBorder 
+      padding="md" 
+      radius="lg"
+      className="hover-lift transition-all"
+      style={{ 
+        cursor: onOpenHistory && !editing ? 'pointer' : undefined,
+        background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.5)',
+      }} 
+      onClick={!editing ? onOpenHistory : undefined}
+    >
+      <Group justify="space-between" wrap="nowrap" gap="sm" mb={8}>
+        <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+          <Text size="xl">{budget.category_icon}</Text>
+          <Text fw={600} size="md" lineClamp={1}>{budget.category_name}</Text>
         </Group>
         {editing ? (
           <NumberInput
@@ -288,25 +442,41 @@ function BudgetCard({ budget, onBudgetChange, onOpenHistory }: { budget: Dashboa
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
             thousandSeparator=" "
             suffix=" ₸"
-            w={100}
-            size="xs"
+            w={120}
+            size="sm"
             autoFocus
             onClick={(e) => e.stopPropagation()}
+            styles={{
+              input: {
+                fontWeight: 600,
+                borderRadius: '8px',
+              }
+            }}
           />
         ) : (
           <Text
-            size="sm"
-            fw={600}
+            size="md"
+            fw={700}
             c={isOverBudget ? 'red' : 'dimmed'}
+            className="transition-colors"
             style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
-            onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+            onClick={handleEditClick}
           >
             {isOverBudget ? `−${formatNumber(-budget.remaining)}` : formatNumber(budget.remaining)} ₸
           </Text>
         )}
       </Group>
-      <Text size="xs" c="dimmed">Потрачено {formatNumber(budget.spent)} ₸</Text>
-      <Progress value={Math.min(100, Math.max(0, percent))} color={color} size={4} radius="xl" mt={4} />
+      <Text size="sm" c="dimmed" mb={8}>Потрачено {formatNumber(budget.spent)} ₸</Text>
+      <Progress 
+        value={Math.min(100, Math.max(0, percent))} 
+        color={color} 
+        size="md" 
+        radius="xl"
+        className="progress-animated"
+        style={{
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        }}
+      />
     </Card>
   );
 }
