@@ -7,7 +7,6 @@ import {
   Card,
   Group,
   SimpleGrid,
-  LoadingOverlay,
   Badge,
   ActionIcon,
   SegmentedControl,
@@ -16,12 +15,16 @@ import {
   Modal,
   NumberInput,
   Select,
+  Box,
+  useMantineColorScheme,
 } from '@mantine/core';
-import { IconChevronLeft, IconChevronRight, IconSearch, IconDownload, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight, IconSearch, IconDownload, IconTrash, IconX } from '@tabler/icons-react';
 import { transactionsApi, categoriesApi } from '../api';
+import { useTelegram } from '../hooks/useTelegram';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Transaction, Category } from '../types';
 
-const TIMEZONE = 'Asia/Almaty'; // UTC+5
+const TIMEZONE = 'Asia/Almaty';
 
 function formatNumber(num: number): string {
   return new Intl.NumberFormat('ru-RU').format(num);
@@ -52,6 +55,8 @@ export function TransactionsPage() {
   const [searchParams] = useSearchParams();
   const categoryIdParam = searchParams.get('category_id');
   const categoryId = categoryIdParam ? parseInt(categoryIdParam, 10) : undefined;
+  const { haptic } = useTelegram();
+  const { colorScheme } = useMantineColorScheme();
 
   const [viewMode, setViewMode] = useState<'all' | 'day'>('all');
   const [selectedDate, setSelectedDate] = useState<Date>(() => getTodayUTC5());
@@ -68,7 +73,7 @@ export function TransactionsPage() {
   const [editComment, setEditComment] = useState('');
 
   useEffect(() => {
-    const t = setTimeout(() => setSearchDebounced(search), 1500);
+    const t = setTimeout(() => setSearchDebounced(search), 500);
     return () => clearTimeout(t);
   }, [search]);
 
@@ -100,18 +105,23 @@ export function TransactionsPage() {
   }, [loadTransactions]);
 
   const goPrevDay = () => {
+    haptic('light');
     const d = new Date(selectedDate);
     d.setDate(d.getDate() - 1);
     setSelectedDate(d);
   };
+  
   const goNextDay = () => {
+    haptic('light');
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + 1);
     setSelectedDate(d);
   };
-  const dayLabel = selectedDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+  
+  const dayLabel = selectedDate.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 
   const openEditModal = (tx: Transaction) => {
+    haptic('medium');
     setEditingTx(tx);
     setEditAmount(tx.amount);
     setEditCategoryId(String(tx.category_id));
@@ -127,6 +137,7 @@ export function TransactionsPage() {
         category_id: editCategoryId ? parseInt(editCategoryId, 10) : undefined,
         comment: editComment || undefined,
       });
+      haptic('success');
       setEditModalOpen(false);
       setEditingTx(null);
       loadTransactions();
@@ -139,6 +150,7 @@ export function TransactionsPage() {
     if (!editingTx || !window.confirm('Удалить транзакцию?')) return;
     try {
       await transactionsApi.delete(editingTx.id);
+      haptic('success');
       setEditModalOpen(false);
       setEditingTx(null);
       loadTransactions();
@@ -149,6 +161,7 @@ export function TransactionsPage() {
 
   const handleExport = async () => {
     setExporting(true);
+    haptic('medium');
     try {
       const start = viewMode === 'day' ? toDateString(selectedDate) : undefined;
       let end: string | undefined;
@@ -158,6 +171,7 @@ export function TransactionsPage() {
         end = toDateString(d);
       }
       await transactionsApi.exportCsv(start, end);
+      haptic('success');
     } catch (e) {
       console.error(e);
     } finally {
@@ -187,132 +201,288 @@ export function TransactionsPage() {
   }, 0);
   const balance = income - expense;
 
-  if (loading) {
-    return <LoadingOverlay visible />;
+  if (loading && transactions.length === 0) {
+    return (
+      <Container size="sm" pb={100}>
+        <LoadingSkeleton />
+      </Container>
+    );
   }
 
   const title = categoryId && categoryMap[categoryId]
-    ? `История: ${categoryMap[categoryId].icon} ${categoryMap[categoryId].name}`
-    : 'Все транзакции';
+    ? `${categoryMap[categoryId].icon} ${categoryMap[categoryId].name}`
+    : 'История транзакций';
 
   return (
     <Container size="sm" pb={100}>
-      <Text fw={700} size="lg" mb="md">{title}</Text>
+      <Stack gap="lg">
+        {/* Header */}
+        <Box className="animate-slide-down">
+          <Text fw={700} size="xl" mb="xs">{title}</Text>
+          <Text size="sm" c="dimmed">Управляйте своими финансами</Text>
+        </Box>
 
-      <SimpleGrid cols={2} spacing="xs" mb="md">
-        <Card withBorder padding="sm" radius="md">
-          <Text size="xs" c="dimmed">Доход</Text>
-          <Text fw={600} size="sm" c="green">{formatNumber(income)} ₸</Text>
+        {/* Summary Cards */}
+        <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md" className="stagger-item">
+          <Card 
+            shadow="md" 
+            padding="md" 
+            radius="xl" 
+            withBorder
+            className="hover-lift"
+            style={{
+              background: colorScheme === 'dark' 
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)'
+                : 'linear-gradient(135deg, rgba(236, 253, 245, 0.9) 0%, rgba(209, 250, 229, 0.9) 100%)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Text size="xs" c="dimmed" mb={4}>Доход</Text>
+            <Text fw={700} size="lg" c="green">{formatNumber(income)} ₸</Text>
+          </Card>
+          <Card 
+            shadow="md" 
+            padding="md" 
+            radius="xl" 
+            withBorder
+            className="hover-lift"
+            style={{
+              background: colorScheme === 'dark' 
+                ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)'
+                : 'linear-gradient(135deg, rgba(254, 242, 242, 0.9) 0%, rgba(254, 226, 226, 0.9) 100%)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Text size="xs" c="dimmed" mb={4}>Расход</Text>
+            <Text fw={700} size="lg" c="red">{formatNumber(expense)} ₸</Text>
+          </Card>
+          {savings > 0 && (
+            <Card 
+              shadow="md" 
+              padding="md" 
+              radius="xl" 
+              withBorder
+              className="hover-lift"
+              style={{
+                background: colorScheme === 'dark' 
+                  ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)'
+                  : 'linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(219, 234, 254, 0.9) 100%)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <Text size="xs" c="dimmed" mb={4}>Накопления</Text>
+              <Text fw={700} size="lg" c="blue">{formatNumber(savings)} ₸</Text>
+            </Card>
+          )}
+          <Card 
+            shadow="md" 
+            padding="md" 
+            radius="xl" 
+            withBorder
+            className="hover-lift"
+            style={{
+              background: colorScheme === 'dark' 
+                ? 'rgba(255, 255, 255, 0.05)'
+                : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Text size="xs" c="dimmed" mb={4}>Баланс</Text>
+            <Text fw={700} size="lg" c={balance >= 0 ? 'green' : 'red'}>{formatNumber(balance)} ₸</Text>
+          </Card>
+        </SimpleGrid>
+
+        {/* Search Bar */}
+        <Card 
+          shadow="md" 
+          padding="md" 
+          radius="xl" 
+          withBorder
+          className="stagger-item"
+          style={{
+            background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <TextInput
+            placeholder="Поиск по комментарию или категории..."
+            leftSection={<IconSearch size={18} />}
+            rightSection={
+              search && (
+                <ActionIcon 
+                  variant="subtle" 
+                  size="sm"
+                  onClick={() => {
+                    haptic('light');
+                    setSearch('');
+                  }}
+                >
+                  <IconX size={16} />
+                </ActionIcon>
+              )
+            }
+            value={search}
+            onChange={(e) => setSearch(e.currentTarget.value)}
+            size="md"
+            radius="lg"
+            styles={{
+              input: {
+                border: 'none',
+                background: 'transparent',
+              }
+            }}
+          />
         </Card>
-        <Card withBorder padding="sm" radius="md">
-          <Text size="xs" c="dimmed">Расход</Text>
-          <Text fw={600} size="sm" c="red">{formatNumber(expense)} ₸</Text>
-        </Card>
-        {savings > 0 && (
-          <Card withBorder padding="sm" radius="md">
-            <Text size="xs" c="dimmed">Накопления</Text>
-            <Text fw={600} size="sm" c="blue">{formatNumber(savings)} ₸</Text>
+
+        {/* Controls */}
+        <Group gap="md" className="stagger-item">
+          <SegmentedControl
+            value={viewMode}
+            onChange={(v) => {
+              haptic('light');
+              setViewMode(v as 'all' | 'day');
+            }}
+            data={[
+              { value: 'all', label: 'Все' },
+              { value: 'day', label: 'По дням' },
+            ]}
+            radius="xl"
+            style={{ flex: 1 }}
+          />
+          <Button
+            leftSection={<IconDownload size={18} />}
+            variant="light"
+            radius="xl"
+            loading={exporting}
+            onClick={handleExport}
+          >
+            CSV
+          </Button>
+        </Group>
+
+        {/* Day Navigator */}
+        {viewMode === 'day' && (
+          <Card 
+            shadow="md" 
+            padding="md" 
+            radius="xl" 
+            withBorder
+            className="animate-scale-in"
+            style={{
+              background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            <Group justify="space-between" align="center">
+              <ActionIcon 
+                variant="light" 
+                size="lg" 
+                radius="xl"
+                onClick={goPrevDay}
+                className="hover-scale"
+              >
+                <IconChevronLeft size={20} />
+              </ActionIcon>
+              <Text fw={600} size="md">{dayLabel}</Text>
+              <ActionIcon 
+                variant="light" 
+                size="lg" 
+                radius="xl"
+                onClick={goNextDay}
+                className="hover-scale"
+              >
+                <IconChevronRight size={20} />
+              </ActionIcon>
+            </Group>
           </Card>
         )}
-        <Card withBorder padding="sm" radius="md">
-          <Text size="xs" c="dimmed">Баланс</Text>
-          <Text fw={600} size="sm" c={balance >= 0 ? 'green' : 'red'}>{formatNumber(balance)} ₸</Text>
-        </Card>
-      </SimpleGrid>
 
-      <TextInput
-        placeholder="Поиск по комментарию или категории"
-        leftSection={<IconSearch size={16} />}
-        value={search}
-        onChange={(e) => setSearch(e.currentTarget.value)}
-        mb="md"
-      />
-
-      <SegmentedControl
-        value={viewMode}
-        onChange={(v) => setViewMode(v as 'all' | 'day')}
-        data={[
-          { value: 'all', label: 'Все' },
-          { value: 'day', label: 'По дням' },
-        ]}
-        fullWidth
-        mb="md"
-      />
-
-      <Group mb="md">
-        <Button
-          leftSection={<IconDownload size={16} />}
-          variant="light"
-          size="xs"
-          loading={exporting}
-          onClick={handleExport}
-        >
-          Экспорт CSV
-        </Button>
-      </Group>
-
-      {viewMode === 'day' && (
-        <Group justify="space-between" align="center" mb="md">
-          <ActionIcon variant="light" size="lg" onClick={goPrevDay} aria-label="Предыдущий день">
-            <IconChevronLeft size={20} />
-          </ActionIcon>
-          <Text fw={600} size="sm">{dayLabel}</Text>
-          <ActionIcon variant="light" size="lg" onClick={goNextDay} aria-label="Следующий день">
-            <IconChevronRight size={20} />
-          </ActionIcon>
-        </Group>
-      )}
-
-      <Stack gap="xs">
-        {transactions.length === 0 ? (
-          <Text c="dimmed" ta="center" py="xl">Нет транзакций</Text>
-        ) : (
-          transactions.map((tx) => {
-            const cat = categoryMap[tx.category_id];
-            const isIncome = cat?.type === 'INCOME';
-            const isSavings = cat?.group === 'SAVINGS';
-            const badgeColor = isIncome ? 'green' : isSavings ? 'blue' : 'red';
-            const badgePrefix = isIncome ? '+' : '−';
-            return (
-              <Card
-                key={tx.id}
-                shadow="xs"
-                padding="sm"
-                radius="md"
-                withBorder
-                style={{ cursor: 'pointer' }}
-                onClick={() => openEditModal(tx)}
-              >
-                <Group justify="space-between" wrap="nowrap" gap="sm">
-                  <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
-                    <Text size="lg">{cat?.icon ?? '📦'}</Text>
-                    <Stack gap={0} style={{ minWidth: 0 }}>
-                      <Text fw={500} size="sm">{cat?.name ?? '—'}</Text>
-                      <Text size="xs" c="dimmed">{formatDateUTC5(tx.transaction_date)}</Text>
-                      {tx.comment && (
-                        <Text size="xs" c="dimmed" lineClamp={2} mt={4}>📝 {tx.comment}</Text>
-                      )}
-                    </Stack>
-                  </Group>
-                  <Group gap="xs" wrap="nowrap">
-                    <Badge color={badgeColor} variant="light" size="lg">
+        {/* Transactions List */}
+        <Stack gap="sm">
+          {transactions.length === 0 ? (
+            <Card 
+              shadow="md" 
+              padding="xl" 
+              radius="xl" 
+              withBorder
+              className="animate-fade-in"
+              style={{
+                background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <Text c="dimmed" ta="center" size="lg">Нет транзакций</Text>
+              <Text c="dimmed" ta="center" size="sm" mt="xs">Добавьте первую транзакцию</Text>
+            </Card>
+          ) : (
+            transactions.map((tx, index) => {
+              const cat = categoryMap[tx.category_id];
+              const isIncome = cat?.type === 'INCOME';
+              const isSavings = cat?.group === 'SAVINGS';
+              const badgeColor = isIncome ? 'green' : isSavings ? 'blue' : 'red';
+              const badgePrefix = isIncome ? '+' : '−';
+              return (
+                <Card
+                  key={tx.id}
+                  shadow="md"
+                  padding="md"
+                  radius="xl"
+                  withBorder
+                  className="stagger-item hover-lift"
+                  style={{
+                    cursor: 'pointer',
+                    background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(10px)',
+                    animationDelay: `${index * 0.05}s`,
+                  }}
+                  onClick={() => openEditModal(tx)}
+                >
+                  <Group justify="space-between" wrap="nowrap" gap="md">
+                    <Group gap="md" wrap="nowrap" style={{ minWidth: 0, flex: 1 }}>
+                      <Text size="2rem">{cat?.icon ?? '📦'}</Text>
+                      <Stack gap={4} style={{ minWidth: 0, flex: 1 }}>
+                        <Text fw={600} size="md">{cat?.name ?? '—'}</Text>
+                        <Text size="xs" c="dimmed">{formatDateUTC5(tx.transaction_date)}</Text>
+                        {tx.comment && (
+                          <Text size="sm" c="dimmed" lineClamp={2} mt={4}>
+                            💬 {tx.comment}
+                          </Text>
+                        )}
+                      </Stack>
+                    </Group>
+                    <Badge 
+                      color={badgeColor} 
+                      variant="light" 
+                      size="lg"
+                      radius="md"
+                      style={{ 
+                        fontSize: '0.9rem',
+                        padding: '12px 16px',
+                        fontWeight: 700,
+                      }}
+                    >
                       {badgePrefix}{formatNumber(tx.amount)} ₸
                     </Badge>
-                    <ActionIcon variant="subtle" size="sm" onClick={(e) => { e.stopPropagation(); openEditModal(tx); }} aria-label="Редактировать">
-                      <IconEdit size={14} />
-                    </ActionIcon>
                   </Group>
-                </Group>
-              </Card>
-            );
-          })
-        )}
+                </Card>
+              );
+            })
+          )}
+        </Stack>
       </Stack>
 
+      {/* Edit Modal */}
       <Modal
         opened={editModalOpen}
-        onClose={() => { setEditModalOpen(false); setEditingTx(null); }}
-        title="Редактировать транзакцию"
+        onClose={() => { 
+          haptic('light');
+          setEditModalOpen(false); 
+          setEditingTx(null); 
+        }}
+        title={<Text fw={700} size="lg">Редактировать транзакцию</Text>}
+        centered
+        radius="xl"
+        size="md"
       >
         {editingTx && (
           <Stack gap="md">
@@ -321,24 +491,41 @@ export function TransactionsPage() {
               data={editCategoryOptions}
               value={editCategoryId}
               onChange={setEditCategoryId}
+              radius="lg"
             />
             <NumberInput
               label="Сумма (₸)"
               value={editAmount}
               onChange={(v) => setEditAmount(Number(v) || 0)}
               min={0}
+              thousandSeparator=" "
+              radius="lg"
             />
             <TextInput
               label="Комментарий"
               value={editComment}
               onChange={(e) => setEditComment(e.currentTarget.value)}
               placeholder="Необязательно"
+              radius="lg"
             />
-            <Group justify="space-between">
-              <Button variant="light" color="red" leftSection={<IconTrash size={16} />} onClick={handleDelete}>
+            <Group justify="space-between" mt="md">
+              <Button 
+                variant="light" 
+                color="red" 
+                leftSection={<IconTrash size={18} />} 
+                onClick={handleDelete}
+                radius="xl"
+              >
                 Удалить
               </Button>
-              <Button onClick={handleSaveEdit}>Сохранить</Button>
+              <Button 
+                onClick={handleSaveEdit}
+                radius="xl"
+                variant="gradient"
+                gradient={{ from: 'blue', to: 'violet', deg: 135 }}
+              >
+                Сохранить
+              </Button>
             </Group>
           </Stack>
         )}

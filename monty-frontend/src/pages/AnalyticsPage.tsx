@@ -1,22 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Container,
   Stack,
   Text,
   Card,
   Group,
-  LoadingOverlay,
   SegmentedControl,
-  Button,
   Progress,
   Box,
-  Anchor,
+  useMantineColorScheme,
+  SimpleGrid,
+  ActionIcon,
 } from '@mantine/core';
-import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
+import { IconChevronLeft, IconChevronRight, IconTrendingUp, IconTrendingDown, IconWallet, IconTarget } from '@tabler/icons-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { analyticsApi, settingsApi } from '../api';
-import type { Analytics, BudgetWithSpent, Settings } from '../types';
+import { useTelegram } from '../hooks/useTelegram';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import type { Analytics, Settings } from '../types';
 
 function formatNumber(num: number): string {
   return new Intl.NumberFormat('ru-RU').format(num);
@@ -79,26 +80,18 @@ function buildExpenseBarData(analytics: Analytics): { dateIso: string; expense: 
       dateIso: iso,
       expense: expenseByDay.get(iso) ?? 0,
       dayNum: String(d.getDate()),
-      fullLabel: d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }),
+      fullLabel: d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
     });
   }
   return out;
 }
 
-function limitUsageColor(ratio: number): 'green' | 'yellow' | 'red' {
-  if (ratio >= 1) return 'red';
-  if (ratio >= 0.7) return 'yellow';
-  return 'green';
-}
-
 export function AnalyticsPage() {
-  const navigate = useNavigate();
+  const { haptic } = useTelegram();
+  const { colorScheme } = useMantineColorScheme();
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('current');
-  const [viewMode, setViewMode] = useState<'preset' | 'custom'>('preset');
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [financialOffset, setFinancialOffset] = useState(0);
   const [financialLabel, setFinancialLabel] = useState<string | null>(null);
@@ -185,554 +178,322 @@ export function AnalyticsPage() {
   }, []);
 
   useEffect(() => {
-    if (viewMode === 'preset') {
-      setFinancialOffset(0);
-    }
-  }, [viewMode, period]);
+    setFinancialOffset(0);
+  }, [period]);
 
   useEffect(() => {
-    if (viewMode === 'preset') {
-      void loadAnalyticsByPeriod();
-    }
-  }, [viewMode, loadAnalyticsByPeriod]);
-
-  const loadAnalyticsByDateRange = async () => {
-    if (!startDate || !endDate) return;
-    setLoading(true);
-    try {
-      const start = startDate.toISOString().split('T')[0];
-      const end = endDate.toISOString().split('T')[0];
-      const data = await analyticsApi.getPeriod(start, end);
-      setAnalytics(data);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const presetPeriodLabel = (a: Analytics): string | null => {
-    if (viewMode === 'preset' && period === 'current' && financialLabel) return financialLabel;
-    if (a.period_start && a.period_end) {
-      const formatter = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' });
-      const s = parseISODateLocal(a.period_start);
-      const e = parseISODateLocal(a.period_end);
-      return `${formatter.format(s)} – ${formatter.format(e)}`;
-    }
-    return null;
-  };
-
-  const limitsRows: BudgetWithSpent[] = (analytics?.budgets_with_spent ?? []).filter(
-    (b) => b.group === 'BASE' || b.group === 'COMFORT',
-  );
+    void loadAnalyticsByPeriod();
+  }, [loadAnalyticsByPeriod]);
 
   const barData = analytics ? buildExpenseBarData(analytics) : [];
   const maxExpense = Math.max(...barData.map((d) => d.expense), 1);
 
+  if (loading && !analytics) {
+    return (
+      <Container size="sm" pb={100}>
+        <LoadingSkeleton />
+      </Container>
+    );
+  }
+
+  const bounds = analytics ? resolvePeriodBounds(analytics) : null;
+  const daysTotal = bounds ? inclusiveDays(bounds.start, bounds.end) : 0;
+  const elapsed = bounds ? periodElapsedDays(bounds.start, bounds.end) : 0;
+  const pace = analytics && elapsed > 0 ? Math.round(analytics.total_expenses / elapsed) : 0;
+  const progressPct = daysTotal > 0 ? Math.min(100, (elapsed / daysTotal) * 100) : 0;
+
   return (
     <Container size="sm" pb={100}>
-      <Stack gap="md">
-        <SegmentedControl
-          value={viewMode}
-          onChange={(val) => setViewMode(val as 'preset' | 'custom')}
-          data={[
-            { value: 'preset', label: 'Период' },
-            { value: 'custom', label: 'Даты' },
-          ]}
-          fullWidth
-        />
+      <Stack gap="lg">
+        {/* Header */}
+        <Box className="animate-slide-down">
+          <Text fw={700} size="xl" mb="xs">Аналитика</Text>
+          <Text size="sm" c="dimmed">Отслеживайте свои финансы</Text>
+        </Box>
 
-        {viewMode === 'preset' ? (
+        {/* Period Selector */}
+        <Card 
+          shadow="md" 
+          padding="md" 
+          radius="xl" 
+          withBorder
+          className="stagger-item"
+          style={{
+            background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <SegmentedControl
+            value={period}
+            onChange={(val) => {
+              haptic('light');
+              setPeriod(val);
+            }}
+            data={[
+              { value: 'current', label: 'Период' },
+              { value: '1', label: 'Месяц' },
+              { value: '3', label: '3 мес' },
+              { value: '6', label: '6 мес' },
+            ]}
+            fullWidth
+            radius="lg"
+          />
+          {period === 'current' && (
+            <Group justify="space-between" align="center" mt="md">
+              <ActionIcon 
+                variant="subtle" 
+                size="lg" 
+                radius="xl"
+                onClick={() => {
+                  haptic('light');
+                  setFinancialOffset((prev) => prev - 1);
+                }}
+                className="hover-scale"
+              >
+                <IconChevronLeft size={20} />
+              </ActionIcon>
+              <Text size="sm" fw={600} ta="center">
+                {financialLabel ?? '—'}
+              </Text>
+              <ActionIcon 
+                variant="subtle" 
+                size="lg" 
+                radius="xl"
+                onClick={() => {
+                  if (financialOffset < 0) {
+                    haptic('light');
+                    setFinancialOffset((prev) => prev + 1);
+                  }
+                }}
+                disabled={financialOffset >= 0}
+                className="hover-scale"
+                style={{ opacity: financialOffset < 0 ? 1 : 0.3 }}
+              >
+                <IconChevronRight size={20} />
+              </ActionIcon>
+            </Group>
+          )}
+        </Card>
+
+        {analytics && (
           <>
-            <SegmentedControl
-              value={period}
-              onChange={(val) => {
-                setPeriod(val);
-                setFinancialOffset(0);
+            {/* Main Balance */}
+            <Card 
+              shadow="lg" 
+              padding="xl" 
+              radius="xl" 
+              withBorder
+              className="stagger-item"
+              style={{
+                background: colorScheme === 'dark'
+                  ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)'
+                  : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%)',
+                backdropFilter: 'blur(10px)',
               }}
-              data={[
-                { value: 'current', label: 'Фин. период' },
-                { value: '1', label: 'Календарный месяц' },
-                { value: '3', label: '3 месяца' },
-                { value: '6', label: '6 месяцев' },
-                { value: '12', label: 'Год' },
-              ]}
-              fullWidth
-            />
-            {period === 'current' && (
-              <Stack gap={4}>
-                <Text size="sm" fw={500}>
-                  {financialOffset === 0 ? 'Текущий фин. период' : `${-financialOffset}-й период назад`}
+            >
+              <Group gap="xs" mb="sm">
+                <IconWallet size={24} style={{ color: '#667eea' }} />
+                <Text size="sm" c="dimmed">Остаток доходов</Text>
+              </Group>
+              <Text fw={800} size="2.5rem" lh={1.2} className="gradient-text">
+                {formatNumber(analytics.balance ?? 0)} ₸
+              </Text>
+              <Text size="xs" c="dimmed" mt="sm">
+                после расходов · без сбережений
+              </Text>
+            </Card>
+
+            {/* Summary Cards */}
+            <SimpleGrid cols={3} spacing="md" className="stagger-item">
+              <Card 
+                shadow="md" 
+                padding="md" 
+                radius="xl" 
+                withBorder
+                className="hover-lift"
+                style={{
+                  background: colorScheme === 'dark' 
+                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)'
+                    : 'linear-gradient(135deg, rgba(236, 253, 245, 0.9) 0%, rgba(209, 250, 229, 0.9) 100%)',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                <IconTrendingUp size={20} style={{ color: '#10b981', marginBottom: '8px' }} />
+                <Text size="xs" c="dimmed" mb={4}>Пришло</Text>
+                <Text size="lg" fw={700} c="green">{formatNumber(analytics.total_income || 0)} ₸</Text>
+              </Card>
+              <Card 
+                shadow="md" 
+                padding="md" 
+                radius="xl" 
+                withBorder
+                className="hover-lift"
+                style={{
+                  background: colorScheme === 'dark' 
+                    ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)'
+                    : 'linear-gradient(135deg, rgba(254, 242, 242, 0.9) 0%, rgba(254, 226, 226, 0.9) 100%)',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                <IconTrendingDown size={20} style={{ color: '#ef4444', marginBottom: '8px' }} />
+                <Text size="xs" c="dimmed" mb={4}>Потрачено</Text>
+                <Text size="lg" fw={700} c="red">{formatNumber(analytics.total_expenses || 0)} ₸</Text>
+              </Card>
+              <Card 
+                shadow="md" 
+                padding="md" 
+                radius="xl" 
+                withBorder
+                className="hover-lift"
+                style={{
+                  background: colorScheme === 'dark' 
+                    ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)'
+                    : 'linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(219, 234, 254, 0.9) 100%)',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                <IconTarget size={20} style={{ color: '#3b82f6', marginBottom: '8px' }} />
+                <Text size="xs" c="dimmed" mb={4}>Отложено</Text>
+                <Text size="lg" fw={700} c="blue">{formatNumber(analytics.total_savings ?? 0)} ₸</Text>
+              </Card>
+            </SimpleGrid>
+
+            {/* Period Progress */}
+            <Card 
+              shadow="md" 
+              padding="lg" 
+              radius="xl" 
+              withBorder
+              className="stagger-item"
+              style={{
+                background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <Group justify="space-between" mb="md">
+                <Text fw={600} size="md">Прогресс периода</Text>
+                <Text size="sm" c="dimmed">
+                  день {elapsed} из {daysTotal}
                 </Text>
-              </Stack>
+              </Group>
+              <Progress 
+                value={progressPct} 
+                color="blue" 
+                size="lg" 
+                radius="xl"
+                className="progress-animated"
+                style={{
+                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.2)',
+                }}
+              />
+              <Group justify="space-between" mt="md">
+                <Text size="sm" c="dimmed">Темп расходов</Text>
+                <Text size="md" fw={700}>{formatNumber(pace)} ₸/день</Text>
+              </Group>
+            </Card>
+
+            {/* Expense Chart */}
+            <Card 
+              shadow="md" 
+              padding="lg" 
+              radius="xl" 
+              withBorder
+              className="stagger-item"
+              style={{
+                background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <Text fw={600} mb="lg" size="md">Расходы по дням</Text>
+              {barData.length > 0 ? (
+                <Box style={{ width: '100%', height: 220 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={barData}
+                      margin={{ top: 8, right: 4, left: -20, bottom: 0 }}
+                    >
+                      <CartesianGrid 
+                        strokeDasharray="3 3" 
+                        stroke={colorScheme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'} 
+                        vertical={false} 
+                      />
+                      <XAxis
+                        dataKey="dayNum"
+                        tick={{ fontSize: 10, fill: colorScheme === 'dark' ? '#9ca3af' : '#6b7280' }}
+                        interval={barData.length > 18 ? Math.ceil(barData.length / 14) - 1 : 0}
+                        height={28}
+                        tickMargin={4}
+                      />
+                      <YAxis hide domain={[0, maxExpense * 1.05]} />
+                      <Tooltip
+                        formatter={(v: number | undefined) => (v != null ? `${formatNumber(v)} ₸` : '')}
+                        labelFormatter={(_, items) => {
+                          const p = items?.[0]?.payload as { fullLabel?: string } | undefined;
+                          return p?.fullLabel ?? '';
+                        }}
+                        contentStyle={{
+                          background: colorScheme === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.95)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                        }}
+                      />
+                      <Bar 
+                        dataKey="expense" 
+                        fill="url(#colorExpense)" 
+                        radius={[6, 6, 0, 0]} 
+                        maxBarSize={16} 
+                      />
+                      <defs>
+                        <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f97316" stopOpacity={0.8}/>
+                          <stop offset="100%" stopColor="#ea580c" stopOpacity={0.6}/>
+                        </linearGradient>
+                      </defs>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              ) : (
+                <Text c="dimmed" ta="center" py="xl">Нет данных</Text>
+              )}
+            </Card>
+
+            {/* Top Expenses */}
+            {analytics.top_expenses && analytics.top_expenses.length > 0 && (
+              <Card 
+                shadow="md" 
+                padding="lg" 
+                radius="xl" 
+                withBorder
+                className="stagger-item"
+                style={{
+                  background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+                  backdropFilter: 'blur(10px)',
+                }}
+              >
+                <Text fw={600} mb="md" size="md">Топ категорий</Text>
+                <Stack gap="md">
+                  {analytics.top_expenses.slice(0, 5).map((item, idx) => {
+                    const isSavings = item.type === 'savings';
+                    const color = isSavings ? 'blue' : 'red';
+                    const prefix = isSavings ? '' : '−';
+                    return (
+                      <Group key={idx} justify="space-between" className="hover-lift" p="xs" style={{ borderRadius: '12px', transition: 'all 0.2s' }}>
+                        <Group gap="md">
+                          <Text size="2rem">{item.icon}</Text>
+                          <Text size="md" fw={500}>{item.name}</Text>
+                        </Group>
+                        <Text size="lg" fw={700} c={color}>
+                          {prefix}{formatNumber(item.amount)} ₸
+                        </Text>
+                      </Group>
+                    );
+                  })}
+                </Stack>
+              </Card>
             )}
           </>
-        ) : (
-          <Stack gap="xs">
-            <Group grow>
-              <div>
-                <Text size="sm" fw={500} mb={4} component="label">
-                  С
-                </Text>
-                <input
-                  type="date"
-                  value={startDate ? startDate.toISOString().slice(0, 10) : ''}
-                  onChange={(e) => setStartDate(e.target.value ? new Date(e.target.value) : null)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: 4,
-                    border: '1px solid var(--mantine-color-default-border)',
-                  }}
-                />
-              </div>
-              <div>
-                <Text size="sm" fw={500} mb={4} component="label">
-                  По
-                </Text>
-                <input
-                  type="date"
-                  value={endDate ? endDate.toISOString().slice(0, 10) : ''}
-                  onChange={(e) => setEndDate(e.target.value ? new Date(e.target.value) : null)}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: 4,
-                    border: '1px solid var(--mantine-color-default-border)',
-                  }}
-                />
-              </div>
-            </Group>
-            <Button onClick={loadAnalyticsByDateRange} disabled={!startDate || !endDate} loading={loading}>
-              Показать
-            </Button>
-          </Stack>
         )}
-
-        <Box pos="relative" mih={loading && !analytics ? 240 : undefined}>
-          <LoadingOverlay visible={loading} zIndex={10} />
-          {analytics && (
-            <>
-              <Group justify="space-between" align="center" wrap="nowrap" gap="xs">
-                <Text fw={700} size="lg" style={{ flex: '0 1 auto', minWidth: 0 }} truncate>
-                  Финансовый дашборд
-                </Text>
-                {viewMode === 'preset' && period === 'current' ? (
-                  <Group gap={4} wrap="nowrap">
-                    <IconChevronLeft
-                      size={18}
-                      style={{ cursor: 'pointer', flexShrink: 0 }}
-                      onClick={() => setFinancialOffset((prev) => prev - 1)}
-                    />
-                    <Text size="sm" c="dimmed" ta="center" style={{ whiteSpace: 'nowrap' }}>
-                      {financialLabel ?? '—'}
-                    </Text>
-                    <IconChevronRight
-                      size={18}
-                      style={{
-                        cursor: financialOffset < 0 ? 'pointer' : 'default',
-                        opacity: financialOffset < 0 ? 1 : 0.35,
-                        flexShrink: 0,
-                      }}
-                      onClick={() => {
-                        if (financialOffset < 0) {
-                          setFinancialOffset((prev) => prev + 1);
-                        }
-                      }}
-                    />
-                  </Group>
-                ) : (
-                  presetPeriodLabel(analytics) && (
-                    <Text size="sm" c="dimmed" ta="right" style={{ whiteSpace: 'nowrap' }}>
-                      {presetPeriodLabel(analytics)}
-                    </Text>
-                  )
-                )}
-              </Group>
-
-              <Box>
-                <Text size="sm" c="dimmed" mb={4}>
-                  Остаток доходов
-                </Text>
-                <Text fw={800} size="2.25rem" lh={1.2}>
-                  {formatNumber(analytics.balance ?? 0)} ₸
-                </Text>
-                <Text size="xs" c="dimmed" mt={6}>
-                  после расходов · без сбережений
-                </Text>
-              </Box>
-
-              <Group gap="xs" grow wrap="nowrap">
-                <Box
-                  py={6}
-                  px={10}
-                  style={{
-                    borderRadius: 12,
-                    border: '1px solid var(--mantine-color-default-border)',
-                    textAlign: 'center',
-                  }}
-                >
-                  <Text size="xs" c="dimmed" mb={2}>
-                    Пришло
-                  </Text>
-                  <Text size="sm" fw={600} c="green">
-                    {formatNumber(analytics.total_income || 0)} ₸
-                  </Text>
-                </Box>
-                <Box
-                  py={6}
-                  px={10}
-                  style={{
-                    borderRadius: 12,
-                    border: '1px solid var(--mantine-color-default-border)',
-                    textAlign: 'center',
-                  }}
-                >
-                  <Text size="xs" c="dimmed" mb={2}>
-                    Потрачено
-                  </Text>
-                  <Text size="sm" fw={600} c="orange">
-                    {formatNumber(analytics.total_expenses || 0)} ₸
-                  </Text>
-                </Box>
-                <Box
-                  py={6}
-                  px={10}
-                  style={{
-                    borderRadius: 12,
-                    border: '1px solid var(--mantine-color-default-border)',
-                    textAlign: 'center',
-                  }}
-                >
-                  <Text size="xs" c="dimmed" mb={2}>
-                    Отложено
-                  </Text>
-                  <Text size="sm" fw={600} c="blue">
-                    {formatNumber(analytics.total_savings ?? 0)} ₸
-                  </Text>
-                </Box>
-              </Group>
-
-              {(analytics.large_one_off_total ?? 0) > 0 && (
-                <Box
-                  py="sm"
-                  px="md"
-                  style={{
-                    borderRadius: 12,
-                    backgroundColor: 'var(--mantine-color-red-0)',
-                  }}
-                >
-                  <Group justify="space-between" wrap="nowrap" gap="xs">
-                    <Text size="sm" fw={500} style={{ flex: 1, color: 'var(--mantine-color-red-8)' }}>
-                      Крупные разовые траты в периоде
-                    </Text>
-                    <Text size="sm" fw={700} style={{ whiteSpace: 'nowrap', color: 'var(--mantine-color-red-9)' }}>
-                      {formatNumber(analytics.large_one_off_total!)} ₸
-                    </Text>
-                  </Group>
-                </Box>
-              )}
-
-              {(() => {
-                const bounds = resolvePeriodBounds(analytics);
-                if (!bounds) return null;
-                const daysTotal = inclusiveDays(bounds.start, bounds.end);
-                const elapsed = periodElapsedDays(bounds.start, bounds.end);
-                const pace = Math.round(analytics.total_expenses / Math.max(1, elapsed));
-                const progressPct = daysTotal > 0 ? Math.min(100, (elapsed / daysTotal) * 100) : 0;
-                return (
-                  <Stack gap="sm">
-                    <Box>
-                      <Group justify="space-between" mb={6}>
-                        <Text size="sm" fw={500}>
-                          Период
-                        </Text>
-                        <Text size="sm" c="dimmed">
-                          день {elapsed} из {daysTotal}
-                        </Text>
-                      </Group>
-                      <Progress value={progressPct} color="green" size="sm" radius="xl" />
-                    </Box>
-                    <Group justify="space-between">
-                      <Text size="sm" fw={500}>
-                        Темп расходов
-                      </Text>
-                      <Text size="sm" fw={600}>
-                        {formatNumber(pace)} ₸/день
-                      </Text>
-                    </Group>
-                  </Stack>
-                );
-              })()}
-
-              <Card shadow="sm" padding="md" radius="md" withBorder>
-                <Group justify="space-between" mb="md">
-                  <Text fw={600}>Лимиты</Text>
-                  <Anchor size="sm" onClick={() => navigate('/')}>
-                    все →
-                  </Anchor>
-                </Group>
-                {limitsRows.length > 0 ? (
-                  <Stack gap="md">
-                    {limitsRows.map((b) => {
-                      const limit = Math.max(1, b.limit_amount);
-                      const ratio = b.spent / limit;
-                      const barPct = Math.min(100, ratio * 100);
-                      const color = limitUsageColor(ratio);
-                      const over = b.spent - b.limit_amount;
-                      return (
-                        <Box key={b.category_id}>
-                          <Group justify="space-between" mb={6} wrap="nowrap" gap="xs">
-                            <Group gap="xs" style={{ minWidth: 0 }}>
-                              <Text size="lg">{b.category_icon}</Text>
-                              <Text size="sm" fw={500} truncate>
-                                {b.category_name}
-                              </Text>
-                            </Group>
-                            <Text size="sm" fw={500} style={{ whiteSpace: 'nowrap' }}>
-                              {formatNumber(b.spent)} / {formatNumber(b.limit_amount)} ₸
-                            </Text>
-                          </Group>
-                          <Progress value={barPct} color={color} size="sm" radius="xl" />
-                          {over > 0 && (
-                            <Text size="xs" c="red" mt={4}>
-                              Превышение +{formatNumber(over)} ₸
-                            </Text>
-                          )}
-                        </Box>
-                      );
-                    })}
-                  </Stack>
-                ) : (
-                  <Text c="dimmed" size="sm" ta="center">
-                    Нет лимитов по категориям (база / комфорт)
-                  </Text>
-                )}
-              </Card>
-
-              <Card shadow="sm" padding="md" radius="md" withBorder>
-                <Text fw={600} mb="md">
-                  Расходы по дням
-                </Text>
-                {barData.length > 0 ? (
-                  <Box style={{ width: '100%', height: 200 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={barData}
-                        margin={{ top: 8, right: 4, left: -20, bottom: 0 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--mantine-color-default-border)" vertical={false} />
-                        <XAxis
-                          dataKey="dayNum"
-                          tick={{ fontSize: 9 }}
-                          interval={barData.length > 18 ? Math.ceil(barData.length / 14) - 1 : 0}
-                          height={28}
-                          tickMargin={4}
-                        />
-                        <YAxis hide domain={[0, maxExpense * 1.05]} />
-                        <Tooltip
-                          formatter={(v: number | undefined) => (v != null ? `${formatNumber(v)} ₸` : '')}
-                          labelFormatter={(_, items) => {
-                            const p = items?.[0]?.payload as { fullLabel?: string } | undefined;
-                            return p?.fullLabel ?? '';
-                          }}
-                        />
-                        <Bar dataKey="expense" fill="var(--mantine-color-orange-6)" radius={[3, 3, 0, 0]} maxBarSize={14} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Box>
-                ) : (
-                  <Text c="dimmed" ta="center" py="xl">
-                    Нет данных
-                  </Text>
-                )}
-              </Card>
-
-              {analytics.top_expenses && analytics.top_expenses.length > 0 && (
-                <Card shadow="sm" padding="md" radius="md" withBorder>
-                  <Text fw={600} mb="sm">
-                    Топ расходов и накоплений
-                  </Text>
-                  <Stack gap="xs">
-                    {analytics.top_expenses.map((item, idx) => {
-                      const isSavings = item.type === 'savings';
-                      const color = isSavings ? 'blue' : 'red';
-                      const prefix = isSavings ? '' : '−';
-                      return (
-                        <Group key={idx} justify="space-between">
-                          <Group gap="xs">
-                            <Text size="lg">{item.icon}</Text>
-                            <Text size="sm">{item.name}</Text>
-                          </Group>
-                          <Text size="sm" fw={500} c={color}>
-                            {prefix}
-                            {formatNumber(item.amount)} ₸
-                          </Text>
-                        </Group>
-                      );
-                    })}
-                  </Stack>
-                </Card>
-              )}
-
-              {analytics.by_user && analytics.by_user.length > 0 && (
-                <Card shadow="sm" padding="md" radius="md" withBorder>
-                  <Text fw={600} mb="sm">
-                    Кто сколько потратил
-                  </Text>
-                  <Stack gap="xs">
-                    {analytics.by_user.map((u) => (
-                      <Group key={u.user_id} justify="space-between">
-                        <Text size="sm" fw={500}>
-                          {u.user_name}
-                        </Text>
-                        <Group gap="md">
-                          <Text size="xs" c="green">
-                            +{formatNumber(u.income)}
-                          </Text>
-                          <Text size="xs" c="red">
-                            −{formatNumber(u.expense)}
-                          </Text>
-                          {u.savings > 0 && (
-                            <Text size="xs" c="blue">
-                              накопл. {formatNumber(u.savings)}
-                            </Text>
-                          )}
-                        </Group>
-                      </Group>
-                    ))}
-                  </Stack>
-                </Card>
-              )}
-
-              <Card shadow="sm" padding="md" radius="md" withBorder>
-                <Text fw={600} mb="md">
-                  По категориям
-                </Text>
-                <Stack gap="sm">
-                  {analytics.by_category.length > 0 &&
-                    (() => {
-                      const maxAmount = Math.max(...analytics.by_category.map((c) => c.amount));
-                      const totalForPct = analytics.total_income + analytics.total_expenses + analytics.total_savings;
-                      return analytics.by_category.map((cat, idx) => {
-                        const isIncome = cat.type === 'income';
-                        const isSavings = cat.type === 'savings';
-                        const color = isIncome ? 'green' : isSavings ? 'blue' : 'red';
-                        const prefix = isIncome ? '+' : isSavings ? '' : '−';
-                        const barPct = maxAmount > 0 ? (cat.amount / maxAmount) * 100 : 0;
-                        const sharePct = totalForPct > 0 ? (cat.amount / totalForPct) * 100 : 0;
-                        return (
-                          <Box key={idx}>
-                            <Group justify="space-between" mb={4}>
-                              <Group gap="xs">
-                                <Text size="lg">{cat.icon}</Text>
-                                <Text size="sm">{cat.name}</Text>
-                              </Group>
-                              <Text size="sm" fw={500} c={color}>
-                                {prefix}
-                                {formatNumber(cat.amount)} ₸
-                                <Text span size="xs" c="dimmed" ml={4}>
-                                  ({sharePct.toFixed(0)}%)
-                                </Text>
-                              </Text>
-                            </Group>
-                            <Progress value={barPct} color={cat.type === 'income' ? 'green' : 'red'} size="sm" radius="xl" />
-                          </Box>
-                        );
-                      });
-                    })()}
-                  {analytics.by_category.length === 0 && (
-                    <Text c="dimmed" ta="center">
-                      Нет данных
-                    </Text>
-                  )}
-                </Stack>
-              </Card>
-
-              <Card shadow="sm" padding="md" radius="md" withBorder>
-                <Text fw={600} mb="md">
-                  По группам
-                </Text>
-                <Stack gap="sm">
-                  {analytics.by_group.length > 0 &&
-                    (() => {
-                      const maxGroupAmount = Math.max(...analytics.by_group.map((g) => g.amount));
-                      const totalGroup = analytics.by_group.reduce((s, g) => s + g.amount, 0);
-                      return analytics.by_group.map((group, idx) => {
-                        const isIncome = group.type === 'income';
-                        const isSavings = group.group === 'SAVINGS';
-                        const color = isIncome ? 'green' : isSavings ? 'blue' : 'red';
-                        const prefix = isIncome ? '+' : isSavings ? '' : '−';
-                        const barPct = maxGroupAmount > 0 ? (group.amount / maxGroupAmount) * 100 : 0;
-                        const sharePct = totalGroup > 0 ? (group.amount / totalGroup) * 100 : 0;
-                        const label =
-                          group.group === 'BASE'
-                            ? 'База'
-                            : group.group === 'COMFORT'
-                              ? 'Комфорт'
-                              : group.group === 'SAVINGS'
-                                ? 'Накопления'
-                                : 'Доход';
-                        return (
-                          <Box key={idx}>
-                            <Group justify="space-between" mb={4}>
-                              <Text size="sm" fw={500}>
-                                {label}
-                              </Text>
-                              <Text size="sm" fw={500} c={color}>
-                                {prefix}
-                                {formatNumber(group.amount)} ₸
-                                <Text span size="xs" c="dimmed" ml={4}>
-                                  ({sharePct.toFixed(0)}%)
-                                </Text>
-                              </Text>
-                            </Group>
-                            <Progress value={barPct} color={color} size="sm" radius="xl" />
-                          </Box>
-                        );
-                      });
-                    })()}
-                  {analytics.by_group.length === 0 && (
-                    <Text c="dimmed" ta="center">
-                      Нет данных
-                    </Text>
-                  )}
-                </Stack>
-              </Card>
-
-              <Card shadow="sm" padding="md" radius="md" withBorder>
-                <Text fw={600} mb="md">
-                  По дням (список)
-                </Text>
-                <Stack gap="xs">
-                  {analytics.daily_data
-                    .slice(-10)
-                    .reverse()
-                    .map((day, idx) => (
-                      <Group key={idx} justify="space-between">
-                        <Text size="sm" c="dimmed">
-                          {new Date(day.date).toLocaleDateString('ru-RU')}
-                        </Text>
-                        <Group gap="sm">
-                          <Text size="xs" c="green">
-                            {formatNumber(day.income)}
-                          </Text>
-                          <Text size="xs" c="red">
-                            −{formatNumber(day.expense)}
-                          </Text>
-                        </Group>
-                      </Group>
-                    ))}
-                  {analytics.daily_data.length === 0 && (
-                    <Text c="dimmed" ta="center">
-                      Нет данных
-                    </Text>
-                  )}
-                </Stack>
-              </Card>
-            </>
-          )}
-        </Box>
       </Stack>
     </Container>
   );

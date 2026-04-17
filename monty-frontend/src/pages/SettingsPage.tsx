@@ -8,14 +8,17 @@ import {
   NumberInput,
   TextInput,
   Button,
-  LoadingOverlay,
   ActionIcon,
   Modal,
   Select,
+  Box,
+  useMantineColorScheme,
+  Divider,
 } from '@mantine/core';
-import { IconPlus, IconTrash, IconPencil } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconPencil, IconTarget, IconWallet, IconCategory } from '@tabler/icons-react';
 import { settingsApi, categoriesApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Settings, BudgetConfig } from '../types';
 
 const GROUP_LABELS: Record<string, string> = {
@@ -25,8 +28,16 @@ const GROUP_LABELS: Record<string, string> = {
   INCOME: 'Доход',
 };
 
+const GROUP_ICONS: Record<string, string> = {
+  BASE: '🏠',
+  COMFORT: '✨',
+  SAVINGS: '💰',
+  INCOME: '💵',
+};
+
 export function SettingsPage() {
   const { haptic } = useTelegram();
+  const { colorScheme } = useMantineColorScheme();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [budgets, setBudgets] = useState<BudgetConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +88,7 @@ export function SettingsPage() {
   };
 
   const openEditCategory = (budget: BudgetConfig) => {
+    haptic('medium');
     setEditingCategory({
       id: budget.category_id,
       name: budget.category_name,
@@ -90,6 +102,7 @@ export function SettingsPage() {
   };
 
   const openNewCategory = () => {
+    haptic('medium');
     setEditingCategory({
       id: 0,
       name: '',
@@ -139,6 +152,7 @@ export function SettingsPage() {
   };
 
   const handleDeleteCategory = async (id: number) => {
+    if (!window.confirm('Удалить категорию?')) return;
     setDeleteError(null);
     setSaving(true);
     try {
@@ -155,12 +169,16 @@ export function SettingsPage() {
   };
 
   if (loading) {
-    return <LoadingOverlay visible />;
+    return (
+      <Container size="sm" pb={100}>
+        <LoadingSkeleton />
+      </Container>
+    );
   }
 
   const baseTotal = budgets.filter(b => b.group === 'BASE').reduce((sum, b) => sum + b.limit_amount, 0);
   const comfortTotal = budgets.filter(b => b.group === 'COMFORT').reduce((sum, b) => sum + b.limit_amount, 0);
-  const expensesTotal = baseTotal + comfortTotal; // только траты (база + комфорт)
+  const expensesTotal = baseTotal + comfortTotal;
 
   const groupedBudgets = {
     BASE: budgets.filter(b => b.group === 'BASE'),
@@ -171,42 +189,98 @@ export function SettingsPage() {
 
   return (
     <Container size="sm" pb={100}>
-      <LoadingOverlay visible={saving} />
       <Stack gap="lg">
+        {/* Header */}
+        <Box className="animate-slide-down">
+          <Text fw={700} size="xl" mb="xs">Настройки</Text>
+          <Text size="sm" c="dimmed">Управление бюджетом и категориями</Text>
+        </Box>
+
         {deleteError && (
-          <Text c="red" size="sm" mb="md">
-            {deleteError}
-          </Text>
+          <Card 
+            shadow="md" 
+            padding="md" 
+            radius="xl" 
+            withBorder
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+            }}
+          >
+            <Text c="red" size="sm">{deleteError}</Text>
+          </Card>
         )}
-        <Card shadow="sm" padding="md" radius="md" withBorder>
-          <Text fw={600} mb="md">Цель</Text>
-          <Stack gap="sm">
+
+        {/* Goal Settings */}
+        <Card 
+          shadow="lg" 
+          padding="lg" 
+          radius="xl" 
+          withBorder
+          className="stagger-item"
+          style={{
+            background: colorScheme === 'dark'
+              ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)'
+              : 'linear-gradient(135deg, rgba(236, 253, 245, 0.9) 0%, rgba(209, 250, 229, 0.9) 100%)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <Group gap="xs" mb="lg">
+            <IconTarget size={24} style={{ color: '#10b981' }} />
+            <Text fw={700} size="lg">Цель</Text>
+          </Group>
+          <Stack gap="md">
             <NumberInput
               label="Сумма цели"
               value={parseInt(settings?.target_amount || '0')}
               onChange={(val) => handleSettingChange('target_amount', String(val))}
               thousandSeparator=" "
               suffix=" ₸"
+              size="md"
+              radius="lg"
+              disabled={saving}
             />
             <TextInput
               label="Дата достижения"
               type="date"
               value={settings?.target_date || ''}
               onChange={(e) => handleSettingChange('target_date', e.target.value)}
+              size="md"
+              radius="lg"
+              disabled={saving}
             />
           </Stack>
         </Card>
 
-        <Card shadow="sm" padding="md" radius="md" withBorder>
-          <Text fw={600} mb="md">Бюджет</Text>
-          <Stack gap="sm">
+        {/* Budget Settings */}
+        <Card 
+          shadow="lg" 
+          padding="lg" 
+          radius="xl" 
+          withBorder
+          className="stagger-item"
+          style={{
+            background: colorScheme === 'dark'
+              ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)'
+              : 'linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(219, 234, 254, 0.9) 100%)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <Group gap="xs" mb="lg">
+            <IconWallet size={24} style={{ color: '#3b82f6' }} />
+            <Text fw={700} size="lg">Бюджет</Text>
+          </Group>
+          <Stack gap="md">
             <NumberInput
-              label="Общий семейный бюджет (₸)"
-              description="Сумма на месяц, может меняться от заработка"
+              label="Общий семейный бюджет"
+              description="Сумма на месяц"
               value={parseInt(settings?.total_budget || '0')}
               onChange={(val) => handleSettingChange('total_budget', String(val))}
               thousandSeparator=" "
               suffix=" ₸"
+              size="md"
+              radius="lg"
+              disabled={saving}
             />
             <NumberInput
               label="День зарплаты"
@@ -214,80 +288,123 @@ export function SettingsPage() {
               onChange={(val) => handleSettingChange('salary_day', String(val))}
               min={1}
               max={31}
+              size="md"
+              radius="lg"
+              disabled={saving}
             />
+            <Divider />
             <Group justify="space-between">
               <Text size="sm" c="dimmed">База</Text>
-              <Text size="sm" fw={500}>{baseTotal.toLocaleString('ru-RU')} ₸</Text>
+              <Text size="md" fw={600}>{baseTotal.toLocaleString('ru-RU')} ₸</Text>
             </Group>
             <Group justify="space-between">
               <Text size="sm" c="dimmed">Комфорт</Text>
-              <Text size="sm" fw={500}>{comfortTotal.toLocaleString('ru-RU')} ₸</Text>
+              <Text size="md" fw={600}>{comfortTotal.toLocaleString('ru-RU')} ₸</Text>
             </Group>
-            <Group justify="space-between" pt="xs" style={{ borderTop: '1px solid #eee' }}>
-              <Text size="sm" fw={500}>На траты</Text>
-              <Text size="sm" fw={500}>{expensesTotal.toLocaleString('ru-RU')} ₸</Text>
+            <Divider />
+            <Group justify="space-between">
+              <Text size="md" fw={700}>На траты</Text>
+              <Text size="lg" fw={700} className="gradient-text">{expensesTotal.toLocaleString('ru-RU')} ₸</Text>
             </Group>
           </Stack>
         </Card>
 
-        <Group justify="flex-end" mb="md">
-          <Button
-            size="xs"
-            variant="light"
-            leftSection={<IconPlus size={14} />}
-            onClick={openNewCategory}
-          >
-            Добавить категорию
-          </Button>
-        </Group>
+        {/* Add Category Button */}
+        <Button
+          size="lg"
+          radius="xl"
+          leftSection={<IconPlus size={20} />}
+          onClick={openNewCategory}
+          variant="gradient"
+          gradient={{ from: 'blue', to: 'violet', deg: 135 }}
+          className="stagger-item hover-scale"
+        >
+          Добавить категорию
+        </Button>
 
-        {['BASE', 'COMFORT', 'SAVINGS', 'INCOME'].map(group => {
+        {/* Categories */}
+        {['BASE', 'COMFORT', 'SAVINGS', 'INCOME'].map((group, groupIndex) => {
           const items = groupedBudgets[group as keyof typeof groupedBudgets];
           if (items.length === 0) return null;
           const isSavings = group === 'SAVINGS';
           const total = items.reduce((sum, b) => sum + b.limit_amount, 0);
           return (
-            <Card key={group} shadow="sm" padding="md" radius="md" withBorder>
-              <Group justify="space-between" mb="sm">
-                <Text fw={600}>{GROUP_LABELS[group]}</Text>
+            <Card 
+              key={group} 
+              shadow="md" 
+              padding="lg" 
+              radius="xl" 
+              withBorder
+              className="stagger-item"
+              style={{
+                background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+                backdropFilter: 'blur(10px)',
+                animationDelay: `${(groupIndex + 3) * 0.1}s`,
+              }}
+            >
+              <Group justify="space-between" mb="lg">
+                <Group gap="sm">
+                  <Text size="2rem">{GROUP_ICONS[group]}</Text>
+                  <Text fw={700} size="lg">{GROUP_LABELS[group]}</Text>
+                </Group>
                 {group !== 'INCOME' && !isSavings && (
-                  <Text size="sm" c="dimmed">{total.toLocaleString('ru-RU')} ₸</Text>
-                )}
-                {group !== 'INCOME' && isSavings && (
-                  <Text size="sm" c="dimmed">Без лимита</Text>
+                  <Text size="md" fw={600} c="dimmed">{total.toLocaleString('ru-RU')} ₸</Text>
                 )}
               </Group>
-              <Stack gap="xs">
-                {items.map(budget => (
-                  <Group key={budget.category_id} justify="space-between" py={2}>
-                    <Group gap="xs">
-                      <Text size="lg">{budget.category_icon}</Text>
-                      <Text size="sm">{budget.category_name}</Text>
-                      {isSavings ? (
-                        <Text size="xs" c="dimmed">Без лимита</Text>
-                      ) : budget.limit_amount > 0 ? (
-                        <Text size="xs" c="dimmed">{budget.limit_amount.toLocaleString('ru-RU')} ₸</Text>
-                      ) : null}
+              <Stack gap="sm">
+                {items.map((budget) => (
+                  <Card
+                    key={budget.category_id}
+                    padding="md"
+                    radius="lg"
+                    withBorder
+                    className="hover-lift"
+                    style={{
+                      background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.5)',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => openEditCategory(budget)}
+                  >
+                    <Group justify="space-between" wrap="nowrap">
+                      <Group gap="md" style={{ flex: 1, minWidth: 0 }}>
+                        <Text size="2rem">{budget.category_icon}</Text>
+                        <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+                          <Text size="md" fw={600}>{budget.category_name}</Text>
+                          {!isSavings && budget.limit_amount > 0 && (
+                            <Text size="sm" c="dimmed">{budget.limit_amount.toLocaleString('ru-RU')} ₸</Text>
+                          )}
+                        </Stack>
+                      </Group>
+                      <Group gap="xs">
+                        <ActionIcon
+                          variant="subtle"
+                          color="blue"
+                          size="lg"
+                          radius="lg"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditCategory(budget);
+                          }}
+                          className="hover-scale"
+                        >
+                          <IconPencil size={18} />
+                        </ActionIcon>
+                        <ActionIcon
+                          variant="subtle"
+                          color="red"
+                          size="lg"
+                          radius="lg"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteCategory(budget.category_id);
+                          }}
+                          className="hover-scale"
+                        >
+                          <IconTrash size={18} />
+                        </ActionIcon>
+                      </Group>
                     </Group>
-                    <Group gap={4}>
-                      <ActionIcon
-                        variant="subtle"
-                        color="blue"
-                        size="sm"
-                        onClick={() => openEditCategory(budget)}
-                      >
-                        <IconPencil size={14} />
-                      </ActionIcon>
-                      <ActionIcon
-                        variant="subtle"
-                        color="red"
-                        size="sm"
-                        onClick={() => handleDeleteCategory(budget.category_id)}
-                      >
-                        <IconTrash size={14} />
-                      </ActionIcon>
-                    </Group>
-                  </Group>
+                  </Card>
                 ))}
               </Stack>
             </Card>
@@ -295,36 +412,51 @@ export function SettingsPage() {
         })}
       </Stack>
 
+      {/* Edit/Create Category Modal */}
       <Modal
         opened={categoryModal}
         onClose={() => {
+          haptic('light');
           setCategoryModal(false);
           setEditingCategory(null);
         }}
-        title={isNewCategory ? 'Новая категория' : 'Редактировать категорию'}
+        title={
+          <Group gap="sm">
+            <IconCategory size={24} />
+            <Text fw={700} size="lg">{isNewCategory ? 'Новая категория' : 'Редактировать'}</Text>
+          </Group>
+        }
         centered
+        radius="xl"
+        size="md"
       >
-        <Stack>
+        <Stack gap="md">
           <TextInput
             label="Название"
             value={editingCategory?.name || ''}
             onChange={(e) => setEditingCategory(prev => prev ? { ...prev, name: e.target.value } : null)}
+            size="md"
+            radius="lg"
           />
           <TextInput
-            label="Иконка"
+            label="Иконка (эмодзи)"
             value={editingCategory?.icon || ''}
             onChange={(e) => setEditingCategory(prev => prev ? { ...prev, icon: e.target.value } : null)}
+            size="md"
+            radius="lg"
           />
           <Select
             label="Группа"
             data={[
-              { value: 'BASE', label: 'База' },
-              { value: 'COMFORT', label: 'Комфорт' },
-              { value: 'SAVINGS', label: 'Накопления' },
-              { value: 'INCOME', label: 'Доход' },
+              { value: 'BASE', label: '🏠 База' },
+              { value: 'COMFORT', label: '✨ Комфорт' },
+              { value: 'SAVINGS', label: '💰 Накопления' },
+              { value: 'INCOME', label: '💵 Доход' },
             ]}
             value={editingCategory?.group || 'BASE'}
             onChange={(val) => setEditingCategory(prev => prev ? { ...prev, group: val || 'BASE' } : null)}
+            size="md"
+            radius="lg"
           />
           <Select
             label="Тип"
@@ -334,6 +466,8 @@ export function SettingsPage() {
             ]}
             value={editingCategory?.type || 'EXPENSE'}
             onChange={(val) => setEditingCategory(prev => prev ? { ...prev, type: val || 'EXPENSE' } : null)}
+            size="md"
+            radius="lg"
           />
           <NumberInput
             label="Бюджет на месяц"
@@ -341,8 +475,18 @@ export function SettingsPage() {
             onChange={(val) => setEditingCategory(prev => prev ? { ...prev, budget: Number(val) || 0 } : null)}
             thousandSeparator=" "
             suffix=" ₸"
+            size="md"
+            radius="lg"
           />
-          <Button onClick={handleSaveCategory} loading={saving}>
+          <Button 
+            onClick={handleSaveCategory} 
+            loading={saving}
+            size="lg"
+            radius="xl"
+            variant="gradient"
+            gradient={{ from: 'blue', to: 'violet', deg: 135 }}
+            mt="md"
+          >
             Сохранить
           </Button>
         </Stack>
