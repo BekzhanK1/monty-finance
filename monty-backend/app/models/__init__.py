@@ -16,7 +16,15 @@ from app.finance.models import (
     TransactionType,
     User,
 )
-from app.food.models import FoodDish, FoodMealCategory, MVP_HOUSEHOLD_ID
+from app.food.models import (
+    FoodDish,
+    FoodDishIngredient,
+    FoodIngredient,
+    FoodMealCategory,
+    FoodMealSlot,
+    FoodUnit,
+    MVP_HOUSEHOLD_ID,
+)
 
 __all__ = [
     "User",
@@ -28,5 +36,9 @@ __all__ = [
     "TransactionType",
     "FoodMealCategory",
     "FoodDish",
+    "FoodUnit",
+    "FoodIngredient",
+    "FoodDishIngredient",
+    "FoodMealSlot",
     "MVP_HOUSEHOLD_ID",
 ]

@@ -1,32 +1,35 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import {
   ActionIcon,
+  Alert,
   Badge,
   Button,
   Card,
   Container,
+  Divider,
   Group,
   LoadingOverlay,
   Modal,
+  NumberInput,
+  Select,
   Stack,
   Text,
   Textarea,
   TextInput,
-  Select,
-  Alert,
   useMantineColorScheme,
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import {
-  IconPlus,
-  IconTrash,
-  IconPencil,
   IconBook2,
   IconFolderPlus,
+  IconPencil,
+  IconPlus,
   IconToolsKitchen2,
+  IconTrash,
 } from '@tabler/icons-react';
-import { foodApi } from '../../services/food';
-import type { FoodDish, FoodMealCategory } from '../../types';
+import { foodApi, formatIngredientSummary, type FoodDishIngredientPayload } from '../../services/food';
+import type { FoodDish, FoodDishIngredientLine, FoodIngredient, FoodMealCategory, FoodUnit } from '../../types';
+import { useTelegram } from '../../hooks/useTelegram';
 import {
   glassSectionShell,
   gradientButton,
@@ -35,36 +38,206 @@ import {
   modalShell,
   PAGE_WITH_BOTTOM_NAV_PB,
 } from '../../theme/dashboardChrome';
-import { useTelegram } from '../../hooks/useTelegram';
+
+type IngDraftRow = {
+  key: string;
+  ingredientId: string | null;
+  quantity: string;
+  unitId: string | null;
+};
+
+function newRowKey() {
+  return globalThis.crypto?.randomUUID?.() ?? `r-${Date.now()}-${Math.random()}`;
+}
+
+function normalizeDish(d: FoodDish): FoodDish {
+  return {
+    ...d,
+    ingredients: d.ingredients ?? [],
+    description: d.description ?? null,
+    servings_default: d.servings_default ?? 4,
+    is_archived: d.is_archived ?? false,
+    prep_minutes: d.prep_minutes ?? null,
+    cook_minutes: d.cook_minutes ?? null,
+    updated_at: d.updated_at ?? null,
+  };
+}
+
+function emptyIngredientRow(defaultUnitId: string | null): IngDraftRow {
+  return { key: newRowKey(), ingredientId: null, quantity: '1', unitId: defaultUnitId };
+}
+
+function rowsFromLines(lines: FoodDishIngredientLine[] | undefined, defaultUnitId: string | null): IngDraftRow[] {
+  const sorted = [...(lines ?? [])].sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
+  if (!sorted.length) return [emptyIngredientRow(defaultUnitId)];
+  return sorted.map((line) => ({
+    key: `line-${line.id}`,
+    ingredientId: String(line.ingredient_id),
+    quantity: String(line.quantity),
+    unitId: String(line.unit_id),
+  }));
+}
+
+function buildIngredientPayload(rows: IngDraftRow[]): FoodDishIngredientPayload[] {
+  const out: FoodDishIngredientPayload[] = [];
+  let order = 0;
+  for (const r of rows) {
+    if (!r.ingredientId || !r.unitId) continue;
+    const q = Number(String(r.quantity).replace(',', '.'));
+    if (!Number.isFinite(q) || q <= 0) continue;
+    out.push({
+      ingredient_id: Number(r.ingredientId),
+      quantity: q,
+      unit_id: Number(r.unitId),
+      sort_order: order++,
+    });
+  }
+  return out;
+}
+
+type IngredientEditorProps = {
+  units: FoodUnit[];
+  ingredients: FoodIngredient[];
+  rows: IngDraftRow[];
+  setRows: Dispatch<SetStateAction<IngDraftRow[]>>;
+  onOpenNewIngredient: () => void;
+};
+
+function IngredientEditor({ units, ingredients, rows, setRows, onOpenNewIngredient }: IngredientEditorProps) {
+  const unitData = useMemo(
+    () => units.map((u) => ({ value: String(u.id), label: `${u.name} (${u.code})` })),
+    [units],
+  );
+  const ingData = useMemo(
+    () => ingredients.map((i) => ({ value: String(i.id), label: i.name })),
+    [ingredients],
+  );
+
+  return (
+    <Stack gap="sm">
+      <Group justify="space-between" align="center">
+        <Text fw={600} size="sm">
+          Состав (опционально)
+        </Text>
+        <Button size="xs" variant="light" radius="lg" onClick={onOpenNewIngredient}>
+          Новый продукт
+        </Button>
+      </Group>
+      {rows.map((row, idx) => (
+        <Card key={row.key} withBorder padding="sm" radius="md" variant="light">
+          <Group align="flex-end" wrap="nowrap" gap="xs">
+            <Select
+              label={idx === 0 ? 'Продукт' : undefined}
+              placeholder="Выберите"
+              searchable
+              clearable
+              data={ingData}
+              value={row.ingredientId}
+              onChange={(v) =>
+                setRows((prev) =>
+                  prev.map((p) => (p.key === row.key ? { ...p, ingredientId: v } : p)),
+                )
+              }
+              style={{ flex: 1, minWidth: 0 }}
+              size="sm"
+              radius="md"
+            />
+            <NumberInput
+              label={idx === 0 ? 'Кол-во' : undefined}
+              min={0.001}
+              step={0.5}
+              value={Number(row.quantity.replace(',', '.')) || undefined}
+              onChange={(v) =>
+                setRows((prev) =>
+                  prev.map((p) => (p.key === row.key ? { ...p, quantity: v != null ? String(v) : '' } : p)),
+                )
+              }
+              style={{ width: 100 }}
+              size="sm"
+              radius="md"
+              hideControls
+            />
+            <Select
+              label={idx === 0 ? 'Ед.' : undefined}
+              data={unitData}
+              value={row.unitId}
+              onChange={(v) =>
+                setRows((prev) => prev.map((p) => (p.key === row.key ? { ...p, unitId: v } : p)))
+              }
+              style={{ width: 130 }}
+              size="sm"
+              radius="md"
+            />
+            <ActionIcon
+              variant="subtle"
+              color="red"
+              radius="md"
+              aria-label="Удалить строку"
+              onClick={() =>
+                setRows((prev) => (prev.length <= 1 ? prev : prev.filter((p) => p.key !== row.key)))
+              }
+            >
+              <IconTrash size={16} />
+            </ActionIcon>
+          </Group>
+        </Card>
+      ))}
+      <Button
+        size="xs"
+        variant="default"
+        radius="lg"
+        leftSection={<IconPlus size={14} />}
+        onClick={() =>
+          setRows((prev) => [...prev, emptyIngredientRow(prev[prev.length - 1]?.unitId ?? unitData[0]?.value ?? null)])
+        }
+      >
+        Строка состава
+      </Button>
+    </Stack>
+  );
+}
 
 export function FoodCatalogPage() {
   const { colorScheme } = useMantineColorScheme();
   const { haptic } = useTelegram();
   const [categories, setCategories] = useState<FoodMealCategory[]>([]);
   const [dishes, setDishes] = useState<FoodDish[]>([]);
+  const [units, setUnits] = useState<FoodUnit[]>([]);
+  const [ingredients, setIngredients] = useState<FoodIngredient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [catOpened, { open: openCat, close: closeCat }] = useDisclosure(false);
   const [dishOpened, { open: openDish, close: closeDish }] = useDisclosure(false);
   const [editOpened, { open: openEdit, close: closeEdit }] = useDisclosure(false);
+  const [newIngOpened, { open: openNewIng, close: closeNewIng }] = useDisclosure(false);
 
   const [newCatName, setNewCatName] = useState('');
   const [dishTitle, setDishTitle] = useState('');
   const [dishRecipe, setDishRecipe] = useState('');
   const [dishCategoryId, setDishCategoryId] = useState<string | null>(null);
   const [editingDish, setEditingDish] = useState<FoodDish | null>(null);
+  const [ingRows, setIngRows] = useState<IngDraftRow[]>([]);
+  const [newIngName, setNewIngName] = useState('');
+  const [newIngUnitId, setNewIngUnitId] = useState<string | null>(null);
+
+  const defaultUnitIdStr = units[0] ? String(units[0].id) : null;
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [cats, allDishes] = await Promise.all([
+      const [cats, allDishes, u, ing] = await Promise.all([
         foodApi.mealCategories.list(),
         foodApi.dishes.list(),
+        foodApi.units.list(),
+        foodApi.ingredients.list(),
       ]);
       setCategories(cats);
-      setDishes(allDishes);
+      setDishes(allDishes.map(normalizeDish));
+      setUnits(u);
+      setIngredients(ing);
       setDishCategoryId((prev) => prev ?? (cats[0] ? String(cats[0].id) : null));
+      setNewIngUnitId((prev) => prev ?? (u[0] ? String(u[0].id) : null));
     } catch (e) {
       setError('Не удалось загрузить данные. Проверьте, что backend запущен.');
       console.error(e);
@@ -76,6 +249,14 @@ export function FoodCatalogPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const openAddDishModal = () => {
+    haptic('light');
+    setDishTitle('');
+    setDishRecipe('');
+    setIngRows([emptyIngredientRow(defaultUnitIdStr)]);
+    openDish();
+  };
 
   const handleAddCategory = async () => {
     const name = newCatName.trim();
@@ -100,11 +281,15 @@ export function FoodCatalogPage() {
   const handleAddDish = async () => {
     const title = dishTitle.trim();
     if (!title || !dishCategoryId) return;
-    await foodApi.dishes.create({
+    const payload = buildIngredientPayload(ingRows);
+    const created = await foodApi.dishes.create({
       title,
       recipe_text: dishRecipe,
       meal_category_id: Number(dishCategoryId),
     });
+    if (payload.length) {
+      await foodApi.dishes.replaceIngredients(created.id, payload);
+    }
     setDishTitle('');
     setDishRecipe('');
     closeDish();
@@ -114,10 +299,12 @@ export function FoodCatalogPage() {
 
   const startEdit = (d: FoodDish) => {
     haptic('light');
-    setEditingDish(d);
-    setDishTitle(d.title);
-    setDishRecipe(d.recipe_text);
-    setDishCategoryId(String(d.meal_category_id));
+    const nd = normalizeDish(d);
+    setEditingDish(nd);
+    setDishTitle(nd.title);
+    setDishRecipe(nd.recipe_text);
+    setDishCategoryId(String(nd.meal_category_id));
+    setIngRows(rowsFromLines(nd.ingredients, defaultUnitIdStr));
     openEdit();
   };
 
@@ -130,6 +317,7 @@ export function FoodCatalogPage() {
       recipe_text: dishRecipe,
       meal_category_id: Number(dishCategoryId),
     });
+    await foodApi.dishes.replaceIngredients(editingDish.id, buildIngredientPayload(ingRows));
     setEditingDish(null);
     closeEdit();
     haptic('success');
@@ -141,6 +329,16 @@ export function FoodCatalogPage() {
     await foodApi.dishes.delete(id);
     haptic('light');
     await load();
+  };
+
+  const handleCreateIngredient = async () => {
+    const name = newIngName.trim();
+    if (!name || !newIngUnitId) return;
+    const row = await foodApi.ingredients.create({ name, default_unit_id: Number(newIngUnitId) });
+    setIngredients((prev) => [...prev, row].sort((a, b) => a.name.localeCompare(b.name)));
+    setNewIngName('');
+    closeNewIng();
+    haptic('success');
   };
 
   if (loading) {
@@ -170,7 +368,7 @@ export function FoodCatalogPage() {
                   Каталог блюд
                 </Text>
                 <Text size="sm" c="dimmed">
-                  Категории и рецепты текстом
+                  Категории, рецепт текстом и состав для списков покупок
                 </Text>
               </div>
             </Group>
@@ -194,10 +392,7 @@ export function FoodCatalogPage() {
                 variant="gradient"
                 gradient={{ from: 'blue', to: 'violet', deg: 135 }}
                 leftSection={<IconPlus size={16} />}
-                onClick={() => {
-                  haptic('light');
-                  openDish();
-                }}
+                onClick={openAddDishModal}
               >
                 Блюдо
               </Button>
@@ -248,47 +443,55 @@ export function FoodCatalogPage() {
                     Пока нет блюд — нажмите «Блюдо».
                   </Text>
                 ) : (
-                  inCat.map((d) => (
-                    <Card
-                      key={d.id}
-                      withBorder
-                      padding="md"
-                      radius="lg"
-                      className="hover-lift transition-all"
-                      style={insetRowShell(colorScheme)}
-                    >
-                      <Group justify="space-between" align="flex-start" wrap="nowrap" gap="sm">
-                        <div style={{ minWidth: 0 }}>
-                          <Text fw={600} size="md">
-                            {d.title}
-                          </Text>
-                          <Text size="sm" c="dimmed" style={{ whiteSpace: 'pre-wrap' }} mt={6}>
-                            {d.recipe_text || '—'}
-                          </Text>
-                        </div>
-                        <Group gap={4} wrap="nowrap">
-                          <ActionIcon
-                            variant="subtle"
-                            color="gray"
-                            radius="lg"
-                            aria-label="Изменить"
-                            onClick={() => startEdit(d)}
-                          >
-                            <IconPencil size={18} />
-                          </ActionIcon>
-                          <ActionIcon
-                            variant="light"
-                            color="red"
-                            radius="lg"
-                            aria-label="Удалить"
-                            onClick={() => void handleDeleteDish(d.id)}
-                          >
-                            <IconTrash size={18} />
-                          </ActionIcon>
+                  inCat.map((d) => {
+                    const summary = formatIngredientSummary(d.ingredients ?? []);
+                    return (
+                      <Card
+                        key={d.id}
+                        withBorder
+                        padding="md"
+                        radius="lg"
+                        className="hover-lift transition-all"
+                        style={insetRowShell(colorScheme)}
+                      >
+                        <Group justify="space-between" align="flex-start" wrap="nowrap" gap="sm">
+                          <div style={{ minWidth: 0 }}>
+                            <Text fw={600} size="md">
+                              {d.title}
+                            </Text>
+                            {summary ? (
+                              <Text size="xs" c="dimmed" mt={4}>
+                                {summary}
+                              </Text>
+                            ) : null}
+                            <Text size="sm" c="dimmed" style={{ whiteSpace: 'pre-wrap' }} mt={6}>
+                              {d.recipe_text || '—'}
+                            </Text>
+                          </div>
+                          <Group gap={4} wrap="nowrap">
+                            <ActionIcon
+                              variant="subtle"
+                              color="gray"
+                              radius="lg"
+                              aria-label="Изменить"
+                              onClick={() => startEdit(d)}
+                            >
+                              <IconPencil size={18} />
+                            </ActionIcon>
+                            <ActionIcon
+                              variant="light"
+                              color="red"
+                              radius="lg"
+                              aria-label="Удалить"
+                              onClick={() => void handleDeleteDish(d.id)}
+                            >
+                              <IconTrash size={18} />
+                            </ActionIcon>
+                          </Group>
                         </Group>
-                      </Group>
-                    </Card>
-                  ))
+                      </Card>
+                    );
+                  })
                 )}
               </Stack>
             </Card>
@@ -342,6 +545,7 @@ export function FoodCatalogPage() {
           </Group>
         }
         {...modalShell}
+        size="lg"
       >
         <Stack gap="md">
           <Select
@@ -366,6 +570,17 @@ export function FoodCatalogPage() {
             onChange={(e) => setDishRecipe(e.currentTarget.value)}
             size="md"
             radius="lg"
+          />
+          <Divider label="Состав" labelPosition="center" />
+          <IngredientEditor
+            units={units}
+            ingredients={ingredients}
+            rows={ingRows}
+            setRows={setIngRows}
+            onOpenNewIngredient={() => {
+              haptic('light');
+              openNewIng();
+            }}
           />
           <Button onClick={() => void handleAddDish()} {...gradientButton} mt="md">
             Сохранить
@@ -388,6 +603,7 @@ export function FoodCatalogPage() {
           </Group>
         }
         {...modalShell}
+        size="lg"
       >
         <Stack gap="md">
           <Select
@@ -413,8 +629,49 @@ export function FoodCatalogPage() {
             size="md"
             radius="lg"
           />
+          <Divider label="Состав" labelPosition="center" />
+          <IngredientEditor
+            units={units}
+            ingredients={ingredients}
+            rows={ingRows}
+            setRows={setIngRows}
+            onOpenNewIngredient={() => {
+              haptic('light');
+              openNewIng();
+            }}
+          />
           <Button onClick={() => void handleSaveEdit()} {...gradientButton} mt="md">
             Сохранить
+          </Button>
+        </Stack>
+      </Modal>
+
+      <Modal
+        opened={newIngOpened}
+        onClose={() => {
+          haptic('light');
+          closeNewIng();
+        }}
+        title={<Text fw={700}>Новый продукт</Text>}
+        {...modalShell}
+      >
+        <Stack gap="md">
+          <TextInput
+            label="Название"
+            placeholder="Например: Гречка"
+            value={newIngName}
+            onChange={(e) => setNewIngName(e.currentTarget.value)}
+            radius="lg"
+          />
+          <Select
+            label="Единица по умолчанию"
+            data={units.map((u) => ({ value: String(u.id), label: `${u.name} (${u.code})` }))}
+            value={newIngUnitId}
+            onChange={setNewIngUnitId}
+            radius="lg"
+          />
+          <Button onClick={() => void handleCreateIngredient()} {...gradientButton}>
+            Добавить в справочник
           </Button>
         </Stack>
       </Modal>

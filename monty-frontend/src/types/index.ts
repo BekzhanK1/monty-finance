@@ -96,11 +96,61 @@ export interface FoodMealCategory {
   sort_order: number;
 }
 
+export interface FoodDishIngredientLine {
+  id: number;
+  ingredient_id: number;
+  ingredient_name: string;
+  quantity: number;
+  unit_id: number;
+  unit_code: string;
+  unit_name: string;
+  is_optional: boolean;
+  note: string | null;
+  sort_order: number;
+}
+
 export interface FoodDish {
   id: number;
   household_id: number;
   meal_category_id: number;
   title: string;
   recipe_text: string;
+  description: string | null;
+  servings_default: number;
+  prep_minutes: number | null;
+  cook_minutes: number | null;
+  is_archived: boolean;
   created_at: string;
+  updated_at: string | null;
+  ingredients: FoodDishIngredientLine[];
+}
+
+export interface FoodUnit {
+  id: number;
+  code: string;
+  name: string;
+  system: string;
+}
+
+export interface FoodIngredient {
+  id: number;
+  household_id: number;
+  name: string;
+  default_unit_id: number;
+  category: string | null;
+  notes: string | null;
+}
+
+export type FoodSlotKey = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export interface FoodMealSlot {
+  id: number;
+  household_id: number;
+  slot_date: string;
+  slot_key: FoodSlotKey;
+  dish_id: number | null;
+  custom_title: string | null;
+  servings: number;
+  notes: string | null;
+  dish_title: string | null;
 }

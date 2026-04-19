@@ -1,14 +1,13 @@
-"""Food service ORM. MVP: single household_id until multi-tenant is needed."""
+"""Meal categories and dishes (catalog grouping + free-text recipe)."""
 
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.config import Base
 
-# Single shared workspace for the couple (see docs/food-service-architecture.md).
-MVP_HOUSEHOLD_ID = 1
+from app.food.models._constants import MVP_HOUSEHOLD_ID
 
 
 class FoodMealCategory(Base):
@@ -34,6 +33,18 @@ class FoodDish(Base):
     meal_category_id = Column(Integer, ForeignKey("food_meal_categories.id"), nullable=False)
     title = Column(String(200), nullable=False)
     recipe_text = Column(Text, nullable=False, default="")
+    description = Column(Text, nullable=True)
+    servings_default = Column(Integer, nullable=False, default=4)
+    prep_minutes = Column(Integer, nullable=True)
+    cook_minutes = Column(Integer, nullable=True)
+    is_archived = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     meal_category = relationship("FoodMealCategory", back_populates="dishes")
+    ingredients = relationship(
+        "FoodDishIngredient",
+        back_populates="dish",
+        cascade="all, delete-orphan",
+        order_by="FoodDishIngredient.sort_order",
+    )
