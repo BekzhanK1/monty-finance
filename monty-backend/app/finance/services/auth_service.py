@@ -6,7 +6,7 @@ from typing import Optional
 
 import httpx
 from app.core.config import settings
-from app.models.models import User
+from app.finance.models import User
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 

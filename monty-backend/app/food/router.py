@@ -2,10 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_db
-from app.middleware.auth import get_current_user
-from app.models.food import FoodDish, FoodMealCategory, MVP_HOUSEHOLD_ID
-from app.models.models import User
-from app.schemas.food_schemas import (
+from app.finance.models import User
+from app.food.models import FoodDish, FoodMealCategory, MVP_HOUSEHOLD_ID
+from app.food.schemas import (
     FoodDishCreate,
     FoodDishResponse,
     FoodDishUpdate,
@@ -13,6 +12,7 @@ from app.schemas.food_schemas import (
     FoodMealCategoryResponse,
     FoodMealCategoryUpdate,
 )
+from app.middleware.auth import get_current_user
 
 router = APIRouter(prefix="/food", tags=["Food"])
 

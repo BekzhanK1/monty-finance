@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.config import get_db
-from app.models.models import User
-from app.schemas.schemas import DashboardResponse
+from app.finance.models import User
+from app.finance.schemas import DashboardResponse
 from app.middleware.auth import get_current_user
-from app.services.database import get_financial_period
-from app.services.settings_service import SettingsService
-from app.services.budget_period_service import build_budgets_with_spent, date_range_to_datetimes
+from app.finance.services.database import get_financial_period
+from app.finance.services.settings_service import SettingsService
+from app.finance.services.budget_period_service import build_budgets_with_spent, date_range_to_datetimes
 
 router = APIRouter(prefix="/budgets", tags=["Budgets"])
 

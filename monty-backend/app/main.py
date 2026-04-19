@@ -1,19 +1,19 @@
 from contextlib import asynccontextmanager
 
-from app.api import (
+from app.core.config import Base, engine
+from app.finance.routers import (
     analytics,
     auth,
     budgets,
     categories,
     digest,
-    food,
     goals,
     settings,
     transactions,
 )
-from app.core.config import Base, engine
-from app.models import food as _food_models  # noqa: F401 — register tables on Base.metadata
-from app.services.scheduler import scheduler, setup_scheduler
+from app.finance.services.scheduler import scheduler, setup_scheduler
+from app.food.router import router as food_router
+import app.models  # noqa: F401 — register all ORM tables on Base.metadata
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -53,7 +53,7 @@ app.include_router(goals.router)
 app.include_router(digest.router)
 app.include_router(settings.router)
 app.include_router(analytics.router)
-app.include_router(food.router)
+app.include_router(food_router)
 
 
 @app.get("/")

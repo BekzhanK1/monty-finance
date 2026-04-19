@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import {
+  Card,
   Container,
-  Text,
-  SimpleGrid,
-  Paper,
-  Stack,
   Group,
   Modal,
+  SimpleGrid,
+  Stack,
+  Text,
   ThemeIcon,
-  useMantineTheme,
   useMantineColorScheme,
+  useMantineTheme,
 } from '@mantine/core';
 import {
   IconHome,
@@ -19,6 +19,7 @@ import {
   IconChevronRight,
 } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
+import { glassSectionShell, modalShell } from '../theme/dashboardChrome';
 
 type ServiceDef = {
   title: string;
@@ -40,79 +41,85 @@ export function AllServicesPage() {
   const theme = useMantineTheme();
   const [soonTitle, setSoonTitle] = useState<string | null>(null);
 
-  const border =
-    colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3];
-  const bg = colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0];
-
-  const tileStyle = {
-    borderColor: border,
-    background: bg,
-    minHeight: 120,
-    height: '100%' as const,
-    display: 'block' as const,
-    width: '100%' as const,
-    textDecoration: 'none' as const,
-    color: 'inherit' as const,
-    cursor: 'pointer' as const,
+  const tileBody = (s: ServiceDef) => {
+    const Icon = s.icon;
+    return (
+      <Stack gap="sm" h="100%" justify="space-between">
+        <Group justify="space-between" align="flex-start" wrap="nowrap">
+          <ThemeIcon size={44} radius="md" variant="light" color="grape">
+            <Icon size={24} stroke={1.5} />
+          </ThemeIcon>
+          <IconChevronRight size={18} color={theme.colors.gray[5]} />
+        </Group>
+        <div>
+          <Text fw={600} size="sm" lineClamp={1}>
+            {s.title}
+          </Text>
+          <Text size="xs" c="dimmed" lineClamp={2}>
+            {s.comingSoon ? 'Скоро' : s.description}
+          </Text>
+        </div>
+      </Stack>
+    );
   };
 
   return (
-    <Container size="md" py="xl">
-      <Text fw={700} size="xl" mb="lg">
+    <Container size="sm" p="md" pb={100}>
+      <Text fw={700} size="xl" mb="lg" className="animate-fade-in">
         Все сервисы
       </Text>
 
       <SimpleGrid cols={{ base: 2, xs: 2, sm: 3, md: 4 }} spacing="md">
         {services.map((s) => {
-          const Icon = s.icon;
-          const body = (
-            <Stack gap="sm" h="100%" justify="space-between">
-              <Group justify="space-between" align="flex-start" wrap="nowrap">
-                <ThemeIcon size={44} radius="md" variant="light" color="grape">
-                  <Icon size={24} stroke={1.5} />
-                </ThemeIcon>
-                <IconChevronRight size={18} color={theme.colors.gray[5]} />
-              </Group>
-              <div>
-                <Text fw={600} size="sm" lineClamp={1}>
-                  {s.title}
-                </Text>
-                <Text size="xs" c="dimmed" lineClamp={2}>
-                  {s.comingSoon ? 'Скоро' : s.description}
-                </Text>
-              </div>
-            </Stack>
-          );
-
           if (s.comingSoon) {
             return (
-              <Paper
+              <Card
                 key={s.title}
                 component="button"
                 type="button"
+                shadow="md"
+                padding="lg"
+                radius="xl"
                 withBorder
-                radius="md"
-                p="md"
-                style={tileStyle}
+                className="stagger-item hover-lift"
+                style={{
+                  ...glassSectionShell(colorScheme),
+                  minHeight: 120,
+                  height: '100%',
+                  display: 'block',
+                  width: '100%',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
                 onClick={() => setSoonTitle(s.title)}
               >
-                {body}
-              </Paper>
+                {tileBody(s)}
+              </Card>
             );
           }
 
           return (
-            <Paper
+            <Card
               key={s.title}
               component={Link}
               to={s.to!}
+              shadow="md"
+              padding="lg"
+              radius="xl"
               withBorder
-              radius="md"
-              p="md"
-              style={tileStyle}
+              className="stagger-item hover-lift"
+              style={{
+                ...glassSectionShell(colorScheme),
+                minHeight: 120,
+                height: '100%',
+                display: 'block',
+                width: '100%',
+                textDecoration: 'none',
+                color: 'inherit',
+              }}
             >
-              {body}
-            </Paper>
+              {tileBody(s)}
+            </Card>
           );
         })}
       </SimpleGrid>
@@ -120,8 +127,12 @@ export function AllServicesPage() {
       <Modal
         opened={soonTitle !== null}
         onClose={() => setSoonTitle(null)}
-        title={soonTitle ?? ''}
-        centered
+        title={
+          <Text fw={700} size="lg">
+            {soonTitle ?? ''}
+          </Text>
+        }
+        {...modalShell}
       >
         <Text c="dimmed" size="sm">
           Сервис в разработке. Следите за обновлениями в Monty.

@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.core.config import settings, SessionLocal
-from app.models.models import Transaction, Category, User
-from app.services.database import get_financial_period
+from app.finance.models import Transaction, Category, User
+from app.finance.services.database import get_financial_period
 
 _openai_client: OpenAI | None = None
 

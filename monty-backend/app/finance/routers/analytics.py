@@ -5,11 +5,11 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import get_db
-from app.models.models import User, Transaction, TransactionType, CategoryGroup
-from app.schemas.schemas import AnalyticsResponse
+from app.finance.models import User, Transaction, TransactionType, CategoryGroup
+from app.finance.schemas import AnalyticsResponse
 from app.middleware.auth import get_current_user
-from app.services.analytics_helpers import large_one_off_expense_total
-from app.services.budget_period_service import build_budgets_with_spent, date_range_to_datetimes
+from app.finance.services.analytics_helpers import large_one_off_expense_total
+from app.finance.services.budget_period_service import build_budgets_with_spent, date_range_to_datetimes
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 

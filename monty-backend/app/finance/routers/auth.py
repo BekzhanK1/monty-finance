@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.core.config import get_db
-from app.services.auth_service import authenticate_telegram_user
+from app.finance.services.auth_service import authenticate_telegram_user
 from app.middleware.auth import get_current_user
-from app.models.models import User
+from app.finance.models import User
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 

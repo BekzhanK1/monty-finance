@@ -7,9 +7,9 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { AllServicesPage } from './pages/AllServicesPage';
-import { FoodLayout } from './components/FoodLayout';
-import { FoodCatalogPage } from './pages/food/FoodCatalogPage';
-import { FoodMenuPage } from './pages/food/FoodMenuPage';
+import { FoodLayout } from './food/FoodLayout';
+import { FoodCatalogPage } from './food/pages/FoodCatalogPage';
+import { FoodMenuPage } from './food/pages/FoodMenuPage';
 import { Layout } from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {

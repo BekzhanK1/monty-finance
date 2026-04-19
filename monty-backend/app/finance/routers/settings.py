@@ -1,8 +1,8 @@
 from app.core.config import get_db
 from app.middleware.auth import get_current_user
-from app.models.models import Category, MonthlyBudget, User
-from app.services.database import get_financial_period
-from app.services.settings_service import SettingsService
+from app.finance.models import Category, MonthlyBudget, User
+from app.finance.services.database import get_financial_period
+from app.finance.services.settings_service import SettingsService
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy import func

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from app.models.models import Settings
+from app.finance.models import Settings
 from sqlalchemy.orm import Session
 
 

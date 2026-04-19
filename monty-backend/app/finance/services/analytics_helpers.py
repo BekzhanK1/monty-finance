@@ -1,6 +1,6 @@
 """Heuristics for analytics (large one-off expenses, etc.)."""
 
-from app.models.models import CategoryGroup, Transaction, TransactionType
+from app.finance.models import CategoryGroup, Transaction, TransactionType
 
 
 def large_one_off_expense_total(transactions: list[Transaction]) -> int:

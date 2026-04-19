@@ -1,13 +1,58 @@
 # Monty Finance
 
-Монорепозиторий приложения **Monty**: веб-клиент на React и API на FastAPI для учёта финансов (в т.ч. интеграция с Telegram).
+Монорепозиторий приложения **Monty**: веб-клиент на React и API на FastAPI для учёта финансов (в т.ч. интеграция с Telegram) и вертикали **Food** (каталог блюд).
 
 ## Структура
 
 | Каталог | Описание |
 |---------|----------|
-| [`monty-backend`](monty-backend/) | FastAPI, SQLAlchemy, Alembic, фоновые задачи (APScheduler) |
+| [`monty-backend`](monty-backend/) | FastAPI, SQLAlchemy, фоновые задачи (APScheduler) |
 | [`monty-frontend`](monty-frontend/) | Vite, React 19, TypeScript, Mantine, React Router |
+| [`docs`](docs/) | Архитектурные заметки (например, Food / superapp) |
+
+### Backend: разделение по сервисам
+
+Код сгруппирован по вертикалям, чтобы проще расширять superapp:
+
+| Путь | Содержимое |
+|------|------------|
+| [`app/finance/`](monty-backend/app/finance/) | Бюджет, транзакции, категории, аналитика, цели, digest, настройки, auth |
+| [`app/finance/models.py`](monty-backend/app/finance/models.py) | ORM: пользователи, транзакции, категории, бюджеты, settings |
+| [`app/finance/schemas.py`](monty-backend/app/finance/schemas.py) | Pydantic-схемы finance |
+| [`app/finance/routers/`](monty-backend/app/finance/routers/) | HTTP-роутеры (`auth`, `transactions`, …) |
+| [`app/finance/services/`](monty-backend/app/finance/services/) | Бизнес-логика, планировщик, digest, auth_service |
+| [`app/food/`](monty-backend/app/food/) | Food: модели, схемы, [`router.py`](monty-backend/app/food/router.py) (`/food/...`) |
+| [`app/core/`](monty-backend/app/core/) | Конфиг, БД engine, `get_db` |
+| [`app/middleware/`](monty-backend/app/middleware/) | JWT / текущий пользователь |
+| [`app/models/__init__.py`](monty-backend/app/models/__init__.py) | Реэкспорт всех ORM-модулей для `Base.metadata` (обратная совместимость) |
+
+Пустые заглушки [`app/api/`](monty-backend/app/api/) и [`app/schemas/`](monty-backend/app/schemas/) оставлены с комментарием: новый код подключается из `finance` / `food`.
+
+### Frontend: разделение по сервисам
+
+| Путь | Содержимое |
+|------|------------|
+| [`src/services/http.ts`](monty-frontend/src/services/http.ts) | Axios-клиент и заголовок `Authorization` |
+| [`src/services/finance.ts`](monty-frontend/src/services/finance.ts) | API finance (auth, транзакции, бюджеты, …) |
+| [`src/services/food.ts`](monty-frontend/src/services/food.ts) | API Food |
+| [`src/services/index.ts`](monty-frontend/src/services/index.ts) | Сводный экспорт |
+| [`src/food/`](monty-frontend/src/food/) | UI Food: [`FoodLayout.tsx`](monty-frontend/src/food/FoodLayout.tsx), страницы в [`food/pages/`](monty-frontend/src/food/pages/) |
+| [`src/api/index.ts`](monty-frontend/src/api/index.ts) | Реэкспорт из `services` для старых импортов `from '../api'` |
+| [`src/theme/dashboardChrome.ts`](monty-frontend/src/theme/dashboardChrome.ts) | Общие стили «как на главной» (градиент hero, glass-карточки, кнопки, модалки) |
+
+Общие страницы finance по-прежнему в [`src/pages/`](monty-frontend/src/pages/), общий shell — [`src/components/Layout.tsx`](monty-frontend/src/components/Layout.tsx).
+
+### UI: единый стиль с главной
+
+Эталон вёрстки и визуала — **[`DashboardPage.tsx`](monty-frontend/src/pages/DashboardPage.tsx)** (главный экран после входа). На остальных экранах (Food, «Все сервисы», модалки) используйте те же приёмы:
+
+- **Контейнер:** `Container size="sm" p="md"`, с нижней навигацией — `pb={100}` (константа [`PAGE_WITH_BOTTOM_NAV_PB`](monty-frontend/src/theme/dashboardChrome.ts) в `dashboardChrome.ts`).
+- **Карточки блоков:** `Card` с `shadow="lg"` или `shadow="md"`, `padding="lg"`, `radius="xl"`, `withBorder`, классы `stagger-item`, `hover-lift` где уместно; фон — градиент с `backdropFilter: blur(10px)` (hero) или «матовое стекло» для секций (см. `heroVioletShell` / `glassSectionShell` в [`dashboardChrome.ts`](monty-frontend/src/theme/dashboardChrome.ts)).
+- **Вложенные строки** (элементы списка): `radius="lg"`, `padding="md"`, стиль как у карточек бюджета на главной (`insetRowShell`).
+- **Основные действия:** кнопка `variant="gradient"` с `gradient={{ from: 'blue', to: 'violet', deg: 135 }}`, `radius="xl"` (объект `gradientButton` в `dashboardChrome.ts`).
+- **Модалки:** как в [`SettingsPage.tsx`](monty-frontend/src/pages/SettingsPage.tsx) — `centered`, `radius="xl"`, `size="md"`, заголовок с иконкой и `Text fw={700} size="lg"`, поля `size="md"` и `radius="lg"`.
+
+Новые страницы и сервисы подключайте через общие хелперы из `dashboardChrome.ts`, чтобы не расходиться с главной.
 
 Корневой [`Makefile`](Makefile) поднимает backend и frontend для локальной разработки.
 

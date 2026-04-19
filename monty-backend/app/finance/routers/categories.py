@@ -1,10 +1,10 @@
 from typing import List
 
 from app.core.config import get_db
-from app.models.models import Category, MonthlyBudget, Transaction
-from app.schemas.schemas import CategoryCreate, CategoryResponse, CategoryUpdate
-from app.services.database import get_financial_period
-from app.services.settings_service import SettingsService
+from app.finance.models import Category, MonthlyBudget, Transaction
+from app.finance.schemas import CategoryCreate, CategoryResponse, CategoryUpdate
+from app.finance.services.database import get_financial_period
+from app.finance.services.settings_service import SettingsService
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 

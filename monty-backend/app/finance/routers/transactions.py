@@ -8,11 +8,11 @@ import io
 import csv
 
 from app.core.config import get_db
-from app.models.models import User, Category, Transaction
-from app.schemas.schemas import TransactionCreate, TransactionResponse, TransactionUpdate
+from app.finance.models import User, Category, Transaction
+from app.finance.schemas import TransactionCreate, TransactionResponse, TransactionUpdate
 from app.middleware.auth import get_current_user
-from app.services.database import get_financial_period
-from app.services.digest_service import send_transaction_notification
+from app.finance.services.database import get_financial_period
+from app.finance.services.digest_service import send_transaction_notification
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 

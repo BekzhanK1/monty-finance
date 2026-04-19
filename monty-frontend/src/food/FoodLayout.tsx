@@ -51,6 +51,7 @@ export function FoodLayout() {
         gap: 4,
         zIndex: 101,
         paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))',
+        boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.1)',
       }}
     >
       {tabs.map((t) => {
@@ -59,6 +60,7 @@ export function FoodLayout() {
           <UnstyledButton
             key={t.value}
             onClick={() => go(t.path)}
+            className="transition-all"
             style={{
               display: 'flex',
               flexDirection: 'column',
@@ -70,10 +72,38 @@ export function FoodLayout() {
                 : colorScheme === 'dark'
                   ? theme.colors.gray[5]
                   : theme.colors.gray[6],
+              minWidth: 0,
+              position: 'relative',
+              transform: isActive ? 'translateY(-4px)' : 'translateY(0)',
             }}
           >
-            <t.icon size={22} />
-            <Text size="xs" mt={4} fw={isActive ? 600 : 400}>
+            {isActive && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '32px',
+                  height: '3px',
+                  borderRadius: '0 0 3px 3px',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                }}
+              />
+            )}
+            <t.icon size={22} style={{ marginTop: isActive ? '4px' : '0' }} />
+            <Text
+              size="xs"
+              mt={2}
+              fw={isActive ? 600 : 400}
+              style={{
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '100%',
+                fontSize: '11px',
+              }}
+            >
               {t.label}
             </Text>
           </UnstyledButton>
@@ -98,6 +128,9 @@ export function FoodLayout() {
         }}
         visibleFrom="sm"
         mb="md"
+        color="violet"
+        radius="xl"
+        variant="pills"
       >
         <Tabs.List grow>
           {tabs.map((t) => (

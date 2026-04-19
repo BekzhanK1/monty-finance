@@ -1,4 +1,4 @@
-"""Food service models. MVP: single household_id until multi-tenant is needed."""
+"""Food service ORM. MVP: single household_id until multi-tenant is needed."""
 
 from datetime import datetime
 

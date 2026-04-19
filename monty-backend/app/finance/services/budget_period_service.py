@@ -6,8 +6,8 @@ from typing import List
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models.models import MonthlyBudget, Transaction
-from app.schemas.schemas import BudgetWithSpent
+from app.finance.models import MonthlyBudget, Transaction
+from app.finance.schemas import BudgetWithSpent
 
 
 def latest_monthly_budgets_subquery(db: Session):

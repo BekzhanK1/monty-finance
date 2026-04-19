@@ -4,7 +4,7 @@ from datetime import datetime
 import pytz
 
 from app.core.config import SessionLocal
-from app.services.digest_service import generate_ai_digest, send_digest_to_telegram, send_reminder_notification, send_daily_summary
+from app.finance.services.digest_service import generate_ai_digest, send_digest_to_telegram, send_reminder_notification, send_daily_summary
 from app.core.config import settings
 
 scheduler = AsyncIOScheduler(timezone=pytz.timezone("Asia/Almaty"))

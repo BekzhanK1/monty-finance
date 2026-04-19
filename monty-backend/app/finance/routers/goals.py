@@ -4,9 +4,9 @@ from sqlalchemy import func
 from datetime import date
 
 from app.core.config import get_db
-from app.models.models import User, Transaction, Category, CategoryGroup
+from app.finance.models import User, Transaction, Category, CategoryGroup
 from app.middleware.auth import get_current_user
-from app.services.settings_service import SettingsService
+from app.finance.services.settings_service import SettingsService
 
 router = APIRouter(prefix="/goals", tags=["Goals"])
 

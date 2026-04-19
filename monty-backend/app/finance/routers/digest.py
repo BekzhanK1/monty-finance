@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_db, settings
 from app.middleware.auth import get_current_user
-from app.models.models import User
-from app.services.digest_service import generate_ai_digest, send_digest_to_telegram
+from app.finance.models import User
+from app.finance.services.digest_service import generate_ai_digest, send_digest_to_telegram
 
 router = APIRouter(prefix="/digest", tags=["Digest"])
 
