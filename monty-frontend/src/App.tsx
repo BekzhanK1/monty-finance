@@ -6,6 +6,8 @@ import { AddTransactionPage } from './pages/AddTransactionPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { TransactionsPage } from './pages/TransactionsPage';
+import { AllServicesPage } from './pages/AllServicesPage';
+import { FoodPage } from './pages/FoodPage';
 import { Layout } from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -38,6 +40,8 @@ function App() {
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="services" element={<AllServicesPage />} />
+        <Route path="food" element={<FoodPage />} />
       </Route>
       <Route
         path="/add"

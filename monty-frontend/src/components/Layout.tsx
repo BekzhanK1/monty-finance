@@ -20,6 +20,7 @@ import {
   IconList,
   IconSun,
   IconMoon,
+  IconApps,
 } from '@tabler/icons-react';
 import { useTelegram } from '../hooks/useTelegram';
 import { useMantineColorScheme } from '@mantine/core';
@@ -28,6 +29,7 @@ const navItems = [
   { icon: IconHome, label: 'Главная', path: '/' },
   { icon: IconList, label: 'История', path: '/transactions' },
   { icon: IconChartBar, label: 'Аналитика', path: '/analytics' },
+  { icon: IconApps, label: 'Все сервисы', path: '/services' },
   { icon: IconSettings, label: 'Настройки', path: '/settings' },
 ];
 
@@ -209,7 +211,7 @@ export function Layout() {
           borderTop: `1px solid ${colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
           padding: '8px 4px 8px 4px',
           display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
+          gridTemplateColumns: `repeat(${navItems.length}, 1fr)`,
           gap: '4px',
           zIndex: 100,
           boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.1)',
