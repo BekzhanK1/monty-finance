@@ -87,3 +87,20 @@ export interface CategoryInput {
   type: 'EXPENSE' | 'INCOME';
   icon: string;
 }
+
+/** Food service — meal slot (e.g. breakfast), MVP single household on backend */
+export interface FoodMealCategory {
+  id: number;
+  household_id: number;
+  name: string;
+  sort_order: number;
+}
+
+export interface FoodDish {
+  id: number;
+  household_id: number;
+  meal_category_id: number;
+  title: string;
+  recipe_text: string;
+  created_at: string;
+}

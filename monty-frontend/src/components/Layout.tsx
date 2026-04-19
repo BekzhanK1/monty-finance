@@ -196,7 +196,7 @@ export function Layout() {
         </div>
       </AppShell.Main>
 
-      {/* Enhanced Mobile Bottom Navigation */}
+      {/* Enhanced Mobile Bottom Navigation — скрыт внутри Food (там свои вкладки) */}
       <Box
         hiddenFrom="sm"
         style={{
@@ -210,7 +210,7 @@ export function Layout() {
           backdropFilter: 'blur(20px)',
           borderTop: `1px solid ${colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
           padding: '8px 4px 8px 4px',
-          display: 'grid',
+          display: location.pathname.startsWith('/food') ? 'none' : 'grid',
           gridTemplateColumns: `repeat(${navItems.length}, 1fr)`,
           gap: '4px',
           zIndex: 100,

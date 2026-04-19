@@ -6,11 +6,13 @@ from app.api import (
     budgets,
     categories,
     digest,
+    food,
     goals,
     settings,
     transactions,
 )
 from app.core.config import Base, engine
+from app.models import food as _food_models  # noqa: F401 — register tables on Base.metadata
 from app.services.scheduler import scheduler, setup_scheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,6 +53,7 @@ app.include_router(goals.router)
 app.include_router(digest.router)
 app.include_router(settings.router)
 app.include_router(analytics.router)
+app.include_router(food.router)
 
 
 @app.get("/")

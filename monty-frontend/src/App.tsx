@@ -7,7 +7,9 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { TransactionsPage } from './pages/TransactionsPage';
 import { AllServicesPage } from './pages/AllServicesPage';
-import { FoodPage } from './pages/FoodPage';
+import { FoodLayout } from './components/FoodLayout';
+import { FoodCatalogPage } from './pages/food/FoodCatalogPage';
+import { FoodMenuPage } from './pages/food/FoodMenuPage';
 import { Layout } from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -41,7 +43,11 @@ function App() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="services" element={<AllServicesPage />} />
-        <Route path="food" element={<FoodPage />} />
+        <Route path="food" element={<FoodLayout />}>
+          <Route index element={<Navigate to="catalog" replace />} />
+          <Route path="catalog" element={<FoodCatalogPage />} />
+          <Route path="menu" element={<FoodMenuPage />} />
+        </Route>
       </Route>
       <Route
         path="/add"
