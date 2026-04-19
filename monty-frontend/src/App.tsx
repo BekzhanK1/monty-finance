@@ -9,7 +9,10 @@ import { TransactionsPage } from './pages/TransactionsPage';
 import { AllServicesPage } from './pages/AllServicesPage';
 import { FoodLayout } from './food/FoodLayout';
 import { FoodCatalogPage } from './food/pages/FoodCatalogPage';
+import { FoodGuidePage } from './food/pages/FoodGuidePage';
 import { FoodMenuPage } from './food/pages/FoodMenuPage';
+import { FoodPantryPage } from './food/pages/FoodPantryPage';
+import { FoodShoppingPage } from './food/pages/FoodShoppingPage';
 import { Layout } from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -47,6 +50,9 @@ function App() {
           <Route index element={<Navigate to="catalog" replace />} />
           <Route path="catalog" element={<FoodCatalogPage />} />
           <Route path="menu" element={<FoodMenuPage />} />
+          <Route path="guide" element={<FoodGuidePage />} />
+          <Route path="shopping" element={<FoodShoppingPage />} />
+          <Route path="pantry" element={<FoodPantryPage />} />
         </Route>
       </Route>
       <Route

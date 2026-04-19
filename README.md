@@ -26,6 +26,9 @@
 | [`app/food/schemas/`](monty-backend/app/food/schemas/) | Pydantic-схемы Food (те же слои) |
 | [`app/food/serialization.py`](monty-backend/app/food/serialization.py) | Сборка ответов API (блюдо со строками состава, слот меню с названием блюда) |
 | [`app/food/db_bootstrap.py`](monty-backend/app/food/db_bootstrap.py) | Добавление новых колонок в `food_dishes` на уже существующей SQLite/Postgres БД (проект без Alembic, основной путь — `create_all` при старте) |
+| [`app/food/models/shop.py`](monty-backend/app/food/models/shop.py) | Списки покупок и позиции |
+| [`app/food/models/pantry.py`](monty-backend/app/food/models/pantry.py) | Кладовая (остатки по продукту) |
+| [`app/food/services/shopping_generator.py`](monty-backend/app/food/services/shopping_generator.py) | Сборка списка покупок из меню за период |
 | [`app/core/`](monty-backend/app/core/) | Конфиг, БД engine, `get_db` |
 | [`app/middleware/`](monty-backend/app/middleware/) | JWT / текущий пользователь |
 | [`app/models/__init__.py`](monty-backend/app/models/__init__.py) | Реэкспорт всех ORM-модулей для `Base.metadata` (обратная совместимость) |
@@ -40,7 +43,7 @@
 | [`src/services/finance.ts`](monty-frontend/src/services/finance.ts) | API finance (auth, транзакции, бюджеты, …) |
 | [`src/services/food.ts`](monty-frontend/src/services/food.ts) | API Food: категории и блюда, единицы и справочник ингредиентов, замена состава блюда (`PUT .../ingredients`), меню недели (`/menu`, слоты) |
 | [`src/services/index.ts`](monty-frontend/src/services/index.ts) | Сводный экспорт |
-| [`src/food/`](monty-frontend/src/food/) | UI Food: [`FoodLayout.tsx`](monty-frontend/src/food/FoodLayout.tsx); **Каталог** — категории, рецепт текстом, состав из справочника продуктов; **Меню** — сетка недели (слоты завтрак/обед/ужин/перекус) и привязка блюд из каталога |
+| [`src/food/`](monty-frontend/src/food/) | UI Food: [`FoodLayout.tsx`](monty-frontend/src/food/FoodLayout.tsx) (вкладки: каталог, меню, **гид** — только просмотр меню и рецептов, **список** покупок, **склад**); страницы в [`food/pages/`](monty-frontend/src/food/pages/) |
 | [`src/api/index.ts`](monty-frontend/src/api/index.ts) | Реэкспорт из `services` для старых импортов `from '../api'` |
 | [`src/theme/dashboardChrome.ts`](monty-frontend/src/theme/dashboardChrome.ts) | Общие стили «как на главной» (градиент hero, glass-карточки, кнопки, модалки) |
 
@@ -101,6 +104,8 @@ make backend-run
 | Справочник продуктов | `GET /food/ingredients?q=…`, `POST/PATCH/DELETE /food/ingredients/{id}` |
 | Состав блюда | `PUT /food/dishes/{id}/ingredients` — тело `{ "items": [ { "ingredient_id", "quantity", "unit_id", … } ] }` (полная замена списка) |
 | Меню недели | `GET /food/menu?from=…&to=…`, `POST /food/menu/slots`, `PATCH/DELETE /food/menu/slots/{id}` |
+| Список покупок | `GET /food/shopping-lists/latest`, `POST /food/shopping-lists/generate` (тело `{ date_from, date_to }` — агрегация состава блюд из меню), `POST /food/shopping-lists/{id}/items`, `PATCH /food/shopping-items/{id}` |
+| Кладовая | `GET/POST /food/pantry`, `PATCH/DELETE /food/pantry/{id}` (на продукт одна строка на дом; `POST` при уже существующей строке суммирует количество при той же единице) |
 
 На MVP данные привязаны к одному «дому» (`household_id` в коде). Целевая схема домена и связка с Finance — в [`docs/food-data-model-v2.md`](docs/food-data-model-v2.md).
 

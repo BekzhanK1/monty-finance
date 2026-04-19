@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useMediaQuery } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import {
   ActionIcon,
   Button,
@@ -14,10 +14,18 @@ import {
   Text,
   useMantineColorScheme,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
 import { IconCalendarEvent, IconChevronLeft, IconChevronRight, IconTrash } from '@tabler/icons-react';
 import { foodApi } from '../../services/food';
 import type { FoodDish, FoodMealSlot, FoodSlotKey } from '../../types';
+import {
+  SLOT_LABELS,
+  SLOT_ORDER,
+  addDays,
+  slotMapKey,
+  startOfWeekMonday,
+  toISODate,
+  weekdayShort,
+} from '../weekUtils';
 import {
   PAGE_WITH_BOTTOM_NAV_PB,
   gradientButton,
@@ -25,44 +33,6 @@ import {
   modalShellResponsive,
 } from '../../theme/dashboardChrome';
 import { useTelegram } from '../../hooks/useTelegram';
-
-const SLOT_ORDER: FoodSlotKey[] = ['breakfast', 'lunch', 'dinner', 'snack'];
-const SLOT_LABELS: Record<FoodSlotKey, string> = {
-  breakfast: 'Завтрак',
-  lunch: 'Обед',
-  dinner: 'Ужин',
-  snack: 'Перекус',
-};
-
-function toISODate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-function startOfWeekMonday(ref: Date): Date {
-  const d = new Date(ref);
-  d.setHours(0, 0, 0, 0);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  return d;
-}
-
-function addDays(d: Date, n: number): Date {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
-
-function slotMapKey(dateStr: string, slotKey: FoodSlotKey) {
-  return `${dateStr}|${slotKey}`;
-}
-
-function weekdayShort(d: Date) {
-  return d.toLocaleDateString('ru-RU', { weekday: 'short' });
-}
 
 function normalizeDish(d: FoodDish): FoodDish {
   return { ...d, ingredients: d.ingredients ?? [] };

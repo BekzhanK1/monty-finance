@@ -7,14 +7,31 @@ import {
   useMantineTheme,
   useMantineColorScheme,
 } from '@mantine/core';
-import { IconBook2, IconCalendarEvent } from '@tabler/icons-react';
+import {
+  IconBook2,
+  IconCalendarEvent,
+  IconFridge,
+  IconNotebook,
+  IconShoppingCart,
+} from '@tabler/icons-react';
 import { useMediaQuery } from '@mantine/hooks';
 import { useTelegram } from '../hooks/useTelegram';
 
 const tabs = [
   { value: 'catalog', label: 'Каталог', path: '/food/catalog', icon: IconBook2 },
   { value: 'menu', label: 'Меню', path: '/food/menu', icon: IconCalendarEvent },
+  { value: 'guide', label: 'Гид', path: '/food/guide', icon: IconNotebook },
+  { value: 'shopping', label: 'Список', path: '/food/shopping', icon: IconShoppingCart },
+  { value: 'pantry', label: 'Склад', path: '/food/pantry', icon: IconFridge },
 ] as const;
+
+function tabFromPath(pathname: string): (typeof tabs)[number]['value'] {
+  if (pathname.includes('/food/menu')) return 'menu';
+  if (pathname.includes('/food/guide')) return 'guide';
+  if (pathname.includes('/food/shopping')) return 'shopping';
+  if (pathname.includes('/food/pantry')) return 'pantry';
+  return 'catalog';
+}
 
 export function FoodLayout() {
   const navigate = useNavigate();
@@ -24,7 +41,7 @@ export function FoodLayout() {
   const { colorScheme } = useMantineColorScheme();
   const isSmall = useMediaQuery('(max-width: 47.99em)');
 
-  const active = location.pathname === '/food/menu' ? 'menu' : 'catalog';
+  const active = tabFromPath(location.pathname);
 
   const go = (path: string) => {
     haptic('light');
@@ -45,12 +62,12 @@ export function FoodLayout() {
         borderTop: `1px solid ${
           colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
         }`,
-        padding: '8px 4px',
+        padding: '6px 2px',
         display: 'grid',
-        gridTemplateColumns: 'repeat(2, 1fr)',
-        gap: 4,
+        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+        gap: 2,
         zIndex: 101,
-        paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
         boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.1)',
       }}
     >
@@ -65,8 +82,8 @@ export function FoodLayout() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              padding: '8px 4px',
-              borderRadius: 12,
+              padding: '6px 2px',
+              borderRadius: 10,
               color: isActive
                 ? '#667eea'
                 : colorScheme === 'dark'
@@ -74,7 +91,7 @@ export function FoodLayout() {
                   : theme.colors.gray[6],
               minWidth: 0,
               position: 'relative',
-              transform: isActive ? 'translateY(-4px)' : 'translateY(0)',
+              transform: isActive ? 'translateY(-2px)' : 'translateY(0)',
             }}
           >
             {isActive && (
@@ -84,14 +101,14 @@ export function FoodLayout() {
                   top: 0,
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  width: '32px',
+                  width: '28px',
                   height: '3px',
                   borderRadius: '0 0 3px 3px',
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 }}
               />
             )}
-            <t.icon size={22} style={{ marginTop: isActive ? '4px' : '0' }} />
+            <t.icon size={20} style={{ marginTop: isActive ? '3px' : '0' }} />
             <Text
               size="xs"
               mt={2}
@@ -101,7 +118,8 @@ export function FoodLayout() {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 maxWidth: '100%',
-                fontSize: '11px',
+                fontSize: '10px',
+                lineHeight: 1.15,
               }}
             >
               {t.label}
@@ -116,7 +134,7 @@ export function FoodLayout() {
     <Box
       style={{
         minHeight: '100%',
-        paddingBottom: isSmall ? 'calc(80px + env(safe-area-inset-bottom, 0px))' : 0,
+        paddingBottom: isSmall ? 'calc(88px + env(safe-area-inset-bottom, 0px))' : 0,
       }}
       className="food-layout-root"
     >
@@ -132,7 +150,7 @@ export function FoodLayout() {
         radius="xl"
         variant="pills"
       >
-        <Tabs.List grow>
+        <Tabs.List grow style={{ flexWrap: 'wrap', gap: 6 }}>
           {tabs.map((t) => (
             <Tabs.Tab key={t.value} value={t.value} leftSection={<t.icon size={16} />}>
               {t.label}

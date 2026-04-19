@@ -154,3 +154,37 @@ export interface FoodMealSlot {
   notes: string | null;
   dish_title: string | null;
 }
+
+export interface FoodShoppingItem {
+  id: number;
+  ingredient_id: number | null;
+  label: string;
+  quantity: number | null;
+  unit_id: number | null;
+  unit_code: string | null;
+  checked: boolean;
+  sort_order: number;
+}
+
+export interface FoodShoppingList {
+  id: number;
+  household_id: number;
+  title: string;
+  period_start: string | null;
+  period_end: string | null;
+  status: string;
+  created_at: string;
+  items: FoodShoppingItem[];
+}
+
+export interface FoodPantryItem {
+  id: number;
+  household_id: number;
+  ingredient_id: number;
+  ingredient_name: string;
+  quantity: number;
+  unit_id: number;
+  unit_code: string;
+  note: string | null;
+  updated_at: string | null;
+}

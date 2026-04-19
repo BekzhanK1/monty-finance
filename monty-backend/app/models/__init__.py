@@ -22,6 +22,9 @@ from app.food.models import (
     FoodIngredient,
     FoodMealCategory,
     FoodMealSlot,
+    FoodPantryItem,
+    FoodShoppingItem,
+    FoodShoppingList,
     FoodUnit,
     MVP_HOUSEHOLD_ID,
 )
@@ -40,5 +43,8 @@ __all__ = [
     "FoodIngredient",
     "FoodDishIngredient",
     "FoodMealSlot",
+    "FoodShoppingList",
+    "FoodShoppingItem",
+    "FoodPantryItem",
     "MVP_HOUSEHOLD_ID",
 ]

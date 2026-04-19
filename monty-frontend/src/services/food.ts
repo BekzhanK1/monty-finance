@@ -1,9 +1,12 @@
+import axios from 'axios';
 import type {
   FoodDish,
   FoodDishIngredientLine,
   FoodIngredient,
   FoodMealCategory,
   FoodMealSlot,
+  FoodPantryItem,
+  FoodShoppingList,
   FoodSlotKey,
   FoodUnit,
 } from '../types';
@@ -134,6 +137,60 @@ export const foodApi = {
     },
     deleteSlot: async (id: number) => {
       await api.delete(`/food/menu/slots/${id}`);
+    },
+  },
+  shopping: {
+    getLatest: async (): Promise<FoodShoppingList | null> => {
+      try {
+        const { data } = await api.get<FoodShoppingList>('/food/shopping-lists/latest');
+        return data;
+      } catch (e) {
+        if (axios.isAxiosError(e) && e.response?.status === 404) return null;
+        throw e;
+      }
+    },
+    generate: async (date_from: string, date_to: string) => {
+      const { data } = await api.post<FoodShoppingList>('/food/shopping-lists/generate', {
+        date_from,
+        date_to,
+      });
+      return data;
+    },
+    addItem: async (
+      listId: number,
+      payload: {
+        label: string;
+        quantity?: number | null;
+        unit_id?: number | null;
+        ingredient_id?: number | null;
+      },
+    ) => {
+      const { data } = await api.post<FoodShoppingList>(`/food/shopping-lists/${listId}/items`, payload);
+      return data;
+    },
+    patchItem: async (itemId: number, payload: { checked?: boolean }) => {
+      const { data } = await api.patch<FoodShoppingList>(`/food/shopping-items/${itemId}`, payload);
+      return data;
+    },
+  },
+  pantry: {
+    list: async () => {
+      const { data } = await api.get<FoodPantryItem[]>('/food/pantry');
+      return data;
+    },
+    upsert: async (payload: { ingredient_id: number; quantity: number; unit_id: number; note?: string | null }) => {
+      const { data } = await api.post<FoodPantryItem>('/food/pantry', payload);
+      return data;
+    },
+    update: async (
+      id: number,
+      payload: { quantity?: number; unit_id?: number; note?: string | null },
+    ) => {
+      const { data } = await api.patch<FoodPantryItem>(`/food/pantry/${id}`, payload);
+      return data;
+    },
+    delete: async (id: number) => {
+      await api.delete(`/food/pantry/${id}`);
     },
   },
 };
