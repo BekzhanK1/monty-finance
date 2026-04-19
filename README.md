@@ -29,6 +29,7 @@
 | [`app/food/models/shop.py`](monty-backend/app/food/models/shop.py) | Списки покупок и позиции |
 | [`app/food/models/pantry.py`](monty-backend/app/food/models/pantry.py) | Кладовая (остатки по продукту) |
 | [`app/food/services/shopping_generator.py`](monty-backend/app/food/services/shopping_generator.py) | Сборка списка покупок из меню за период |
+| [`app/food/services/telegram_reminder.py`](monty-backend/app/food/services/telegram_reminder.py) | Текст напоминания в Telegram «меню на завтра» (по слотам из БД) |
 | [`app/core/`](monty-backend/app/core/) | Конфиг, БД engine, `get_db` |
 | [`app/middleware/`](monty-backend/app/middleware/) | JWT / текущий пользователь |
 | [`app/models/__init__.py`](monty-backend/app/models/__init__.py) | Реэкспорт всех ORM-модулей для `Base.metadata` (обратная совместимость) |
@@ -83,7 +84,8 @@ pip install -r requirements.txt
 - `STAGE` — при значении **`DEV`** используется SQLite (`DEV_DATABASE_URL`), иначе PostgreSQL (`DATABASE_URL`)
 - `DATABASE_URL`, `DEV_DATABASE_URL` — строки подключения к БД
 - `JWT_SECRET_KEY` — секрет для JWT (в продакшене обязательно сменить)
-- `TELEGRAM_BOT_TOKEN`, `ALLOWED_TELEGRAM_IDS` и др. — по необходимости для Telegram
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ALLOWED_TELEGRAM_IDS` и др. — по необходимости для Telegram (`TELEGRAM_CHAT_ID` — чат для напоминаний и сводок)
+- **Фоновые задачи** ([`app/finance/services/scheduler.py`](monty-backend/app/finance/services/scheduler.py), часовой пояс **Asia/Almaty**): **20:00** — сообщение в Telegram «кухня на завтра» (список блюд из Food → Меню на завтра или просьба составить расписание); **21:00** — напоминание записать траты; **23:50** — сводка дня по финансам. Нужны `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`.
 
 Запуск API (порт **8000**):
 

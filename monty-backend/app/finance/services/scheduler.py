@@ -5,6 +5,7 @@ import pytz
 
 from app.core.config import SessionLocal
 from app.finance.services.digest_service import generate_ai_digest, send_digest_to_telegram, send_reminder_notification, send_daily_summary
+from app.food.services.telegram_reminder import send_tomorrow_food_telegram_reminder
 from app.core.config import settings
 
 scheduler = AsyncIOScheduler(timezone=pytz.timezone("Asia/Almaty"))
@@ -38,6 +39,15 @@ def send_summary():
     except Exception as e:
         print(f"[{datetime.now()}] Error sending daily summary: {e}")
 
+
+def send_food_tomorrow_reminder():
+    try:
+        send_tomorrow_food_telegram_reminder()
+        print(f"[{datetime.now()}] Food tomorrow reminder job finished")
+    except Exception as e:
+        print(f"[{datetime.now()}] Error sending food tomorrow reminder: {e}")
+
+
 def setup_scheduler():
     reminder_trigger = CronTrigger(
         hour=21,
@@ -66,7 +76,21 @@ def setup_scheduler():
         name="Send daily summary with AI analysis",
         replace_existing=True
     )
-    
+
+    food_trigger = CronTrigger(
+        hour=20,
+        minute=0,
+        timezone=pytz.timezone("Asia/Almaty"),
+    )
+    scheduler.add_job(
+        send_food_tomorrow_reminder,
+        trigger=food_trigger,
+        id="food_tomorrow_reminder",
+        name="Telegram: menu for tomorrow (Food)",
+        replace_existing=True,
+    )
+
     print("Scheduler configured:")
     print("  - Reminder at 21:00 (Almaty time)")
+    print("  - Food tomorrow menu at 20:00 (Almaty time)")
     print("  - Daily summary at 23:50 (Almaty time)")
