@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
 import { useSearchParams } from 'react-router-dom';
 import {
   Container,
@@ -23,6 +24,7 @@ import { transactionsApi, categoriesApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Transaction, Category } from '../types';
+import { modalShellResponsive } from '../theme/dashboardChrome';
 
 const TIMEZONE = 'Asia/Almaty';
 
@@ -57,6 +59,7 @@ export function TransactionsPage() {
   const categoryId = categoryIdParam ? parseInt(categoryIdParam, 10) : undefined;
   const { haptic } = useTelegram();
   const { colorScheme } = useMantineColorScheme();
+  const isNarrow = useMediaQuery('(max-width: 36em)');
 
   const [viewMode, setViewMode] = useState<'all' | 'day'>('all');
   const [selectedDate, setSelectedDate] = useState<Date>(() => getTodayUTC5());
@@ -480,9 +483,7 @@ export function TransactionsPage() {
           setEditingTx(null); 
         }}
         title={<Text fw={700} size="lg">Редактировать транзакцию</Text>}
-        centered
-        radius="xl"
-        size="md"
+        {...modalShellResponsive(!!isNarrow)}
       >
         {editingTx && (
           <Stack gap="md">
@@ -492,6 +493,7 @@ export function TransactionsPage() {
               value={editCategoryId}
               onChange={setEditCategoryId}
               radius="lg"
+              comboboxProps={{ withinPortal: true }}
             />
             <NumberInput
               label="Сумма (₸)"
@@ -508,25 +510,49 @@ export function TransactionsPage() {
               placeholder="Необязательно"
               radius="lg"
             />
-            <Group justify="space-between" mt="md">
-              <Button 
-                variant="light" 
-                color="red" 
-                leftSection={<IconTrash size={18} />} 
-                onClick={handleDelete}
-                radius="xl"
-              >
-                Удалить
-              </Button>
-              <Button 
-                onClick={handleSaveEdit}
-                radius="xl"
-                variant="gradient"
-                gradient={{ from: 'blue', to: 'violet', deg: 135 }}
-              >
-                Сохранить
-              </Button>
-            </Group>
+            {isNarrow ? (
+              <Stack gap="sm" mt="md">
+                <Button
+                  onClick={handleSaveEdit}
+                  radius="xl"
+                  variant="gradient"
+                  gradient={{ from: 'blue', to: 'violet', deg: 135 }}
+                  fullWidth
+                >
+                  Сохранить
+                </Button>
+                <Button
+                  variant="light"
+                  color="red"
+                  leftSection={<IconTrash size={18} />}
+                  onClick={handleDelete}
+                  radius="xl"
+                  fullWidth
+                >
+                  Удалить
+                </Button>
+              </Stack>
+            ) : (
+              <Group justify="space-between" mt="md" wrap="wrap">
+                <Button 
+                  variant="light" 
+                  color="red" 
+                  leftSection={<IconTrash size={18} />} 
+                  onClick={handleDelete}
+                  radius="xl"
+                >
+                  Удалить
+                </Button>
+                <Button 
+                  onClick={handleSaveEdit}
+                  radius="xl"
+                  variant="gradient"
+                  gradient={{ from: 'blue', to: 'violet', deg: 135 }}
+                >
+                  Сохранить
+                </Button>
+              </Group>
+            )}
           </Stack>
         )}
       </Modal>

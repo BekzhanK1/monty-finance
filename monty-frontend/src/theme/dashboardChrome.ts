@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { MantineColorScheme } from '@mantine/core';
+import type { MantineColorScheme, ModalProps } from '@mantine/core';
 
 /** Match [`DashboardPage`](../pages/DashboardPage.tsx): glass cards, violet hero, spacing. */
 export const PAGE_WITH_BOTTOM_NAV_PB = 100;
@@ -54,3 +54,56 @@ export const modalShell = {
   radius: 'xl' as const,
   size: 'md' as const,
 };
+
+/** Safe-area + scroll on small screens (Telegram Mini App, narrow phones). */
+const modalSafeAreaStyles: ModalProps['styles'] = {
+  header: {
+    paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--mantine-spacing-sm))',
+  },
+  body: {
+    paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--mantine-spacing-md))',
+  },
+};
+
+/** Default modals: fullscreen on narrow viewports so content is not clipped. */
+export function modalShellResponsive(isNarrow: boolean): Partial<ModalProps> {
+  if (!isNarrow) return modalShell;
+  return {
+    centered: false,
+    fullScreen: true,
+    size: '100%',
+    radius: 0,
+    padding: 'md',
+    styles: modalSafeAreaStyles,
+  };
+}
+
+/** Food dish create/edit: large desktop + scroll; fullscreen + scroll on phone. */
+export function dishFormModalProps(isNarrow: boolean): Partial<ModalProps> {
+  if (!isNarrow) {
+    return {
+      ...modalShell,
+      size: 'lg',
+      styles: {
+        body: { maxHeight: 'min(75dvh, 560px)' },
+      },
+    };
+  }
+  return {
+    centered: false,
+    fullScreen: true,
+    size: '100%',
+    radius: 0,
+    padding: 'md',
+    styles: {
+      header: modalSafeAreaStyles?.header,
+      content: { maxHeight: '100dvh', display: 'flex', flexDirection: 'column' },
+      body: {
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--mantine-spacing-md))',
+        flex: 1,
+        minHeight: 0,
+        overflowY: 'auto',
+      },
+    },
+  };
+}

@@ -1,6 +1,6 @@
 # Monty Finance
 
-Монорепозиторий приложения **Monty**: веб-клиент на React и API на FastAPI для учёта финансов (в т.ч. интеграция с Telegram) и вертикали **Food** (каталог блюд).
+Монорепозиторий приложения **Monty**: веб-клиент на React и API на FastAPI для учёта финансов (в т.ч. интеграция с Telegram) и вертикали **Food** (каталог блюд с составом, недельное меню).
 
 ## Структура
 
@@ -8,7 +8,7 @@
 |---------|----------|
 | [`monty-backend`](monty-backend/) | FastAPI, SQLAlchemy, фоновые задачи (APScheduler) |
 | [`monty-frontend`](monty-frontend/) | Vite, React 19, TypeScript, Mantine, React Router |
-| [`docs`](docs/) | Архитектурные заметки (например, Food / superapp) |
+| [`docs`](docs/) | Архитектурные заметки: [`food-service-architecture.md`](docs/food-service-architecture.md), модель данных v2 — [`food-data-model-v2.md`](docs/food-data-model-v2.md) |
 
 ### Backend: разделение по сервисам
 
@@ -21,7 +21,11 @@
 | [`app/finance/schemas.py`](monty-backend/app/finance/schemas.py) | Pydantic-схемы finance |
 | [`app/finance/routers/`](monty-backend/app/finance/routers/) | HTTP-роутеры (`auth`, `transactions`, …) |
 | [`app/finance/services/`](monty-backend/app/finance/services/) | Бизнес-логика, планировщик, digest, auth_service |
-| [`app/food/`](monty-backend/app/food/) | Food: модели, схемы, [`router.py`](monty-backend/app/food/router.py) (`/food/...`) |
+| [`app/food/`](monty-backend/app/food/) | Food: [`router.py`](monty-backend/app/food/router.py) собирает префикс `/food`; подроутеры в [`app/food/routers/`](monty-backend/app/food/routers/) (`meal`, `catalog`, `plan`) |
+| [`app/food/models/`](monty-backend/app/food/models/) | ORM: `meal` (категории приёма пищи, блюда), `catalog` (единицы, ингредиенты, строки состава блюда), `plan` (слоты недельного меню) |
+| [`app/food/schemas/`](monty-backend/app/food/schemas/) | Pydantic-схемы Food (те же слои) |
+| [`app/food/serialization.py`](monty-backend/app/food/serialization.py) | Сборка ответов API (блюдо со строками состава, слот меню с названием блюда) |
+| [`app/food/db_bootstrap.py`](monty-backend/app/food/db_bootstrap.py) | Добавление новых колонок в `food_dishes` на уже существующей SQLite/Postgres БД (проект без Alembic, основной путь — `create_all` при старте) |
 | [`app/core/`](monty-backend/app/core/) | Конфиг, БД engine, `get_db` |
 | [`app/middleware/`](monty-backend/app/middleware/) | JWT / текущий пользователь |
 | [`app/models/__init__.py`](monty-backend/app/models/__init__.py) | Реэкспорт всех ORM-модулей для `Base.metadata` (обратная совместимость) |
@@ -34,9 +38,9 @@
 |------|------------|
 | [`src/services/http.ts`](monty-frontend/src/services/http.ts) | Axios-клиент и заголовок `Authorization` |
 | [`src/services/finance.ts`](monty-frontend/src/services/finance.ts) | API finance (auth, транзакции, бюджеты, …) |
-| [`src/services/food.ts`](monty-frontend/src/services/food.ts) | API Food |
+| [`src/services/food.ts`](monty-frontend/src/services/food.ts) | API Food: категории и блюда, единицы и справочник ингредиентов, замена состава блюда (`PUT .../ingredients`), меню недели (`/menu`, слоты) |
 | [`src/services/index.ts`](monty-frontend/src/services/index.ts) | Сводный экспорт |
-| [`src/food/`](monty-frontend/src/food/) | UI Food: [`FoodLayout.tsx`](monty-frontend/src/food/FoodLayout.tsx), страницы в [`food/pages/`](monty-frontend/src/food/pages/) |
+| [`src/food/`](monty-frontend/src/food/) | UI Food: [`FoodLayout.tsx`](monty-frontend/src/food/FoodLayout.tsx); **Каталог** — категории, рецепт текстом, состав из справочника продуктов; **Меню** — сетка недели (слоты завтрак/обед/ужин/перекус) и привязка блюд из каталога |
 | [`src/api/index.ts`](monty-frontend/src/api/index.ts) | Реэкспорт из `services` для старых импортов `from '../api'` |
 | [`src/theme/dashboardChrome.ts`](monty-frontend/src/theme/dashboardChrome.ts) | Общие стили «как на главной» (градиент hero, glass-карточки, кнопки, модалки) |
 
@@ -86,6 +90,19 @@ make backend-run
 ```
 
 Документация OpenAPI: `http://localhost:8000/docs`
+
+### Food API (префикс `/food`, тот же JWT)
+
+| Область | Эндпоинты (кратко) |
+|---------|-------------------|
+| Категории приёма пищи | `GET/POST /food/meal-categories`, `PATCH/DELETE /food/meal-categories/{id}` |
+| Блюда | `GET/POST /food/dishes`, `PATCH/DELETE /food/dishes/{id}`; ответы включают вложенный **состав** (`ingredients`) |
+| Единицы измерения | `GET /food/units` (при пустой таблице создаются базовые: g, ml, pcs, …) |
+| Справочник продуктов | `GET /food/ingredients?q=…`, `POST/PATCH/DELETE /food/ingredients/{id}` |
+| Состав блюда | `PUT /food/dishes/{id}/ingredients` — тело `{ "items": [ { "ingredient_id", "quantity", "unit_id", … } ] }` (полная замена списка) |
+| Меню недели | `GET /food/menu?from=…&to=…`, `POST /food/menu/slots`, `PATCH/DELETE /food/menu/slots/{id}` |
+
+На MVP данные привязаны к одному «дому» (`household_id` в коде). Целевая схема домена и связка с Finance — в [`docs/food-data-model-v2.md`](docs/food-data-model-v2.md).
 
 ## Frontend
 

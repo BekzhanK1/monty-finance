@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
 import {
   Container,
   Stack,
@@ -20,6 +21,7 @@ import { settingsApi, categoriesApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Settings, BudgetConfig } from '../types';
+import { modalShellResponsive } from '../theme/dashboardChrome';
 
 const GROUP_LABELS: Record<string, string> = {
   BASE: 'База',
@@ -38,6 +40,7 @@ const GROUP_ICONS: Record<string, string> = {
 export function SettingsPage() {
   const { haptic } = useTelegram();
   const { colorScheme } = useMantineColorScheme();
+  const isNarrow = useMediaQuery('(max-width: 36em)');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [budgets, setBudgets] = useState<BudgetConfig[]>([]);
   const [loading, setLoading] = useState(true);
@@ -426,9 +429,7 @@ export function SettingsPage() {
             <Text fw={700} size="lg">{isNewCategory ? 'Новая категория' : 'Редактировать'}</Text>
           </Group>
         }
-        centered
-        radius="xl"
-        size="md"
+        {...modalShellResponsive(!!isNarrow)}
       >
         <Stack gap="md">
           <TextInput
@@ -486,6 +487,7 @@ export function SettingsPage() {
             variant="gradient"
             gradient={{ from: 'blue', to: 'violet', deg: 135 }}
             mt="md"
+            fullWidth={!!isNarrow}
           >
             Сохранить
           </Button>

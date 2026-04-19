@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
 import {
   Card,
   Container,
@@ -19,7 +20,7 @@ import {
   IconChevronRight,
 } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
-import { glassSectionShell, modalShell } from '../theme/dashboardChrome';
+import { glassSectionShell, modalShellResponsive } from '../theme/dashboardChrome';
 
 type ServiceDef = {
   title: string;
@@ -39,6 +40,7 @@ const services: ServiceDef[] = [
 export function AllServicesPage() {
   const { colorScheme } = useMantineColorScheme();
   const theme = useMantineTheme();
+  const isNarrow = useMediaQuery('(max-width: 36em)');
   const [soonTitle, setSoonTitle] = useState<string | null>(null);
 
   const tileBody = (s: ServiceDef) => {
@@ -132,7 +134,7 @@ export function AllServicesPage() {
             {soonTitle ?? ''}
           </Text>
         }
-        {...modalShell}
+        {...modalShellResponsive(!!isNarrow)}
       >
         <Text c="dimmed" size="sm">
           Сервис в разработке. Следите за обновлениями в Monty.

@@ -18,7 +18,7 @@ import {
   TextInput,
   useMantineColorScheme,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import {
   IconBook2,
   IconFolderPlus,
@@ -31,11 +31,12 @@ import { foodApi, formatIngredientSummary, type FoodDishIngredientPayload } from
 import type { FoodDish, FoodDishIngredientLine, FoodIngredient, FoodMealCategory, FoodUnit } from '../../types';
 import { useTelegram } from '../../hooks/useTelegram';
 import {
+  dishFormModalProps,
   glassSectionShell,
   gradientButton,
   heroVioletShell,
   insetRowShell,
-  modalShell,
+  modalShellResponsive,
   PAGE_WITH_BOTTOM_NAV_PB,
 } from '../../theme/dashboardChrome';
 
@@ -101,9 +102,17 @@ type IngredientEditorProps = {
   rows: IngDraftRow[];
   setRows: Dispatch<SetStateAction<IngDraftRow[]>>;
   onOpenNewIngredient: () => void;
+  isNarrow: boolean;
 };
 
-function IngredientEditor({ units, ingredients, rows, setRows, onOpenNewIngredient }: IngredientEditorProps) {
+function IngredientEditor({
+  units,
+  ingredients,
+  rows,
+  setRows,
+  onOpenNewIngredient,
+  isNarrow,
+}: IngredientEditorProps) {
   const unitData = useMemo(
     () => units.map((u) => ({ value: String(u.id), label: `${u.name} (${u.code})` })),
     [units],
@@ -115,17 +124,23 @@ function IngredientEditor({ units, ingredients, rows, setRows, onOpenNewIngredie
 
   return (
     <Stack gap="sm">
-      <Group justify="space-between" align="center">
-        <Text fw={600} size="sm">
+      <Group justify="space-between" align="flex-start" wrap="wrap" gap="xs">
+        <Text fw={600} size="sm" style={{ flex: '1 1 140px' }}>
           Состав (опционально)
         </Text>
-        <Button size="xs" variant="light" radius="lg" onClick={onOpenNewIngredient}>
+        <Button
+          size="xs"
+          variant="light"
+          radius="lg"
+          onClick={onOpenNewIngredient}
+          style={{ flex: isNarrow ? '1 1 100%' : '0 0 auto', alignSelf: isNarrow ? 'stretch' : 'center' }}
+        >
           Новый продукт
         </Button>
       </Group>
       {rows.map((row, idx) => (
         <Card key={row.key} withBorder padding="sm" radius="md" variant="light">
-          <Group align="flex-end" wrap="nowrap" gap="xs">
+          <Stack gap="xs">
             <Select
               label={idx === 0 ? 'Продукт' : undefined}
               placeholder="Выберите"
@@ -138,48 +153,52 @@ function IngredientEditor({ units, ingredients, rows, setRows, onOpenNewIngredie
                   prev.map((p) => (p.key === row.key ? { ...p, ingredientId: v } : p)),
                 )
               }
-              style={{ flex: 1, minWidth: 0 }}
               size="sm"
               radius="md"
+              comboboxProps={{ withinPortal: true }}
             />
-            <NumberInput
-              label={idx === 0 ? 'Кол-во' : undefined}
-              min={0.001}
-              step={0.5}
-              value={Number(row.quantity.replace(',', '.')) || undefined}
-              onChange={(v) =>
-                setRows((prev) =>
-                  prev.map((p) => (p.key === row.key ? { ...p, quantity: v != null ? String(v) : '' } : p)),
-                )
-              }
-              style={{ width: 100 }}
-              size="sm"
-              radius="md"
-              hideControls
-            />
-            <Select
-              label={idx === 0 ? 'Ед.' : undefined}
-              data={unitData}
-              value={row.unitId}
-              onChange={(v) =>
-                setRows((prev) => prev.map((p) => (p.key === row.key ? { ...p, unitId: v } : p)))
-              }
-              style={{ width: 130 }}
-              size="sm"
-              radius="md"
-            />
-            <ActionIcon
-              variant="subtle"
-              color="red"
-              radius="md"
-              aria-label="Удалить строку"
-              onClick={() =>
-                setRows((prev) => (prev.length <= 1 ? prev : prev.filter((p) => p.key !== row.key)))
-              }
-            >
-              <IconTrash size={16} />
-            </ActionIcon>
-          </Group>
+            <Group align="flex-end" wrap="wrap" gap="xs" justify="space-between">
+              <NumberInput
+                label={idx === 0 ? 'Кол-во' : undefined}
+                min={0.001}
+                step={0.5}
+                value={Number(row.quantity.replace(',', '.')) || undefined}
+                onChange={(v) =>
+                  setRows((prev) =>
+                    prev.map((p) => (p.key === row.key ? { ...p, quantity: v != null ? String(v) : '' } : p)),
+                  )
+                }
+                style={{ flex: '1 1 96px', minWidth: 88, maxWidth: isNarrow ? '100%' : 120 }}
+                size="sm"
+                radius="md"
+                hideControls
+              />
+              <Select
+                label={idx === 0 ? 'Единица' : undefined}
+                data={unitData}
+                value={row.unitId}
+                onChange={(v) =>
+                  setRows((prev) => prev.map((p) => (p.key === row.key ? { ...p, unitId: v } : p)))
+                }
+                style={{ flex: '2 1 140px', minWidth: 120, maxWidth: '100%' }}
+                size="sm"
+                radius="md"
+                comboboxProps={{ withinPortal: true }}
+              />
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                radius="md"
+                aria-label="Удалить строку"
+                size="lg"
+                onClick={() =>
+                  setRows((prev) => (prev.length <= 1 ? prev : prev.filter((p) => p.key !== row.key)))
+                }
+              >
+                <IconTrash size={18} />
+              </ActionIcon>
+            </Group>
+          </Stack>
         </Card>
       ))}
       <Button
@@ -200,6 +219,7 @@ function IngredientEditor({ units, ingredients, rows, setRows, onOpenNewIngredie
 export function FoodCatalogPage() {
   const { colorScheme } = useMantineColorScheme();
   const { haptic } = useTelegram();
+  const isNarrow = useMediaQuery('(max-width: 36em)');
   const [categories, setCategories] = useState<FoodMealCategory[]>([]);
   const [dishes, setDishes] = useState<FoodDish[]>([]);
   const [units, setUnits] = useState<FoodUnit[]>([]);
@@ -513,7 +533,7 @@ export function FoodCatalogPage() {
             </Text>
           </Group>
         }
-        {...modalShell}
+        {...modalShellResponsive(!!isNarrow)}
       >
         <Stack gap="md">
           <TextInput
@@ -524,7 +544,7 @@ export function FoodCatalogPage() {
             size="md"
             radius="lg"
           />
-          <Button onClick={() => void handleAddCategory()} {...gradientButton} mt="md">
+          <Button onClick={() => void handleAddCategory()} {...gradientButton} mt="md" fullWidth={!!isNarrow}>
             Добавить
           </Button>
         </Stack>
@@ -544,8 +564,7 @@ export function FoodCatalogPage() {
             </Text>
           </Group>
         }
-        {...modalShell}
-        size="lg"
+        {...dishFormModalProps(!!isNarrow)}
       >
         <Stack gap="md">
           <Select
@@ -555,6 +574,7 @@ export function FoodCatalogPage() {
             onChange={setDishCategoryId}
             size="md"
             radius="lg"
+            comboboxProps={{ withinPortal: true }}
           />
           <TextInput
             label="Название"
@@ -565,7 +585,9 @@ export function FoodCatalogPage() {
           />
           <Textarea
             label="Рецепт (текст)"
-            minRows={4}
+            autosize
+            minRows={isNarrow ? 3 : 4}
+            maxRows={isNarrow ? 8 : 12}
             value={dishRecipe}
             onChange={(e) => setDishRecipe(e.currentTarget.value)}
             size="md"
@@ -577,12 +599,13 @@ export function FoodCatalogPage() {
             ingredients={ingredients}
             rows={ingRows}
             setRows={setIngRows}
+            isNarrow={!!isNarrow}
             onOpenNewIngredient={() => {
               haptic('light');
               openNewIng();
             }}
           />
-          <Button onClick={() => void handleAddDish()} {...gradientButton} mt="md">
+          <Button onClick={() => void handleAddDish()} {...gradientButton} mt="md" fullWidth={!!isNarrow}>
             Сохранить
           </Button>
         </Stack>
@@ -602,8 +625,7 @@ export function FoodCatalogPage() {
             </Text>
           </Group>
         }
-        {...modalShell}
-        size="lg"
+        {...dishFormModalProps(!!isNarrow)}
       >
         <Stack gap="md">
           <Select
@@ -613,6 +635,7 @@ export function FoodCatalogPage() {
             onChange={setDishCategoryId}
             size="md"
             radius="lg"
+            comboboxProps={{ withinPortal: true }}
           />
           <TextInput
             label="Название"
@@ -623,7 +646,9 @@ export function FoodCatalogPage() {
           />
           <Textarea
             label="Рецепт (текст)"
-            minRows={4}
+            autosize
+            minRows={isNarrow ? 3 : 4}
+            maxRows={isNarrow ? 8 : 12}
             value={dishRecipe}
             onChange={(e) => setDishRecipe(e.currentTarget.value)}
             size="md"
@@ -635,12 +660,13 @@ export function FoodCatalogPage() {
             ingredients={ingredients}
             rows={ingRows}
             setRows={setIngRows}
+            isNarrow={!!isNarrow}
             onOpenNewIngredient={() => {
               haptic('light');
               openNewIng();
             }}
           />
-          <Button onClick={() => void handleSaveEdit()} {...gradientButton} mt="md">
+          <Button onClick={() => void handleSaveEdit()} {...gradientButton} mt="md" fullWidth={!!isNarrow}>
             Сохранить
           </Button>
         </Stack>
@@ -653,7 +679,7 @@ export function FoodCatalogPage() {
           closeNewIng();
         }}
         title={<Text fw={700}>Новый продукт</Text>}
-        {...modalShell}
+        {...modalShellResponsive(!!isNarrow)}
       >
         <Stack gap="md">
           <TextInput
@@ -669,8 +695,9 @@ export function FoodCatalogPage() {
             value={newIngUnitId}
             onChange={setNewIngUnitId}
             radius="lg"
+            comboboxProps={{ withinPortal: true }}
           />
-          <Button onClick={() => void handleCreateIngredient()} {...gradientButton}>
+          <Button onClick={() => void handleCreateIngredient()} {...gradientButton} fullWidth={!!isNarrow}>
             Добавить в справочник
           </Button>
         </Stack>

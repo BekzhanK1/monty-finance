@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMediaQuery } from '@mantine/hooks';
 import {
   ActionIcon,
   Button,
@@ -17,7 +18,12 @@ import { useDisclosure } from '@mantine/hooks';
 import { IconCalendarEvent, IconChevronLeft, IconChevronRight, IconTrash } from '@tabler/icons-react';
 import { foodApi } from '../../services/food';
 import type { FoodDish, FoodMealSlot, FoodSlotKey } from '../../types';
-import { PAGE_WITH_BOTTOM_NAV_PB, gradientButton, heroVioletShell, modalShell } from '../../theme/dashboardChrome';
+import {
+  PAGE_WITH_BOTTOM_NAV_PB,
+  gradientButton,
+  heroVioletShell,
+  modalShellResponsive,
+} from '../../theme/dashboardChrome';
 import { useTelegram } from '../../hooks/useTelegram';
 
 const SLOT_ORDER: FoodSlotKey[] = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -69,6 +75,7 @@ type MenuModalState =
 export function FoodMenuPage() {
   const { colorScheme } = useMantineColorScheme();
   const { haptic } = useTelegram();
+  const isNarrow = useMediaQuery('(max-width: 36em)');
   const [weekOffset, setWeekOffset] = useState(0);
   const [dishes, setDishes] = useState<FoodDish[]>([]);
   const [slots, setSlots] = useState<FoodMealSlot[]>([]);
@@ -304,7 +311,7 @@ export function FoodMenuPage() {
         opened={opened}
         onClose={closeModal}
         title={<Text fw={700}>Блюдо в меню</Text>}
-        {...modalShell}
+        {...modalShellResponsive(!!isNarrow)}
       >
         <Stack gap="md">
           <Select
@@ -316,21 +323,35 @@ export function FoodMenuPage() {
             value={dishSelect}
             onChange={setDishSelect}
             radius="lg"
+            comboboxProps={{ withinPortal: true }}
           />
-          <Group grow>
-            <Button variant="default" onClick={closeModal}>
-              Отмена
-            </Button>
-            <Button onClick={() => void saveModal()} {...gradientButton}>
-              Сохранить
-            </Button>
-          </Group>
+          {isNarrow ? (
+            <Stack gap="sm">
+              <Button onClick={() => void saveModal()} {...gradientButton} fullWidth>
+                Сохранить
+              </Button>
+              <Button variant="default" onClick={closeModal} fullWidth radius="xl">
+                Отмена
+              </Button>
+            </Stack>
+          ) : (
+            <Group grow>
+              <Button variant="default" onClick={closeModal} radius="xl">
+                Отмена
+              </Button>
+              <Button onClick={() => void saveModal()} {...gradientButton}>
+                Сохранить
+              </Button>
+            </Group>
+          )}
           {menuModal?.mode === 'edit' ? (
             <Button
               color="red"
               variant="light"
               leftSection={<IconTrash size={16} />}
               onClick={() => void deleteSlot()}
+              fullWidth={!!isNarrow}
+              radius="xl"
             >
               Удалить ячейку
             </Button>
