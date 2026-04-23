@@ -153,8 +153,8 @@ export function AnalyticsPage() {
       let data: Analytics;
       if (period === 'current') {
         const { start, end } = getFinancialPeriodWithOffset(financialOffset, salaryDay);
-        const startStr = start.toISOString().split('T')[0];
-        const endStr = end.toISOString().split('T')[0];
+        const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+        const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
         data = await analyticsApi.getPeriod(startStr, endStr);
         const formatter = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' });
         setFinancialLabel(`${formatter.format(start)} – ${formatter.format(end)}`);
