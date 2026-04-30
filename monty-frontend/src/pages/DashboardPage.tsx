@@ -81,7 +81,7 @@ export function DashboardPage() {
   const percentColor = (p: number) => (p >= 75 ? 'red' : p >= 50 ? 'yellow' : 'green');
 
   const budgetRemain = totalBudget > 0 ? totalBudget - expensesSpent : 0;
-  const budgetExpensePercent = totalBudget > 0 ? Math.round((expensesSpent / totalBudget) * 100) : 0;
+  const budgetExpensePercent = expensesBudget > 0 ? Math.round((expensesSpent / expensesBudget) * 100) : 0;
   const afterPlannedSpending = totalBudget > 0 ? totalBudget - expensesBudget : 0;
 
   return (
