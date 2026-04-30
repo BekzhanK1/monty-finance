@@ -13,7 +13,7 @@ import {
   NumberInput,
   useMantineColorScheme,
 } from '@mantine/core';
-import { IconTarget, IconTrendingUp, IconWallet, IconPigMoney } from '@tabler/icons-react';
+import { IconTarget, IconTrendingUp, IconWallet } from '@tabler/icons-react';
 import { budgetsApi, goalsApi, settingsApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { FloatingActionButton } from '../components/FloatingActionButton';
@@ -66,7 +66,6 @@ export function DashboardPage() {
                          comfortBudgets.reduce((sum, b) => sum + b.limit_amount, 0);
   const expensesSpent = baseBudgets.reduce((sum, b) => sum + b.spent, 0) +
                         comfortBudgets.reduce((sum, b) => sum + b.spent, 0);
-  const savingsSpent = savingsBudgets.reduce((sum, b) => sum + b.spent, 0);
   const totalRemaining = expensesBudget - expensesSpent;
   const spentPercent = expensesBudget > 0 ? Math.round((expensesSpent / expensesBudget) * 100) : 0;
   const remainingPercent = expensesBudget > 0 ? Math.round((totalRemaining / expensesBudget) * 100) : 0;
@@ -229,8 +228,8 @@ export function DashboardPage() {
           </Group>
         </Card>
 
-        {/* Total Budget Summary - More spacious for 6-figure numbers */}
-        <SimpleGrid cols={{ base: 2, xs: 3 }} spacing="md">
+        {/* Total Budget Summary */}
+        <SimpleGrid cols={2} spacing="md">
           <Card 
             shadow="md" 
             padding="lg" 
@@ -244,23 +243,8 @@ export function DashboardPage() {
           >
             <IconTrendingUp size={24} style={{ color: '#ef4444', marginBottom: '12px' }} />
             <Text size="xs" c="dimmed" mb={8}>Потрачено</Text>
-            <Text fw={700} size="xl" style={{ fontSize: '1.5rem' }}>{formatNumber(expensesSpent)} ₸</Text>
+            <Text fw={700} size="lg" style={{ fontSize: '1.25rem', wordBreak: 'break-word' }}>{formatNumber(expensesSpent)} ₸</Text>
             <Text size="xs" c="dimmed" mt={8}>{spentPercent}%</Text>
-          </Card>
-          <Card 
-            shadow="md" 
-            padding="lg" 
-            radius="xl" 
-            withBorder
-            className="stagger-item hover-lift"
-            style={{
-              background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <IconPigMoney size={24} style={{ color: '#14b8a6', marginBottom: '12px' }} />
-            <Text size="xs" c="dimmed" mb={8}>Накопления</Text>
-            <Text fw={700} size="xl" c="teal" style={{ fontSize: '1.5rem' }}>{formatNumber(savingsSpent)} ₸</Text>
           </Card>
           <Card 
             shadow="md" 
@@ -275,7 +259,7 @@ export function DashboardPage() {
           >
             <IconWallet size={24} style={{ color: totalRemaining < 0 ? '#ef4444' : '#10b981', marginBottom: '12px' }} />
             <Text size="xs" c="dimmed" mb={8}>Осталось</Text>
-            <Text fw={700} size="xl" c={totalRemaining < 0 ? 'red' : 'green'} style={{ fontSize: '1.5rem' }}>{formatNumber(totalRemaining)} ₸</Text>
+            <Text fw={700} size="lg" c={totalRemaining < 0 ? 'red' : 'green'} style={{ fontSize: '1.25rem', wordBreak: 'break-word' }}>{formatNumber(totalRemaining)} ₸</Text>
             <Text size="xs" c="dimmed" mt={8}>{remainingPercent}%</Text>
           </Card>
         </SimpleGrid>
