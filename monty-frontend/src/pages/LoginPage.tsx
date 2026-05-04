@@ -3,20 +3,21 @@ import { Button, Center, Stack, Text, Title, ThemeIcon } from '@mantine/core';
 import { IconWallet } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useTelegram } from '../hooks/useTelegram';
+import { LoadingScreen } from '../components/LoadingScreen';
 
 export function LoginPage() {
   const navigate = useNavigate();
   const { login, isLoading, isReady, error, isAuthenticated } = useAuth();
-  const { initData, user: telegramUser } = useTelegram();
-
-  const initDataPreview = initData ? initData : '(пусто)';
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  if (!isReady) {
+    return <LoadingScreen />;
+  }
 
   return (
     <Center h="100vh" p="md">
@@ -30,35 +31,21 @@ export function LoginPage() {
           Приватный финансовый трекер для пары
         </Text>
 
-        <Text c="dimmed" size="xs" ta="center" maw={280} style={{ wordBreak: 'break-all' }}>
-          initData: {initDataPreview}
-        </Text>
-
-        {telegramUser && (
-          <Text c="dimmed" size="xs" ta="center" maw={280}>
-            Telegram user: {telegramUser.first_name} (id: {telegramUser.id})
-          </Text>
-        )}
-
         {error && (
           <Text c="red" size="sm" ta="center" maw={280}>
             {error}
           </Text>
         )}
 
-        {!isReady ? (
-          <Text c="dimmed" size="sm">Загрузка...</Text>
-        ) : (
-          <Button
-            size="lg"
-            onClick={login}
-            loading={isLoading}
-            fullWidth
-            maw={280}
-          >
-            Войти через Telegram
-          </Button>
-        )}
+        <Button
+          size="lg"
+          onClick={login}
+          loading={isLoading}
+          fullWidth
+          maw={280}
+        >
+          Войти через Telegram
+        </Button>
       </Stack>
     </Center>
   );
