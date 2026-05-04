@@ -4,3 +4,4 @@ export { ThemeExample } from './ThemeExample';
 export { StatCard } from './StatCard';
 export { BudgetCard } from './BudgetCard';
 export { TransactionCard } from './TransactionCard';
+export { LoadingScreen } from './LoadingScreen';
