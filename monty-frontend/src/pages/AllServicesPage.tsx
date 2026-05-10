@@ -3,21 +3,18 @@ import { useMediaQuery } from '@mantine/hooks';
 import {
   Card,
   Container,
-  Group,
   Modal,
   SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
   useMantineColorScheme,
-  useMantineTheme,
 } from '@mantine/core';
 import {
   IconHome,
   IconToolsKitchen2,
   IconHeart,
   IconPlane,
-  IconChevronRight,
 } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
 import { glassSectionShell, modalShellResponsive } from '../theme/dashboardChrome';
@@ -39,28 +36,24 @@ const services: ServiceDef[] = [
 
 export function AllServicesPage() {
   const { colorScheme } = useMantineColorScheme();
-  const theme = useMantineTheme();
   const isNarrow = useMediaQuery('(max-width: 36em)');
   const [soonTitle, setSoonTitle] = useState<string | null>(null);
 
   const tileBody = (s: ServiceDef) => {
     const Icon = s.icon;
     return (
-      <Stack gap="sm" h="100%" justify="space-between">
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <ThemeIcon size={44} radius="md" variant="light" color="grape">
-            <Icon size={24} stroke={1.5} />
-          </ThemeIcon>
-          <IconChevronRight size={18} color={theme.colors.gray[5]} />
-        </Group>
-        <div>
-          <Text fw={600} size="sm" lineClamp={1}>
+      <Stack gap="sm" h="100%" justify="center" align="center">
+        <ThemeIcon size={48} radius="md" variant="light" color="grape">
+          <Icon size={28} stroke={1.5} />
+        </ThemeIcon>
+        <Stack gap={4} align="center">
+          <Text fw={600} size="sm" ta="center" lineClamp={1}>
             {s.title}
           </Text>
-          <Text size="xs" c="dimmed" lineClamp={2}>
+          <Text size="xs" c="dimmed" ta="center" lineClamp={2}>
             {s.comingSoon ? 'Скоро' : s.description}
           </Text>
-        </div>
+        </Stack>
       </Stack>
     );
   };
