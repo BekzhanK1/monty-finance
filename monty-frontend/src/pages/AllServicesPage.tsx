@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import {
-  Card,
   Container,
   Modal,
   SimpleGrid,
   Stack,
   Text,
   ThemeIcon,
-  useMantineColorScheme,
+  UnstyledButton,
 } from '@mantine/core';
 import {
   IconHome,
@@ -17,46 +16,81 @@ import {
   IconPlane,
 } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
-import { glassSectionShell, modalShellResponsive } from '../theme/dashboardChrome';
+import { modalShellResponsive } from '../theme/dashboardChrome';
 
 type ServiceDef = {
   title: string;
-  description: string;
   icon: typeof IconHome;
   comingSoon?: boolean;
   to?: string;
 };
 
 const services: ServiceDef[] = [
-  { title: 'Finance', description: 'Бюджет и транзакции', to: '/', icon: IconHome },
-  { title: 'Food', description: 'Меню и каталог блюд', to: '/food', icon: IconToolsKitchen2 },
-  { title: 'Health', description: 'Wellness', icon: IconHeart, comingSoon: true },
-  { title: 'Travel', description: 'Поездки', icon: IconPlane, comingSoon: true },
+  { title: 'Finance', to: '/', icon: IconHome },
+  { title: 'Food', to: '/food', icon: IconToolsKitchen2 },
+  { title: 'Health', icon: IconHeart, comingSoon: true },
+  { title: 'Travel', icon: IconPlane, comingSoon: true },
 ];
 
+function ServiceTile({
+  service,
+  onSoon,
+}: {
+  service: ServiceDef;
+  onSoon: () => void;
+}) {
+  const Icon = service.icon;
+  const body = (
+    <Stack gap={8} align="center" py="sm">
+      <ThemeIcon
+        size={52}
+        radius="xl"
+        variant="light"
+        color="grape"
+        style={service.comingSoon ? { opacity: 0.45 } : undefined}
+      >
+        <Icon size={28} stroke={1.5} />
+      </ThemeIcon>
+      <Text fw={500} size="xs" ta="center" lineClamp={2} maw="100%">
+        {service.title}
+      </Text>
+    </Stack>
+  );
+
+  const tileStyle = {
+    width: '100%',
+    color: 'inherit',
+    textDecoration: 'none',
+  } as const;
+
+  if (service.comingSoon) {
+    return (
+      <UnstyledButton
+        type="button"
+        className="stagger-item transition-all"
+        style={tileStyle}
+        onClick={onSoon}
+      >
+        {body}
+      </UnstyledButton>
+    );
+  }
+
+  return (
+    <UnstyledButton
+      component={Link}
+      to={service.to!}
+      className="stagger-item transition-all"
+      style={tileStyle}
+    >
+      {body}
+    </UnstyledButton>
+  );
+}
+
 export function AllServicesPage() {
-  const { colorScheme } = useMantineColorScheme();
   const isNarrow = useMediaQuery('(max-width: 36em)');
   const [soonTitle, setSoonTitle] = useState<string | null>(null);
-
-  const tileBody = (s: ServiceDef) => {
-    const Icon = s.icon;
-    return (
-      <Stack gap="sm" h="100%" justify="center" align="center">
-        <ThemeIcon size={48} radius="md" variant="light" color="grape">
-          <Icon size={28} stroke={1.5} />
-        </ThemeIcon>
-        <Stack gap={4} align="center">
-          <Text fw={600} size="sm" ta="center" lineClamp={1}>
-            {s.title}
-          </Text>
-          <Text size="xs" c="dimmed" ta="center" lineClamp={2}>
-            {s.comingSoon ? 'Скоро' : s.description}
-          </Text>
-        </Stack>
-      </Stack>
-    );
-  };
 
   return (
     <Container size="sm" p="md" pb={100}>
@@ -64,59 +98,14 @@ export function AllServicesPage() {
         Все сервисы
       </Text>
 
-      <SimpleGrid cols={{ base: 2, xs: 2, sm: 3, md: 4 }} spacing="md">
-        {services.map((s) => {
-          if (s.comingSoon) {
-            return (
-              <Card
-                key={s.title}
-                component="button"
-                type="button"
-                shadow="md"
-                padding="lg"
-                radius="xl"
-                withBorder
-                className="stagger-item hover-lift"
-                style={{
-                  ...glassSectionShell(colorScheme),
-                  minHeight: 120,
-                  height: '100%',
-                  display: 'block',
-                  width: '100%',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-                onClick={() => setSoonTitle(s.title)}
-              >
-                {tileBody(s)}
-              </Card>
-            );
-          }
-
-          return (
-            <Card
-              key={s.title}
-              component={Link}
-              to={s.to!}
-              shadow="md"
-              padding="lg"
-              radius="xl"
-              withBorder
-              className="stagger-item hover-lift"
-              style={{
-                ...glassSectionShell(colorScheme),
-                minHeight: 120,
-                height: '100%',
-                display: 'block',
-                width: '100%',
-                textDecoration: 'none',
-                color: 'inherit',
-              }}
-            >
-              {tileBody(s)}
-            </Card>
-          );
-        })}
+      <SimpleGrid cols={{ base: 3, sm: 4 }} spacing="lg" verticalSpacing="xl">
+        {services.map((s) => (
+          <ServiceTile
+            key={s.title}
+            service={s}
+            onSoon={() => setSoonTitle(s.title)}
+          />
+        ))}
       </SimpleGrid>
 
       <Modal
