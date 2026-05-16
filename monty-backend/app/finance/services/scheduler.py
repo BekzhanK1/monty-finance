@@ -5,6 +5,7 @@ import pytz
 
 from app.core.config import SessionLocal
 from app.finance.services.digest_service import generate_ai_digest, send_digest_to_telegram, send_reminder_notification, send_daily_summary
+from app.food.models._constants import MVP_HOUSEHOLD_ID
 from app.food.services.telegram_reminder import send_tomorrow_food_telegram_reminder
 from app.core.config import settings
 
@@ -42,7 +43,7 @@ def send_summary():
 
 def send_food_tomorrow_reminder():
     try:
-        send_tomorrow_food_telegram_reminder()
+        send_tomorrow_food_telegram_reminder(household_id=MVP_HOUSEHOLD_ID)
         print(f"[{datetime.now()}] Food tomorrow reminder job finished")
     except Exception as e:
         print(f"[{datetime.now()}] Error sending food tomorrow reminder: {e}")

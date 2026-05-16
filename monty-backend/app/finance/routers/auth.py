@@ -39,5 +39,6 @@ def get_me(current_user: User = Depends(get_current_user)):
         "user_id": current_user.id,
         "telegram_id": current_user.telegram_id,
         "first_name": current_user.first_name,
-        "is_active": current_user.is_active
+        "is_active": current_user.is_active,
+        "household_id": current_user.household_id,
     }

@@ -4,10 +4,12 @@ import asyncio
 from datetime import date, datetime, timedelta
 
 import pytz
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import SessionLocal, settings
-from app.food.models import FoodMealSlot, MVP_HOUSEHOLD_ID
+from app.food.models import FoodMealSlot, FoodReminderSent
+from app.food.models._constants import MVP_HOUSEHOLD_ID
 
 SLOT_LABELS_RU: dict[str, str] = {
     "breakfast": "Завтрак",
@@ -19,12 +21,41 @@ SLOT_LABELS_RU: dict[str, str] = {
 SLOT_ORDER = ("breakfast", "lunch", "dinner", "snack")
 
 
-def _tomorrow_almaty() -> date:
+def _today_almaty() -> date:
     tz = pytz.timezone("Asia/Almaty")
-    return datetime.now(tz).date() + timedelta(days=1)
+    return datetime.now(tz).date()
 
 
-def build_tomorrow_menu_message(db: Session) -> str:
+def _tomorrow_almaty() -> date:
+    return _today_almaty() + timedelta(days=1)
+
+
+def _already_sent_today(db: Session, *, household_id: int, on_date: date) -> bool:
+    return (
+        db.query(FoodReminderSent)
+        .filter(
+            FoodReminderSent.household_id == household_id,
+            FoodReminderSent.reminder_date == on_date,
+        )
+        .first()
+        is not None
+    )
+
+
+def _try_reserve_reminder_slot(db: Session, *, household_id: int, on_date: date) -> bool:
+    """Reserve send slot before Telegram API call (idempotent per household/day)."""
+    if _already_sent_today(db, household_id=household_id, on_date=on_date):
+        return False
+    try:
+        db.add(FoodReminderSent(household_id=household_id, reminder_date=on_date))
+        db.commit()
+        return True
+    except IntegrityError:
+        db.rollback()
+        return False
+
+
+def build_tomorrow_menu_message(db: Session, *, household_id: int) -> str:
     tomorrow = _tomorrow_almaty()
     tomorrow_fmt = tomorrow.strftime("%d.%m.%Y")
 
@@ -32,7 +63,7 @@ def build_tomorrow_menu_message(db: Session) -> str:
         db.query(FoodMealSlot)
         .options(selectinload(FoodMealSlot.dish))
         .filter(
-            FoodMealSlot.household_id == MVP_HOUSEHOLD_ID,
+            FoodMealSlot.household_id == household_id,
             FoodMealSlot.slot_date == tomorrow,
         )
         .all()
@@ -88,16 +119,23 @@ def build_tomorrow_menu_message(db: Session) -> str:
     )
 
 
-def send_tomorrow_food_telegram_reminder() -> bool:
+def send_tomorrow_food_telegram_reminder(*, household_id: int = MVP_HOUSEHOLD_ID) -> bool:
     from telegram import Bot
 
     if not settings.TELEGRAM_CHAT_ID or not settings.TELEGRAM_BOT_TOKEN:
         print("[Telegram] Food tomorrow reminder SKIPPED - missing chat_id or bot_token")
         return False
 
+    today = _today_almaty()
     db = SessionLocal()
     try:
-        message = build_tomorrow_menu_message(db)
+        if not _try_reserve_reminder_slot(db, household_id=household_id, on_date=today):
+            print(
+                f"[Telegram] Food tomorrow reminder skipped "
+                f"(already reserved for household {household_id} on {today})"
+            )
+            return False
+        message = build_tomorrow_menu_message(db, household_id=household_id)
     finally:
         db.close()
 
@@ -114,5 +152,8 @@ def send_tomorrow_food_telegram_reminder() -> bool:
         print("[Telegram] Tomorrow food reminder sent successfully")
         return True
     except Exception as e:
-        print(f"[Telegram] ERROR sending tomorrow food reminder: {e}")
+        print(
+            f"[Telegram] ERROR sending tomorrow food reminder: {e} "
+            f"(slot reserved for {today}, will not retry today)"
+        )
         return False

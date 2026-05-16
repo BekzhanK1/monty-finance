@@ -28,6 +28,7 @@ class FoodIngredient(Base):
     default_unit_id = Column(Integer, ForeignKey("food_units.id"), nullable=False)
     category = Column(String(64), nullable=True)
     notes = Column(String(500), nullable=True)
+    is_pantry_default = Column(Boolean, nullable=False, default=False)
 
     default_unit = relationship("FoodUnit", foreign_keys=[default_unit_id])
 

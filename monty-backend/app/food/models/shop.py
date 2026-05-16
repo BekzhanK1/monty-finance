@@ -19,6 +19,7 @@ class FoodShoppingList(Base):
     period_start = Column(Date, nullable=True)
     period_end = Column(Date, nullable=True)
     status = Column(String(20), nullable=False, default="active")
+    linked_transaction_id = Column(String(36), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     items = relationship(
@@ -41,6 +42,7 @@ class FoodShoppingItem(Base):
     checked = Column(Boolean, nullable=False, default=False)
     sort_order = Column(Integer, nullable=False, default=0)
     note = Column(Text, nullable=True)
+    actual_price = Column(Numeric(12, 2), nullable=True)
 
     shopping_list = relationship("FoodShoppingList", back_populates="items")
     ingredient = relationship("FoodIngredient")

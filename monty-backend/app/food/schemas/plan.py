@@ -20,6 +20,19 @@ class FoodMealSlotUpdate(BaseModel):
     notes: str | None = None
 
 
+class FoodMenuCopyWeekBody(BaseModel):
+    """Monday of the week to fill (target). Source defaults to previous week."""
+
+    target_week_start: date
+    source_week_start: date | None = None
+
+
+class FoodMenuCopyWeekResponse(BaseModel):
+    slots_created: int
+    target_week_start: date
+    source_week_start: date
+
+
 class FoodMealSlotResponse(BaseModel):
     id: int
     household_id: int

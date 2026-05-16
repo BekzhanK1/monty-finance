@@ -12,7 +12,12 @@ from app.finance.routers import (
     transactions,
 )
 from app.finance.services.scheduler import scheduler, setup_scheduler
-from app.food.db_bootstrap import ensure_food_dish_columns
+from app.finance.db_bootstrap import ensure_users_household_id
+from app.food.db_bootstrap import (
+    ensure_food_dish_columns,
+    ensure_food_ingredient_columns,
+    ensure_food_shopping_columns,
+)
 from app.food.router import router as food_router
 import app.models  # noqa: F401 — register all ORM tables on Base.metadata
 from fastapi import FastAPI
@@ -22,7 +27,10 @@ from fastapi.middleware.cors import CORSMiddleware
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    ensure_users_household_id()
     ensure_food_dish_columns()
+    ensure_food_ingredient_columns()
+    ensure_food_shopping_columns()
 
     setup_scheduler()
     scheduler.start()

@@ -8,6 +8,7 @@ import {
   Group,
   LoadingOverlay,
   Modal,
+  NumberInput,
   Select,
   Stack,
   Table,
@@ -53,6 +54,7 @@ export function FoodMenuPage() {
   const [error, setError] = useState<string | null>(null);
   const [menuModal, setMenuModal] = useState<MenuModalState | null>(null);
   const [dishSelect, setDishSelect] = useState<string | null>(null);
+  const [slotServings, setSlotServings] = useState(2);
   const [opened, { open, close }] = useDisclosure(false);
 
   const weekStart = useMemo(() => {
@@ -108,9 +110,11 @@ export function FoodMenuPage() {
     if (existing) {
       setMenuModal({ mode: 'edit', slot: existing });
       setDishSelect(existing.dish_id != null ? String(existing.dish_id) : null);
+      setSlotServings(existing.servings ?? 2);
     } else {
       setMenuModal({ mode: 'new', date: dateStr, slot_key });
       setDishSelect(null);
+      setSlotServings(2);
     }
     open();
   };
@@ -138,9 +142,10 @@ export function FoodMenuPage() {
         slot_date: menuModal.date,
         slot_key: menuModal.slot_key,
         dish_id,
+        servings: slotServings,
       });
     } else {
-      await foodApi.menu.updateSlot(menuModal.slot.id, { dish_id });
+      await foodApi.menu.updateSlot(menuModal.slot.id, { dish_id, servings: slotServings });
     }
     haptic('success');
     closeModal();
@@ -215,6 +220,36 @@ export function FoodMenuPage() {
               </ActionIcon>
               <Button size="xs" variant="default" radius="lg" onClick={() => setWeekOffset(0)}>
                 Сегодня
+              </Button>
+              <Button
+                size="xs"
+                variant="light"
+                color="violet"
+                radius="lg"
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      'Скопировать меню с прошлой недели? Текущая неделя будет полностью перезаписана.',
+                    )
+                  ) {
+                    return;
+                  }
+                  void (async () => {
+                    setLoading(true);
+                    try {
+                      await foodApi.menu.copyPreviousWeek(toISODate(weekDays[0]));
+                      haptic('success');
+                      await load();
+                    } catch (e) {
+                      setError('Не удалось скопировать неделю.');
+                      console.error(e);
+                    } finally {
+                      setLoading(false);
+                    }
+                  })();
+                }}
+              >
+                Повтор недели
               </Button>
             </Group>
           </Group>
@@ -294,6 +329,16 @@ export function FoodMenuPage() {
             onChange={setDishSelect}
             radius="lg"
             comboboxProps={{ withinPortal: true }}
+          />
+          <NumberInput
+            label="Порции"
+            description="Влияет на количество в списке покупок"
+            min={1}
+            max={50}
+            step={1}
+            value={slotServings}
+            onChange={(v) => setSlotServings(typeof v === 'number' ? v : 2)}
+            radius="lg"
           />
           {isNarrow ? (
             <Stack gap="sm">

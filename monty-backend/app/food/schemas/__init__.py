@@ -1,3 +1,4 @@
+from app.food.schemas.bootstrap import FoodBootstrapResponse
 from app.food.schemas.catalog import (
     FoodDishIngredientItem,
     FoodDishIngredientLineResponse,
@@ -20,9 +21,17 @@ from app.food.schemas.pantry import (
     FoodPantryItemResponse,
     FoodPantryItemUpdate,
 )
-from app.food.schemas.plan import FoodMealSlotCreate, FoodMealSlotResponse, FoodMealSlotUpdate
+from app.food.schemas.plan import (
+    FoodMealSlotCreate,
+    FoodMealSlotResponse,
+    FoodMealSlotUpdate,
+    FoodMenuCopyWeekBody,
+    FoodMenuCopyWeekResponse,
+)
 from app.food.schemas.shop import (
+    FoodShoppingFinalizeResponse,
     FoodShoppingGenerateBody,
+    FoodShoppingListPatch,
     FoodShoppingItemCreate,
     FoodShoppingItemPatch,
     FoodShoppingItemResponse,
@@ -30,6 +39,7 @@ from app.food.schemas.shop import (
 )
 
 __all__ = [
+    "FoodBootstrapResponse",
     "FoodMealCategoryCreate",
     "FoodMealCategoryResponse",
     "FoodMealCategoryUpdate",
@@ -46,7 +56,11 @@ __all__ = [
     "FoodMealSlotCreate",
     "FoodMealSlotUpdate",
     "FoodMealSlotResponse",
+    "FoodMenuCopyWeekBody",
+    "FoodMenuCopyWeekResponse",
+    "FoodShoppingFinalizeResponse",
     "FoodShoppingGenerateBody",
+    "FoodShoppingListPatch",
     "FoodShoppingListResponse",
     "FoodShoppingItemResponse",
     "FoodShoppingItemPatch",

@@ -16,6 +16,7 @@ class FoodIngredientCreate(BaseModel):
     default_unit_id: int
     category: str | None = Field(None, max_length=64)
     notes: str | None = Field(None, max_length=500)
+    is_pantry_default: bool = False
 
 
 class FoodIngredientUpdate(BaseModel):
@@ -23,6 +24,7 @@ class FoodIngredientUpdate(BaseModel):
     default_unit_id: int | None = None
     category: str | None = Field(None, max_length=64)
     notes: str | None = Field(None, max_length=500)
+    is_pantry_default: bool | None = None
 
 
 class FoodIngredientResponse(BaseModel):
@@ -32,6 +34,7 @@ class FoodIngredientResponse(BaseModel):
     default_unit_id: int
     category: str | None
     notes: str | None
+    is_pantry_default: bool
 
     class Config:
         from_attributes = True

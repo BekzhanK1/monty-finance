@@ -4,11 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_db
-from app.finance.models import User
-from app.food.models import FoodIngredient, FoodPantryItem, FoodUnit, MVP_HOUSEHOLD_ID
+from app.food.deps import get_food_household_id
+from app.food.models import FoodIngredient, FoodPantryItem, FoodUnit
 from app.food.schemas import FoodPantryItemCreate, FoodPantryItemResponse, FoodPantryItemUpdate
 from app.food.serialization_pantry import pantry_item_to_response
-from app.middleware.auth import get_current_user
 
 router = APIRouter()
 
@@ -20,12 +19,12 @@ def _pantry_options():
 @router.get("/pantry", response_model=list[FoodPantryItemResponse])
 def list_pantry(
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    household_id: int = Depends(get_food_household_id),
 ):
     rows = (
         db.query(FoodPantryItem)
         .options(_pantry_options())
-        .filter(FoodPantryItem.household_id == MVP_HOUSEHOLD_ID)
+        .filter(FoodPantryItem.household_id == household_id)
         .order_by(FoodPantryItem.updated_at.desc(), FoodPantryItem.id.desc())
         .all()
     )
@@ -36,11 +35,11 @@ def list_pantry(
 def upsert_pantry_item(
     body: FoodPantryItemCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    household_id: int = Depends(get_food_household_id),
 ):
     ing = (
         db.query(FoodIngredient)
-        .filter(FoodIngredient.id == body.ingredient_id, FoodIngredient.household_id == MVP_HOUSEHOLD_ID)
+        .filter(FoodIngredient.id == body.ingredient_id, FoodIngredient.household_id == household_id)
         .first()
     )
     if not ing:
@@ -52,7 +51,7 @@ def upsert_pantry_item(
     existing = (
         db.query(FoodPantryItem)
         .filter(
-            FoodPantryItem.household_id == MVP_HOUSEHOLD_ID,
+            FoodPantryItem.household_id == household_id,
             FoodPantryItem.ingredient_id == body.ingredient_id,
         )
         .first()
@@ -73,7 +72,7 @@ def upsert_pantry_item(
         return pantry_item_to_response(row)
 
     row = FoodPantryItem(
-        household_id=MVP_HOUSEHOLD_ID,
+        household_id=household_id,
         ingredient_id=body.ingredient_id,
         quantity=qty,
         unit_id=body.unit_id,
@@ -91,11 +90,11 @@ def update_pantry_item(
     item_id: int,
     body: FoodPantryItemUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    household_id: int = Depends(get_food_household_id),
 ):
     row = (
         db.query(FoodPantryItem)
-        .filter(FoodPantryItem.id == item_id, FoodPantryItem.household_id == MVP_HOUSEHOLD_ID)
+        .filter(FoodPantryItem.id == item_id, FoodPantryItem.household_id == household_id)
         .first()
     )
     if not row:
@@ -118,11 +117,11 @@ def update_pantry_item(
 def delete_pantry_item(
     item_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    household_id: int = Depends(get_food_household_id),
 ):
     row = (
         db.query(FoodPantryItem)
-        .filter(FoodPantryItem.id == item_id, FoodPantryItem.household_id == MVP_HOUSEHOLD_ID)
+        .filter(FoodPantryItem.id == item_id, FoodPantryItem.household_id == household_id)
         .first()
     )
     if not row:

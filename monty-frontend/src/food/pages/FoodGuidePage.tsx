@@ -85,13 +85,14 @@ export function FoodGuidePage() {
     try {
       const from = toISODate(weekDays[0]);
       const to = toISODate(weekDays[6]);
-      const [sList, dList, cats] = await Promise.all([
+      const [sList, activeDishes, archivedDishes, cats] = await Promise.all([
         foodApi.menu.list(from, to),
-        foodApi.dishes.list(),
+        foodApi.dishes.list(undefined, false),
+        foodApi.dishes.list(undefined, true),
         foodApi.mealCategories.list(),
       ]);
       setSlots(sList);
-      setDishes(dList.map(normalizeDish));
+      setDishes([...activeDishes, ...archivedDishes].map(normalizeDish));
       setCategories(cats);
     } finally {
       setLoading(false);
@@ -238,6 +239,10 @@ export function FoodGuidePage() {
                     slot?.dish_id && dishById.get(slot.dish_id)
                       ? dishById.get(slot.dish_id)!.title
                       : slot?.custom_title || slot?.dish_title || null;
+                  const servingsLabel =
+                    title && slot && slot.dish_id && (slot.servings ?? 0) > 0
+                      ? ` · ${slot.servings} порц.`
+                      : '';
                   return (
                     <Group
                       key={sk}
@@ -265,6 +270,7 @@ export function FoodGuidePage() {
                           }}
                         >
                           {title}
+                          {servingsLabel}
                         </Button>
                       ) : (
                         <Text size="sm" c="dimmed" style={{ flex: 1, textAlign: 'right' }}>

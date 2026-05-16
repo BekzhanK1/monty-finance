@@ -139,6 +139,7 @@ export interface FoodIngredient {
   default_unit_id: number;
   category: string | null;
   notes: string | null;
+  is_pantry_default: boolean;
 }
 
 export type FoodSlotKey = 'breakfast' | 'lunch' | 'dinner' | 'snack';
@@ -164,6 +165,9 @@ export interface FoodShoppingItem {
   unit_code: string | null;
   checked: boolean;
   sort_order: number;
+  note?: string | null;
+  unit_mismatch?: boolean;
+  actual_price?: number | null;
 }
 
 export interface FoodShoppingList {
@@ -173,8 +177,16 @@ export interface FoodShoppingList {
   period_start: string | null;
   period_end: string | null;
   status: string;
+  linked_transaction_id?: string | null;
+  total_amount?: number;
   created_at: string;
   items: FoodShoppingItem[];
+}
+
+export interface FoodShoppingFinalizeResult {
+  list: FoodShoppingList;
+  transaction_id: string;
+  total_amount: number;
 }
 
 export interface FoodPantryItem {

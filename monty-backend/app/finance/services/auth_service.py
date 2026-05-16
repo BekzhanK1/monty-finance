@@ -7,6 +7,7 @@ from typing import Optional
 import httpx
 from app.core.config import settings
 from app.finance.models import User
+from app.food.models._constants import MVP_HOUSEHOLD_ID
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
@@ -89,6 +90,7 @@ def authenticate_telegram_user(db: Session, init_data: str) -> Optional[dict]:
             telegram_id=telegram_id,
             first_name=telegram_data["first_name"],
             is_active=True,
+            household_id=MVP_HOUSEHOLD_ID,
         )
         db.add(user)
         db.commit()
@@ -96,6 +98,8 @@ def authenticate_telegram_user(db: Session, init_data: str) -> Optional[dict]:
     else:
         user.first_name = telegram_data["first_name"]
         user.is_active = True
+        if user.household_id is None:
+            user.household_id = MVP_HOUSEHOLD_ID
         db.commit()
 
     access_token = create_access_token(

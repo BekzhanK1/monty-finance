@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_db
-from app.finance.models import User
-from app.food.models import FoodDish, FoodDishIngredient, FoodIngredient, FoodUnit, MVP_HOUSEHOLD_ID
+from app.food.deps import get_food_household_id
+from app.food.models import FoodDish, FoodDishIngredient, FoodIngredient, FoodUnit
 from app.food.schemas import (
     FoodDishIngredientsReplace,
     FoodDishResponse,
@@ -15,26 +15,9 @@ from app.food.schemas import (
     FoodUnitResponse,
 )
 from app.food.serialization import dish_to_response
-from app.middleware.auth import get_current_user
+from app.food.services.unit_seed import ensure_default_units
 
 router = APIRouter()
-
-DEFAULT_UNITS = [
-    ("g", "грамм", "metric"),
-    ("ml", "миллилитр", "metric"),
-    ("pcs", "шт.", "metric"),
-    ("tbsp", "ст. л.", "metric"),
-    ("tsp", "ч. л.", "metric"),
-    ("pinch", "щепотка", "metric"),
-]
-
-
-def _ensure_default_units(db: Session) -> None:
-    if db.query(FoodUnit).count() > 0:
-        return
-    for code, name, system in DEFAULT_UNITS:
-        db.add(FoodUnit(code=code, name=name, system=system))
-    db.commit()
 
 
 def _dish_load_options():
@@ -47,9 +30,9 @@ def _dish_load_options():
 @router.get("/units", response_model=list[FoodUnitResponse])
 def list_units(
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    _: int = Depends(get_food_household_id),
 ):
-    _ensure_default_units(db)
+    ensure_default_units(db)
     return db.query(FoodUnit).order_by(FoodUnit.id).all()
 
 
@@ -57,10 +40,10 @@ def list_units(
 def list_ingredients(
     q: str | None = Query(None, max_length=200),
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    household_id: int = Depends(get_food_household_id),
 ):
-    _ensure_default_units(db)
-    query = db.query(FoodIngredient).filter(FoodIngredient.household_id == MVP_HOUSEHOLD_ID)
+    ensure_default_units(db)
+    query = db.query(FoodIngredient).filter(FoodIngredient.household_id == household_id)
     if q and q.strip():
         like = f"%{q.strip()}%"
         query = query.filter(FoodIngredient.name.ilike(like))
@@ -71,18 +54,19 @@ def list_ingredients(
 def create_ingredient(
     body: FoodIngredientCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    household_id: int = Depends(get_food_household_id),
 ):
-    _ensure_default_units(db)
+    ensure_default_units(db)
     unit = db.query(FoodUnit).filter(FoodUnit.id == body.default_unit_id).first()
     if not unit:
         raise HTTPException(status_code=400, detail="Invalid default_unit_id")
     row = FoodIngredient(
-        household_id=MVP_HOUSEHOLD_ID,
+        household_id=household_id,
         name=body.name.strip(),
         default_unit_id=body.default_unit_id,
         category=body.category,
         notes=body.notes,
+        is_pantry_default=body.is_pantry_default,
     )
     db.add(row)
     db.commit()
@@ -95,11 +79,11 @@ def update_ingredient(
     ingredient_id: int,
     body: FoodIngredientUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    household_id: int = Depends(get_food_household_id),
 ):
     row = (
         db.query(FoodIngredient)
-        .filter(FoodIngredient.id == ingredient_id, FoodIngredient.household_id == MVP_HOUSEHOLD_ID)
+        .filter(FoodIngredient.id == ingredient_id, FoodIngredient.household_id == household_id)
         .first()
     )
     if not row:
@@ -115,6 +99,8 @@ def update_ingredient(
         row.category = body.category
     if body.notes is not None:
         row.notes = body.notes
+    if body.is_pantry_default is not None:
+        row.is_pantry_default = body.is_pantry_default
     db.commit()
     db.refresh(row)
     return row
@@ -124,11 +110,11 @@ def update_ingredient(
 def delete_ingredient(
     ingredient_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    household_id: int = Depends(get_food_household_id),
 ):
     row = (
         db.query(FoodIngredient)
-        .filter(FoodIngredient.id == ingredient_id, FoodIngredient.household_id == MVP_HOUSEHOLD_ID)
+        .filter(FoodIngredient.id == ingredient_id, FoodIngredient.household_id == household_id)
         .first()
     )
     if not row:
@@ -150,21 +136,21 @@ def replace_dish_ingredients(
     dish_id: int,
     body: FoodDishIngredientsReplace,
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    household_id: int = Depends(get_food_household_id),
 ):
     dish = (
         db.query(FoodDish)
-        .filter(FoodDish.id == dish_id, FoodDish.household_id == MVP_HOUSEHOLD_ID)
+        .filter(FoodDish.id == dish_id, FoodDish.household_id == household_id)
         .first()
     )
     if not dish:
         raise HTTPException(status_code=404, detail="Dish not found")
-    _ensure_default_units(db)
+    ensure_default_units(db)
     db.query(FoodDishIngredient).filter(FoodDishIngredient.dish_id == dish_id).delete(synchronize_session=False)
     for it in sorted(body.items, key=lambda x: (x.sort_order, x.ingredient_id)):
         ing = (
             db.query(FoodIngredient)
-            .filter(FoodIngredient.id == it.ingredient_id, FoodIngredient.household_id == MVP_HOUSEHOLD_ID)
+            .filter(FoodIngredient.id == it.ingredient_id, FoodIngredient.household_id == household_id)
             .first()
         )
         if not ing:

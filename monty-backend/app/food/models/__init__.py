@@ -5,6 +5,7 @@ from app.food.models.catalog import FoodDishIngredient, FoodIngredient, FoodUnit
 from app.food.models.meal import FoodDish, FoodMealCategory
 from app.food.models.pantry import FoodPantryItem
 from app.food.models.plan import FoodMealSlot
+from app.food.models.reminder import FoodReminderSent
 from app.food.models.shop import FoodShoppingItem, FoodShoppingList
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "FoodShoppingList",
     "FoodShoppingItem",
     "FoodPantryItem",
+    "FoodReminderSent",
 ]

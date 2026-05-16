@@ -9,6 +9,7 @@ import { TransactionsPage } from './pages/TransactionsPage';
 import { AllServicesPage } from './pages/AllServicesPage';
 import { FoodLayout } from './food/FoodLayout';
 import { FoodCatalogPage } from './food/pages/FoodCatalogPage';
+import { FoodEntryPage } from './food/pages/FoodEntryPage';
 import { FoodGuidePage } from './food/pages/FoodGuidePage';
 import { FoodMenuPage } from './food/pages/FoodMenuPage';
 import { FoodPantryPage } from './food/pages/FoodPantryPage';
@@ -47,7 +48,7 @@ function App() {
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="services" element={<AllServicesPage />} />
         <Route path="food" element={<FoodLayout />}>
-          <Route index element={<Navigate to="catalog" replace />} />
+          <Route index element={<FoodEntryPage />} />
           <Route path="catalog" element={<FoodCatalogPage />} />
           <Route path="menu" element={<FoodMenuPage />} />
           <Route path="guide" element={<FoodGuidePage />} />

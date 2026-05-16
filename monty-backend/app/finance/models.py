@@ -22,6 +22,7 @@ class User(Base):
     telegram_id = Column(BigInteger, unique=True, index=True, nullable=False)
     first_name = Column(String(100), nullable=False)
     is_active = Column(Boolean, default=True)
+    household_id = Column(Integer, nullable=False, default=1, index=True)
 
     transactions = relationship("Transaction", back_populates="user")
 

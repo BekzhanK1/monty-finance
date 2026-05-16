@@ -5,12 +5,14 @@ import {
   Badge,
   Button,
   Card,
+  Checkbox,
   Container,
   Divider,
   Group,
   LoadingOverlay,
   Modal,
   NumberInput,
+  SegmentedControl,
   Select,
   Stack,
   Text,
@@ -20,10 +22,12 @@ import {
 } from '@mantine/core';
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import {
+  IconArchive,
   IconBook2,
   IconFolderPlus,
   IconPencil,
   IconPlus,
+  IconRotate,
   IconToolsKitchen2,
   IconTrash,
 } from '@tabler/icons-react';
@@ -118,7 +122,11 @@ function IngredientEditor({
     [units],
   );
   const ingData = useMemo(
-    () => ingredients.map((i) => ({ value: String(i.id), label: i.name })),
+    () =>
+      ingredients.map((i) => ({
+        value: String(i.id),
+        label: i.is_pantry_default ? `${i.name} (дома)` : i.name,
+      })),
     [ingredients],
   );
 
@@ -224,6 +232,7 @@ export function FoodCatalogPage() {
   const [dishes, setDishes] = useState<FoodDish[]>([]);
   const [units, setUnits] = useState<FoodUnit[]>([]);
   const [ingredients, setIngredients] = useState<FoodIngredient[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -240,6 +249,7 @@ export function FoodCatalogPage() {
   const [ingRows, setIngRows] = useState<IngDraftRow[]>([]);
   const [newIngName, setNewIngName] = useState('');
   const [newIngUnitId, setNewIngUnitId] = useState<string | null>(null);
+  const [newIngPantryDefault, setNewIngPantryDefault] = useState(false);
 
   const defaultUnitIdStr = units[0] ? String(units[0].id) : null;
 
@@ -248,7 +258,7 @@ export function FoodCatalogPage() {
     try {
       const [cats, allDishes, u, ing] = await Promise.all([
         foodApi.mealCategories.list(),
-        foodApi.dishes.list(),
+        foodApi.dishes.list(undefined, showArchived),
         foodApi.units.list(),
         foodApi.ingredients.list(),
       ]);
@@ -264,7 +274,7 @@ export function FoodCatalogPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showArchived]);
 
   useEffect(() => {
     void load();
@@ -344,8 +354,21 @@ export function FoodCatalogPage() {
     await load();
   };
 
+  const handleArchiveDish = async (id: number) => {
+    if (!window.confirm('Перенести блюдо в архив? Оно останется в прошлых ячейках меню.')) return;
+    await foodApi.dishes.update(id, { is_archived: true });
+    haptic('light');
+    await load();
+  };
+
+  const handleRestoreDish = async (id: number) => {
+    await foodApi.dishes.update(id, { is_archived: false });
+    haptic('success');
+    await load();
+  };
+
   const handleDeleteDish = async (id: number) => {
-    if (!window.confirm('Удалить блюдо?')) return;
+    if (!window.confirm('Удалить блюдо навсегда?')) return;
     await foodApi.dishes.delete(id);
     haptic('light');
     await load();
@@ -354,9 +377,14 @@ export function FoodCatalogPage() {
   const handleCreateIngredient = async () => {
     const name = newIngName.trim();
     if (!name || !newIngUnitId) return;
-    const row = await foodApi.ingredients.create({ name, default_unit_id: Number(newIngUnitId) });
+    const row = await foodApi.ingredients.create({
+      name,
+      default_unit_id: Number(newIngUnitId),
+      is_pantry_default: newIngPantryDefault,
+    });
     setIngredients((prev) => [...prev, row].sort((a, b) => a.name.localeCompare(b.name)));
     setNewIngName('');
+    setNewIngPantryDefault(false);
     closeNewIng();
     haptic('success');
   };
@@ -406,16 +434,18 @@ export function FoodCatalogPage() {
               >
                 Категория
               </Button>
-              <Button
-                size="sm"
-                radius="xl"
-                variant="gradient"
-                gradient={{ from: 'blue', to: 'violet', deg: 135 }}
-                leftSection={<IconPlus size={16} />}
-                onClick={openAddDishModal}
-              >
-                Блюдо
-              </Button>
+              {!showArchived ? (
+                <Button
+                  size="sm"
+                  radius="xl"
+                  variant="gradient"
+                  gradient={{ from: 'blue', to: 'violet', deg: 135 }}
+                  leftSection={<IconPlus size={16} />}
+                  onClick={openAddDishModal}
+                >
+                  Блюдо
+                </Button>
+              ) : null}
             </Group>
           </Group>
         </Card>
@@ -425,6 +455,27 @@ export function FoodCatalogPage() {
             {error}
           </Alert>
         )}
+
+        {!showArchived ? (
+          <Alert color="violet" title="Совет" radius="lg" variant="light">
+            Добавьте состав блюд — тогда список покупок соберётся сам.
+          </Alert>
+        ) : null}
+
+        <SegmentedControl
+          fullWidth
+          radius="lg"
+          value={showArchived ? 'archived' : 'active'}
+          onChange={(v) => {
+            haptic('light');
+            setShowArchived(v === 'archived');
+            setLoading(true);
+          }}
+          data={[
+            { label: 'Активные', value: 'active' },
+            { label: 'В архиве', value: 'archived' },
+          ]}
+        />
 
         {categories.map((cat) => {
           const inCat = dishes.filter((d) => d.meal_category_id === cat.id);
@@ -460,7 +511,7 @@ export function FoodCatalogPage() {
               <Stack gap="sm">
                 {inCat.length === 0 ? (
                   <Text size="sm" c="dimmed">
-                    Пока нет блюд — нажмите «Блюдо».
+                    {showArchived ? 'В архиве пусто.' : 'Пока нет блюд — нажмите «Блюдо».'}
                   </Text>
                 ) : (
                   inCat.map((d) => {
@@ -489,24 +540,49 @@ export function FoodCatalogPage() {
                             </Text>
                           </div>
                           <Group gap={4} wrap="nowrap">
-                            <ActionIcon
-                              variant="subtle"
-                              color="gray"
-                              radius="lg"
-                              aria-label="Изменить"
-                              onClick={() => startEdit(d)}
-                            >
-                              <IconPencil size={18} />
-                            </ActionIcon>
-                            <ActionIcon
-                              variant="light"
-                              color="red"
-                              radius="lg"
-                              aria-label="Удалить"
-                              onClick={() => void handleDeleteDish(d.id)}
-                            >
-                              <IconTrash size={18} />
-                            </ActionIcon>
+                            {!showArchived ? (
+                              <>
+                                <ActionIcon
+                                  variant="subtle"
+                                  color="gray"
+                                  radius="lg"
+                                  aria-label="Изменить"
+                                  onClick={() => startEdit(d)}
+                                >
+                                  <IconPencil size={18} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  variant="light"
+                                  color="orange"
+                                  radius="lg"
+                                  aria-label="В архив"
+                                  onClick={() => void handleArchiveDish(d.id)}
+                                >
+                                  <IconArchive size={18} />
+                                </ActionIcon>
+                              </>
+                            ) : (
+                              <>
+                                <ActionIcon
+                                  variant="light"
+                                  color="teal"
+                                  radius="lg"
+                                  aria-label="Восстановить"
+                                  onClick={() => void handleRestoreDish(d.id)}
+                                >
+                                  <IconRotate size={18} />
+                                </ActionIcon>
+                                <ActionIcon
+                                  variant="light"
+                                  color="red"
+                                  radius="lg"
+                                  aria-label="Удалить навсегда"
+                                  onClick={() => void handleDeleteDish(d.id)}
+                                >
+                                  <IconTrash size={18} />
+                                </ActionIcon>
+                              </>
+                            )}
                           </Group>
                         </Group>
                       </Card>
@@ -696,6 +772,12 @@ export function FoodCatalogPage() {
             onChange={setNewIngUnitId}
             radius="lg"
             comboboxProps={{ withinPortal: true }}
+          />
+          <Checkbox
+            label="Всегда есть дома (не попадает в список покупок)"
+            checked={newIngPantryDefault}
+            onChange={(e) => setNewIngPantryDefault(e.currentTarget.checked)}
+            radius="md"
           />
           <Button onClick={() => void handleCreateIngredient()} {...gradientButton} fullWidth={!!isNarrow}>
             Добавить в справочник

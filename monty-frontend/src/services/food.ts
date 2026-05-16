@@ -6,6 +6,7 @@ import type {
   FoodMealCategory,
   FoodMealSlot,
   FoodPantryItem,
+  FoodShoppingFinalizeResult,
   FoodShoppingList,
   FoodSlotKey,
   FoodUnit,
@@ -21,7 +22,18 @@ export type FoodDishIngredientPayload = {
   sort_order?: number;
 };
 
+export type FoodBootstrap = {
+  dish_count: number;
+  categories_ready: boolean;
+};
+
 export const foodApi = {
+  bootstrap: {
+    get: async () => {
+      const { data } = await api.get<FoodBootstrap>('/food/bootstrap');
+      return data;
+    },
+  },
   mealCategories: {
     list: async () => {
       const { data } = await api.get<FoodMealCategory[]>('/food/meal-categories');
@@ -57,16 +69,32 @@ export const foodApi = {
       default_unit_id: number;
       category?: string | null;
       notes?: string | null;
+      is_pantry_default?: boolean;
     }) => {
       const { data } = await api.post<FoodIngredient>('/food/ingredients', payload);
       return data;
     },
+    update: async (
+      id: number,
+      payload: {
+        name?: string;
+        default_unit_id?: number;
+        category?: string | null;
+        notes?: string | null;
+        is_pantry_default?: boolean;
+      },
+    ) => {
+      const { data } = await api.patch<FoodIngredient>(`/food/ingredients/${id}`, payload);
+      return data;
+    },
   },
   dishes: {
-    list: async (meal_category_id?: number) => {
-      const { data } = await api.get<FoodDish[]>('/food/dishes', {
-        params: meal_category_id != null ? { meal_category_id } : {},
-      });
+    list: async (meal_category_id?: number, archived = false) => {
+      const params: Record<string, number | boolean> = { archived };
+      if (meal_category_id != null) {
+        params.meal_category_id = meal_category_id;
+      }
+      const { data } = await api.get<FoodDish[]>('/food/dishes', { params });
       return data;
     },
     create: async (payload: {
@@ -138,6 +166,13 @@ export const foodApi = {
     deleteSlot: async (id: number) => {
       await api.delete(`/food/menu/slots/${id}`);
     },
+    copyPreviousWeek: async (targetWeekStart: string) => {
+      const { data } = await api.post<{ slots_created: number; target_week_start: string; source_week_start: string }>(
+        '/food/menu/copy-week',
+        { target_week_start: targetWeekStart },
+      );
+      return data;
+    },
   },
   shopping: {
     getLatest: async (): Promise<FoodShoppingList | null> => {
@@ -149,10 +184,15 @@ export const foodApi = {
         throw e;
       }
     },
-    generate: async (date_from: string, date_to: string) => {
+    generate: async (
+      date_from: string,
+      date_to: string,
+      mode: 'new' | 'merge_draft' = 'new',
+    ) => {
       const { data } = await api.post<FoodShoppingList>('/food/shopping-lists/generate', {
         date_from,
         date_to,
+        mode,
       });
       return data;
     },
@@ -168,8 +208,21 @@ export const foodApi = {
       const { data } = await api.post<FoodShoppingList>(`/food/shopping-lists/${listId}/items`, payload);
       return data;
     },
-    patchItem: async (itemId: number, payload: { checked?: boolean }) => {
+    patchItem: async (
+      itemId: number,
+      payload: { checked?: boolean; actual_price?: number | null },
+    ) => {
       const { data } = await api.patch<FoodShoppingList>(`/food/shopping-items/${itemId}`, payload);
+      return data;
+    },
+    updateList: async (listId: number, payload: { status?: 'draft' | 'active' | 'done' }) => {
+      const { data } = await api.patch<FoodShoppingList>(`/food/shopping-lists/${listId}`, payload);
+      return data;
+    },
+    finalize: async (listId: number) => {
+      const { data } = await api.post<FoodShoppingFinalizeResult>(
+        `/food/shopping-lists/${listId}/finalize`,
+      );
       return data;
     },
   },
