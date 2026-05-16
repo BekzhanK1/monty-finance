@@ -1,3 +1,5 @@
+from typing import Literal
+
 from app.food.models.catalog import FoodDishIngredient
 from app.food.models.meal import FoodDish
 from app.food.models.plan import FoodMealSlot
@@ -6,7 +8,10 @@ from app.food.schemas.meal import FoodDishResponse
 from app.food.schemas.plan import FoodMealSlotResponse
 
 
-def dish_to_response(d: FoodDish) -> FoodDishResponse:
+def dish_to_response(
+    d: FoodDish,
+    pantry_status: Literal["ready", "partial", "missing"] | None = None,
+) -> FoodDishResponse:
     lines: list[FoodDishIngredientLineResponse] = []
     raw_lines: list[FoodDishIngredient] = list(d.ingredients) if d.ingredients else []
     for line in sorted(raw_lines, key=lambda x: (x.sort_order, x.id)):
@@ -40,6 +45,7 @@ def dish_to_response(d: FoodDish) -> FoodDishResponse:
         created_at=d.created_at,
         updated_at=d.updated_at,
         ingredients=lines,
+        pantry_status=pantry_status,
     )
 
 

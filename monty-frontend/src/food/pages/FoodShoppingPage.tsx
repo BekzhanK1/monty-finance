@@ -283,6 +283,16 @@ export function FoodShoppingPage() {
                     <Button
                       size="xs"
                       variant="light"
+                      color="teal"
+                      radius="lg"
+                      loading={applyingPantry}
+                      onClick={() => void handleApplyToPantry()}
+                    >
+                      На склад
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="light"
                       color="violet"
                       radius="lg"
                       loading={draftSaving}

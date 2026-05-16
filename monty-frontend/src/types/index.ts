@@ -123,6 +123,7 @@ export interface FoodDish {
   created_at: string;
   updated_at: string | null;
   ingredients: FoodDishIngredientLine[];
+  pantry_status?: 'ready' | 'partial' | 'missing';
 }
 
 export interface FoodUnit {

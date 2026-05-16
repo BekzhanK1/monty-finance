@@ -215,3 +215,167 @@ def finalize_shopping_list(
         transaction_id=tx.id,
         total_amount=total,
     )
+
+
+@router.post("/shopping-lists/{list_id}/apply-to-pantry", response_model=FoodShoppingListResponse)
+def apply_shopping_to_pantry(
+    list_id: int,
+    db: Session = Depends(get_db),
+    household_id: int = Depends(get_food_household_id),
+):
+    from datetime import datetime
+    from app.food.models import FoodIngredient, FoodPantryItem, FoodUnit
+
+    lst = (
+        db.query(FoodShoppingList)
+        .options(_list_options())
+        .filter(FoodShoppingList.id == list_id, FoodShoppingList.household_id == household_id)
+        .first()
+    )
+    if not lst:
+        raise HTTPException(status_code=404, detail="List not found")
+
+    items_to_apply = [
+        it
+        for it in lst.items
+        if it.checked
+        and it.ingredient_id is not None
+        and it.quantity is not None
+        and it.unit_id is not None
+        and it.pantry_applied_at is None
+    ]
+
+    for it in items_to_apply:
+        qty = Decimal(it.quantity)
+        existing = (
+            db.query(FoodPantryItem)
+            .filter(
+                FoodPantryItem.household_id == household_id,
+                FoodPantryItem.ingredient_id == it.ingredient_id,
+            )
+            .first()
+        )
+        if existing:
+            if existing.unit_id != it.unit_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Продукт '{it.label}' уже в кладовой в другой единице — измените вручную.",
+                )
+            existing.quantity = Decimal(existing.quantity) + qty
+        else:
+            db.add(
+                FoodPantryItem(
+                    household_id=household_id,
+                    ingredient_id=it.ingredient_id,
+                    quantity=qty,
+                    unit_id=it.unit_id,
+                )
+            )
+        it.pantry_applied_at = datetime.utcnow()
+
+    db.commit()
+    row = db.query(FoodShoppingList).options(_list_options()).filter(FoodShoppingList.id == list_id).first()
+    return shopping_list_to_response(row)
+
+
+@router.post("/dishes/{dish_id}/shopping-shortfall", response_model=FoodShoppingListResponse)
+def add_dish_shortfall_to_shopping(
+    dish_id: int,
+    db: Session = Depends(get_db),
+    household_id: int = Depends(get_food_household_id),
+):
+    """Add missing ingredients from a dish to the current week's shopping list."""
+    from collections import defaultdict
+    from datetime import date, timedelta
+    from app.food.models import FoodDish, FoodDishIngredient
+    from app.food.services.pantry_adjust import apply_pantry_to_totals, load_pantry_by_ingredient_unit
+
+    dish = (
+        db.query(FoodDish)
+        .options(
+            selectinload(FoodDish.ingredients).selectinload(FoodDishIngredient.ingredient),
+            selectinload(FoodDish.ingredients).selectinload(FoodDishIngredient.unit),
+        )
+        .filter(FoodDish.id == dish_id, FoodDish.household_id == household_id)
+        .first()
+    )
+    if not dish:
+        raise HTTPException(status_code=404, detail="Dish not found")
+
+    today = date.today()
+    weekday = today.weekday()
+    week_start = today - timedelta(days=weekday)
+    week_end = week_start + timedelta(days=6)
+
+    lst = (
+        db.query(FoodShoppingList)
+        .filter(
+            FoodShoppingList.household_id == household_id,
+            FoodShoppingList.period_start == week_start,
+            FoodShoppingList.period_end == week_end,
+            FoodShoppingList.status.in_(["draft", "active"]),
+        )
+        .first()
+    )
+    if not lst:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Нет списка на текущую неделю ({week_start.isoformat()} — {week_end.isoformat()}). Сначала соберите список из меню.",
+        )
+
+    totals: dict[tuple[int, int], Decimal] = defaultdict(lambda: Decimal(0))
+    labels: dict[tuple[int, int], str] = {}
+
+    for line in dish.ingredients:
+        ing = line.ingredient
+        if ing is None:
+            continue
+        if ing.is_pantry_default and not line.is_optional:
+            continue
+        key = (line.ingredient_id, line.unit_id)
+        totals[key] += Decimal(line.quantity)
+        if key not in labels:
+            labels[key] = ing.name
+
+    pantry = load_pantry_by_ingredient_unit(db, household_id=household_id)
+    totals, unit_mismatch = apply_pantry_to_totals(totals, pantry)
+
+    existing_items = {
+        (it.ingredient_id, it.unit_id): it
+        for it in lst.items
+        if it.ingredient_id is not None
+    }
+
+    for (ing_id, unit_id), qty in totals.items():
+        if qty <= 0:
+            continue
+        existing = existing_items.get((ing_id, unit_id))
+        if existing:
+            existing.quantity = Decimal(existing.quantity or 0) + qty
+        else:
+            max_order = (
+                db.query(func.coalesce(func.max(FoodShoppingItem.sort_order), -1))
+                .filter(FoodShoppingItem.list_id == lst.id)
+                .scalar()
+            )
+            note = (
+                "В кладовой этот продукт в другой единице — проверьте количество"
+                if (ing_id, unit_id) in unit_mismatch
+                else None
+            )
+            db.add(
+                FoodShoppingItem(
+                    list_id=lst.id,
+                    ingredient_id=ing_id,
+                    label=labels[(ing_id, unit_id)],
+                    quantity=qty,
+                    unit_id=unit_id,
+                    checked=False,
+                    sort_order=int(max_order) + 1,
+                    note=note,
+                )
+            )
+
+    db.commit()
+    row = db.query(FoodShoppingList).options(_list_options()).filter(FoodShoppingList.id == lst.id).first()
+    return shopping_list_to_response(row)

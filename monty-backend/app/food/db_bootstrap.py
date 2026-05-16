@@ -74,6 +74,11 @@ def ensure_food_shopping_columns() -> None:
         existing = {c["name"] for c in insp.get_columns("food_shopping_items")}
         if "actual_price" not in existing:
             add("ALTER TABLE food_shopping_items ADD COLUMN actual_price NUMERIC(12, 2)")
+        if "pantry_applied_at" not in existing:
+            if dialect == "sqlite":
+                add("ALTER TABLE food_shopping_items ADD COLUMN pantry_applied_at DATETIME")
+            else:
+                add("ALTER TABLE food_shopping_items ADD COLUMN pantry_applied_at TIMESTAMP WITH TIME ZONE")
 
     if insp.has_table("food_shopping_lists"):
         existing = {c["name"] for c in insp.get_columns("food_shopping_lists")}

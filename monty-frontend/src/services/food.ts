@@ -131,6 +131,10 @@ export const foodApi = {
       const { data } = await api.put<FoodDish>(`/food/dishes/${id}/ingredients`, { items });
       return data;
     },
+    addShortfallToShopping: async (id: number) => {
+      const { data } = await api.post<FoodShoppingList>(`/food/dishes/${id}/shopping-shortfall`);
+      return data;
+    },
     delete: async (id: number) => {
       await api.delete(`/food/dishes/${id}`);
     },
