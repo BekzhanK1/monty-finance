@@ -1,5 +1,4 @@
-"""Food vertical: meal categories, dishes, future menu planning."""
+"""Food vertical: meal categories, dishes, menu, shopping, pantry."""
 
-from app.food.router import router
-
-__all__ = ["router"]
+# Do not import router here — it pulls deps → middleware.auth and causes a circular
+# import when finance/auth loads before the food package is fully initialized.
