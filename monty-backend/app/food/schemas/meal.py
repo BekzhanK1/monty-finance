@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -67,3 +68,4 @@ class FoodDishResponse(BaseModel):
     created_at: datetime
     updated_at: datetime | None
     ingredients: list[FoodDishIngredientLineResponse] = Field(default_factory=list)
+    pantry_status: Literal["ready", "partial", "missing"] | None = None

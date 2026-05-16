@@ -141,6 +141,7 @@ def delete_meal_category(
 def list_dishes(
     meal_category_id: int | None = None,
     archived: bool = Query(False, description="true — only archived dishes"),
+    include_pantry_status: bool = Query(False, description="Calculate pantry readiness status"),
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
 ):
@@ -155,6 +156,14 @@ def list_dishes(
     if meal_category_id is not None:
         q = q.filter(FoodDish.meal_category_id == meal_category_id)
     rows = q.order_by(FoodDish.created_at.desc()).all()
+    
+    if include_pantry_status:
+        from app.food.services.dish_pantry_status import calculate_dish_pantry_status
+        return [
+            dish_to_response(d, pantry_status=calculate_dish_pantry_status(db, household_id=household_id, dish=d))
+            for d in rows
+        ]
+    
     return [dish_to_response(d) for d in rows]
 
 

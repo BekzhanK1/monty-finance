@@ -40,6 +40,8 @@ class FoodShoppingListResponse(BaseModel):
 class FoodShoppingItemPatch(BaseModel):
     checked: bool | None = None
     actual_price: float | None = Field(None, ge=0)
+    quantity: float | None = Field(None, gt=0)
+    unit_id: int | None = None
 
 
 class FoodShoppingListPatch(BaseModel):

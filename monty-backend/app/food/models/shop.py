@@ -43,6 +43,7 @@ class FoodShoppingItem(Base):
     sort_order = Column(Integer, nullable=False, default=0)
     note = Column(Text, nullable=True)
     actual_price = Column(Numeric(12, 2), nullable=True)
+    pantry_applied_at = Column(DateTime, nullable=True)
 
     shopping_list = relationship("FoodShoppingList", back_populates="items")
     ingredient = relationship("FoodIngredient")

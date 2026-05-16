@@ -542,6 +542,17 @@ export function FoodCatalogPage() {
                           <Group gap={4} wrap="nowrap">
                             {!showArchived ? (
                               <>
+                                {d.pantry_status === 'partial' || d.pantry_status === 'missing' ? (
+                                  <ActionIcon
+                                    variant="light"
+                                    color="teal"
+                                    radius="lg"
+                                    aria-label="Недостающее в список"
+                                    onClick={() => void handleAddShortfall(d.id)}
+                                  >
+                                    <IconShoppingCart size={18} />
+                                  </ActionIcon>
+                                ) : null}
                                 <ActionIcon
                                   variant="subtle"
                                   color="gray"
