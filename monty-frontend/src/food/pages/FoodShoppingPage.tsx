@@ -40,6 +40,7 @@ export function FoodShoppingPage() {
   const [generating, setGenerating] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
   const [finalizing, setFinalizing] = useState(false);
+  const [applyingPantry, setApplyingPantry] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [priceDraft, setPriceDraft] = useState<Record<number, string>>({});
   const [addOpened, { open: openAdd, close: closeAdd }] = useDisclosure(false);
@@ -176,6 +177,22 @@ export function FoodShoppingPage() {
       console.error(e);
     } finally {
       setFinalizing(false);
+    }
+  };
+
+  const handleApplyToPantry = async () => {
+    if (!list) return;
+    setApplyingPantry(true);
+    setError(null);
+    try {
+      const updated = await foodApi.shopping.applyToPantry(list.id);
+      setList(updated);
+      haptic('success');
+    } catch (e) {
+      setError('Не удалось перенести отмеченные позиции на склад.');
+      console.error(e);
+    } finally {
+      setApplyingPantry(false);
     }
   };
 
