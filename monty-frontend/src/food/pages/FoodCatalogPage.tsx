@@ -28,6 +28,7 @@ import {
   IconPencil,
   IconPlus,
   IconRotate,
+  IconShoppingCart,
   IconToolsKitchen2,
   IconTrash,
 } from '@tabler/icons-react';
@@ -372,6 +373,11 @@ export function FoodCatalogPage() {
     await foodApi.dishes.delete(id);
     haptic('light');
     await load();
+  };
+
+  const handleAddShortfall = async (id: number) => {
+    await foodApi.dishes.addShortfallToShopping(id);
+    haptic('success');
   };
 
   const handleCreateIngredient = async () => {

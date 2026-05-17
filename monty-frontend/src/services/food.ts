@@ -229,6 +229,10 @@ export const foodApi = {
       );
       return data;
     },
+    applyToPantry: async (listId: number) => {
+      const { data } = await api.post<FoodShoppingList>(`/food/shopping-lists/${listId}/apply-to-pantry`);
+      return data;
+    },
   },
   pantry: {
     list: async () => {
