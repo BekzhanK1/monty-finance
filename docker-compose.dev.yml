@@ -1,0 +1,48 @@
+services:
+  backend:
+    build: ./monty-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./monty-backend/.env
+    environment:
+      STAGE: PROD
+      DATABASE_URL: postgresql://postgres:bekzhan2004@89.46.33.112:5432/dev_monty
+      ENABLE_DEV_AUTH: "true"
+      DEV_AUTH_USER_ID: "1"
+    volumes:
+      - ./monty-backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    develop:
+      watch:
+        - action: sync
+          path: ./monty-backend
+          target: /app
+          ignore:
+            - __pycache__/
+            - .venv/
+        - action: rebuild
+          path: ./monty-backend/requirements.txt
+
+  frontend:
+    build:
+      context: ./monty-frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_DEV_BYPASS_AUTH: "true"
+    volumes:
+      - ./monty-frontend:/app
+      - frontend_node_modules:/app/node_modules
+    develop:
+      watch:
+        - action: sync
+          path: ./monty-frontend/src
+          target: /app/src
+        - action: rebuild
+          path: ./monty-frontend/package.json
+
+volumes:
+  frontend_node_modules:

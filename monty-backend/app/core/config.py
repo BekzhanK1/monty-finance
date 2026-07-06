@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     
     ALLOWED_TELEGRAM_IDS: str = "[]"
+
+    ENABLE_DEV_AUTH: bool = False
+    DEV_AUTH_USER_ID: int = 1
     
     class Config:
         env_file = ".env"

@@ -61,6 +61,26 @@ def verify_token(token: str) -> Optional[dict]:
         return None
 
 
+def authenticate_dev_user(db: Session, user_id: int) -> Optional[dict]:
+    if not settings.ENABLE_DEV_AUTH:
+        return None
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        return None
+
+    access_token = create_access_token(
+        {"sub": str(user.id), "telegram_id": user.telegram_id}
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "first_name": user.first_name,
+    }
+
+
 def authenticate_telegram_user(db: Session, init_data: str) -> Optional[dict]:
     # NOTE: simplified auth for development: accept empty or invalid init_data
     telegram_data = validate_telegram_auth(init_data) if init_data else None

@@ -12,6 +12,13 @@ import type {
 import api from './http';
 
 export const authApi = {
+  dev: async () => {
+    const { data } = await api.post('/auth/dev');
+    if (data.access_token) {
+      localStorage.setItem('access_token', data.access_token);
+    }
+    return data;
+  },
   telegram: async (initData: string) => {
     const { data } = await api.post('/auth/telegram', { initData });
     if (data.access_token) {

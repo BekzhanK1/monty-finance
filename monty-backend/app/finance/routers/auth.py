@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
-from app.core.config import get_db
-from app.finance.services.auth_service import authenticate_telegram_user
+from app.core.config import get_db, settings
+from app.finance.services.auth_service import authenticate_dev_user, authenticate_telegram_user
 from app.middleware.auth import get_current_user
 from app.finance.models import User
 
@@ -17,6 +17,24 @@ class TelegramAuthResponse(BaseModel):
     token_type: str
     user_id: int
     first_name: str
+
+@router.post("/dev", response_model=TelegramAuthResponse)
+def dev_auth(db: Session = Depends(get_db)):
+    if not settings.ENABLE_DEV_AUTH:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dev auth is disabled",
+        )
+
+    result = authenticate_dev_user(db, settings.DEV_AUTH_USER_ID)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Dev user {settings.DEV_AUTH_USER_ID} not found",
+        )
+
+    return result
+
 
 @router.post("/telegram", response_model=TelegramAuthResponse)
 def telegram_auth(

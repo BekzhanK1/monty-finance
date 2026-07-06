@@ -4,6 +4,8 @@ import { authApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import type { User } from '../types';
 
+const DEV_BYPASS_AUTH = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -40,7 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      await authApi.telegram(initData);
+      if (DEV_BYPASS_AUTH) {
+        await authApi.dev();
+      } else {
+        await authApi.telegram(initData);
+      }
       const userData = await authApi.me();
       setUser(userData);
     } catch (err) {

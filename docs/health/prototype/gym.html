@@ -1,0 +1,1701 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Monty Gym — прототип</title>
+  <style>
+    :root {
+      --bg: #f4f4f8;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --card: rgba(255, 255, 255, 0.95);
+      --border: rgba(0, 0, 0, 0.06);
+      --grape: #7950f2;
+      --violet: #7048e8;
+      --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --radius-xl: 16px;
+      --radius-lg: 12px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #e8e8ef;
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100dvh;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 40px rgba(0,0,0,.12);
+    }
+
+    .proto-banner {
+      background: #fff3cd;
+      color: #856404;
+      font-size: 11px;
+      text-align: center;
+      padding: 6px 12px;
+      border-bottom: 1px solid #ffeeba;
+    }
+
+    .header {
+      padding: 12px 16px 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      flex: 1;
+    }
+
+    .header .back {
+      border: none;
+      background: none;
+      font-size: 22px;
+      cursor: pointer;
+      padding: 4px 8px;
+      color: var(--grape);
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 100px;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .hero {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      margin-bottom: 16px;
+      backdrop-filter: blur(10px);
+    }
+
+    .hero.gradient {
+      background: var(--gradient);
+      color: #fff;
+      border: none;
+    }
+
+    .hero.gradient .muted { color: rgba(255,255,255,.85); }
+
+    .muted { color: var(--muted); font-size: 13px; }
+    .label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.04);
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px;
+      background: rgba(255,255,255,.9);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: transform .15s;
+    }
+    .row:active { transform: scale(0.98); }
+
+    .row .icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(121, 80, 242, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .row .body { flex: 1; min-width: 0; }
+    .row .title { font-weight: 600; font-size: 15px; }
+    .row .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .row .chevron { color: var(--muted); }
+
+    .btn {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: var(--radius-xl);
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .btn-primary {
+      background: var(--gradient);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(118, 75, 162, 0.35);
+    }
+
+    .btn-light {
+      background: rgba(121, 80, 242, 0.1);
+      color: var(--grape);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .btn-danger-ghost {
+      background: transparent;
+      color: #e03131;
+      font-weight: 500;
+    }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+    .chip {
+      padding: 8px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .chip.selected {
+      background: var(--grape);
+      color: #fff;
+      border-color: var(--grape);
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .badge-done { background: #d3f9d8; color: #2f9e44; }
+    .badge-skip { background: #ffe3e3; color: #c92a2a; }
+    .badge-plan { background: rgba(121,80,242,.12); color: var(--grape); }
+
+    .set-progress {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .set-progress .dot {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(121, 80, 242, 0.15);
+    }
+    .set-progress .dot.done { background: #2f9e44; }
+    .set-progress .dot.current { background: var(--grape); }
+
+    .set-focus {
+      text-align: center;
+      padding: 8px 0 20px;
+    }
+    .set-focus .set-num {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .set-focus .set-of {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .set-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .set-status.waiting {
+      background: rgba(121, 80, 242, 0.1);
+      color: var(--grape);
+    }
+    .set-status.active {
+      background: rgba(47, 158, 68, 0.12);
+      color: #2f9e44;
+    }
+    .set-status.active::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2f9e44;
+      animation: pulse-dot 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    #sets-container.card-live {
+      border-color: rgba(47, 158, 68, 0.35);
+      box-shadow: 0 0 0 1px rgba(47, 158, 68, 0.12), 0 8px 28px rgba(47, 158, 68, 0.12);
+      animation: card-live-glow 2s ease-in-out infinite;
+    }
+    @keyframes card-live-glow {
+      0%, 100% { box-shadow: 0 0 0 1px rgba(47, 158, 68, 0.12), 0 8px 24px rgba(47, 158, 68, 0.1); }
+      50% { box-shadow: 0 0 0 2px rgba(47, 158, 68, 0.22), 0 12px 32px rgba(47, 158, 68, 0.16); }
+    }
+
+    .lift-stage {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 88px;
+      margin: 0 0 8px;
+    }
+    .dumbbell-lift {
+      width: 112px;
+      height: auto;
+      animation: dumbbell-press 1.1s ease-in-out infinite;
+      transform-origin: center center;
+    }
+    @keyframes dumbbell-press {
+      0%, 100% { transform: translateY(10px) scale(0.96); }
+      45% { transform: translateY(-14px) scale(1.02); }
+      55% { transform: translateY(-14px) scale(1.02); }
+    }
+    .set-focus.working .set-num {
+      font-size: 36px;
+      margin-top: 4px;
+    }
+    .set-focus.waiting .lift-stage-static {
+      opacity: 0.28;
+      filter: grayscale(0.4);
+    }
+    .lift-stage-static .dumbbell-lift {
+      animation: none;
+      transform: translateY(6px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .dumbbell-lift { animation: none; transform: none; }
+      #sets-container.card-live { animation: none; }
+    }
+
+    .log-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .log-fields label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .log-fields input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      font-size: 22px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .done-sets-list {
+      margin-bottom: 12px;
+    }
+    .done-set-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(47, 158, 68, 0.08);
+      border-radius: var(--radius-lg);
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .done-set-item span { color: var(--muted); font-size: 12px; }
+    .done-set-item.skipped {
+      background: rgba(201, 42, 42, 0.08);
+    }
+    .done-set-item.skipped span { color: #c92a2a; font-weight: 600; }
+
+    .set-progress .dot.skipped { background: #ffa8a8; }
+
+    .rest-timer {
+      text-align: center;
+      padding: 12px 0 8px;
+    }
+    .rest-timer .rest-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .rest-timer .rest-clock {
+      font-size: 56px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--grape);
+    }
+    .rest-timer.rest-done .rest-clock {
+      color: #2f9e44;
+    }
+    .rest-bar-wrap {
+      height: 8px;
+      background: rgba(121, 80, 242, 0.12);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 20px 0 16px;
+    }
+    .rest-bar {
+      height: 100%;
+      background: var(--gradient);
+      border-radius: 999px;
+      transition: width 1s linear;
+    }
+    .rest-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      background: rgba(255,255,255,.95);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      padding: 6px 4px calc(6px + var(--safe-bottom));
+      z-index: 100;
+    }
+
+    .nav-item {
+      border: none;
+      background: none;
+      padding: 8px 4px;
+      font-size: 10px;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-item .ni { font-size: 20px; }
+    .nav-item.active { color: var(--grape); font-weight: 600; }
+
+    .hint-box {
+      background: rgba(121, 80, 242, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      border-left: 3px solid var(--grape);
+    }
+
+    .tabs-inline {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tabs-inline button {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: #fff;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .tabs-inline button.active {
+      background: var(--grape);
+      color: #fff;
+      border-color: var(--grape);
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.4);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-sheet {
+      background: #fff;
+      width: 100%;
+      max-width: 430px;
+      border-radius: 20px 20px 0 0;
+      padding: 20px 16px calc(24px + var(--safe-bottom));
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.centered {
+      align-items: center;
+      padding: 20px 16px;
+    }
+    .modal-overlay.centered .modal-sheet {
+      border-radius: var(--radius-xl);
+      max-width: 340px;
+      max-height: none;
+    }
+
+    .header-menu {
+      border: none;
+      background: rgba(121, 80, 242, 0.1);
+      color: var(--grape);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      font-size: 20px;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .text-actions {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .text-link {
+      border: none;
+      background: none;
+      padding: 4px 2px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .text-link.danger { color: #c92a2a; }
+
+    .menu-action {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .menu-action.danger {
+      color: #c92a2a;
+      border-color: rgba(201, 42, 42, 0.2);
+      background: rgba(255, 227, 227, 0.35);
+    }
+
+    .workout-overlay .bottom-nav { display: none; }
+  </style>
+</head>
+<body>
+  <div class="phone" id="app">
+    <div class="proto-banner">Прототип Gym · mock-данные · для ревью UX</div>
+
+    <!-- ========== WORKOUT TAB ========== -->
+    <div class="screen active" data-screen="workout-home" data-tab="workout">
+      <div class="header"><h1>Тренировка</h1></div>
+      <div class="content">
+        <div class="hero gradient">
+          <div class="label" style="color:rgba(255,255,255,.7)">Сегодня</div>
+          <div style="font-size:22px;font-weight:700;margin-bottom:4px">Готов к залу?</div>
+          <p class="muted">В прошлый раз: <strong>день A</strong> · 18 мая</p>
+        </div>
+        <button class="btn btn-primary" onclick="go('workout-pick-day')">Начать тренировку</button>
+        <p class="muted" style="text-align:center;margin-top:12px;font-size:12px">Подходы · отдых <strong>90 сек</strong> · вес и пропуски</p>
+      </div>
+    </div>
+
+    <div class="screen" data-screen="workout-pick-day">
+      <div class="header">
+        <button class="back" onclick="go('workout-home')">←</button>
+        <h1>День программы</h1>
+      </div>
+      <div class="content">
+        <div class="hint-box">В прошлый раз был <strong>день A</strong>. Обычно после A идёт B.</div>
+        <div class="chips" id="day-chips"></div>
+        <button class="btn btn-primary" onclick="startWorkout()">Продолжить</button>
+      </div>
+    </div>
+
+    <div class="screen" data-screen="workout-pick-exercise">
+      <div class="header">
+        <button class="back" onclick="go('workout-pick-day')">←</button>
+        <h1>С чего начать?</h1>
+      </div>
+      <div class="content">
+        <p class="muted" style="margin-bottom:12px">День <strong id="picked-day-label">B</strong> · выбери первое упражнение</p>
+        <div id="workout-exercise-list"></div>
+      </div>
+    </div>
+
+    <div class="screen workout-overlay" data-screen="workout-active">
+      <div class="header">
+        <button class="back" onclick="go('workout-whats-next')">←</button>
+        <h1 id="active-ex-title">Жим лёжа</h1>
+        <button type="button" class="header-menu" onclick="openWorkoutMenu()" title="Меню тренировки">⋯</button>
+      </div>
+      <div class="content">
+        <p class="muted" id="active-ex-sub" style="margin-bottom:12px">Bench press · план 3×10</p>
+        <div class="set-progress" id="set-progress"></div>
+        <div class="done-sets-list" id="done-sets-list"></div>
+        <div class="card" id="sets-container"></div>
+      </div>
+    </div>
+
+    <div class="screen workout-overlay" data-screen="workout-whats-next">
+      <div class="header">
+        <h1>Что дальше?</h1>
+        <button type="button" class="header-menu" onclick="openWorkoutMenu()" title="Меню тренировки">⋯</button>
+      </div>
+      <div class="content">
+        <div id="whats-next-list"></div>
+        <p class="muted" style="text-align:center;margin-top:16px;font-size:13px">
+          Закончить поход — меню <strong>⋯</strong> вверху
+        </p>
+      </div>
+    </div>
+
+    <div class="screen workout-overlay" data-screen="workout-summary">
+      <div class="header">
+        <button class="back" onclick="go('workout-home')">←</button>
+        <h1>Итог</h1>
+      </div>
+      <div class="content">
+        <div class="hero">
+          <div class="title" style="font-weight:700;font-size:18px">День B · 24 мая</div>
+          <p class="muted" style="margin-top:4px">42 мин · 4 упражнения</p>
+        </div>
+        <div id="summary-list"></div>
+        <button class="btn btn-primary" onclick="finishWorkout()">Сохранить и выйти</button>
+      </div>
+    </div>
+
+    <!-- ========== PROGRAM TAB ========== -->
+    <div class="screen" data-screen="program" data-tab="program">
+      <div class="header"><h1>Моя программа</h1></div>
+      <div class="content">
+        <div id="program-days"></div>
+        <button class="btn btn-light">+ Добавить день</button>
+      </div>
+    </div>
+
+    <div class="screen" data-screen="program-day">
+      <div class="header">
+        <button class="back" onclick="goTab('program')">←</button>
+        <h1 id="program-day-title">День B</h1>
+      </div>
+      <div class="content">
+        <div id="program-day-exercises"></div>
+        <button class="btn btn-light" onclick="openModal('add-to-day')">+ Упражнение из каталога</button>
+      </div>
+    </div>
+
+    <!-- ========== EXERCISES TAB ========== -->
+    <div class="screen" data-screen="exercises" data-tab="exercises">
+      <div class="header"><h1>Упражнения</h1></div>
+      <div class="content">
+        <div class="tabs-inline">
+          <button class="active" id="tab-active-ex" onclick="setExTab('active')">Активные</button>
+          <button id="tab-arch-ex" onclick="setExTab('archive')">Архив</button>
+        </div>
+        <div id="category-list"></div>
+        <button class="btn btn-light" onclick="openModal('new-exercise')">+ Новое упражнение</button>
+      </div>
+    </div>
+
+    <div class="screen" data-screen="exercise-category">
+      <div class="header">
+        <button class="back" onclick="goTab('exercises')">←</button>
+        <h1 id="cat-title">Грудь</h1>
+      </div>
+      <div class="content">
+        <div id="exercise-list"></div>
+      </div>
+    </div>
+
+    <div class="screen" data-screen="exercise-detail">
+      <div class="header">
+        <button class="back" onclick="history.backScreen()">←</button>
+        <h1 id="ex-detail-title">Жим лёжа</h1>
+      </div>
+      <div class="content">
+        <div class="card">
+          <div class="muted">English</div>
+          <div id="ex-detail-en" style="font-weight:600;margin-top:4px">Bench press</div>
+          <div class="label" style="margin-top:16px">Категория</div>
+          <div id="ex-detail-cat">Грудь</div>
+        </div>
+        <button class="btn btn-danger-ghost" id="archive-btn" onclick="archiveCurrent()">В архив</button>
+      </div>
+    </div>
+
+    <!-- ========== HISTORY TAB ========== -->
+    <div class="screen" data-screen="history" data-tab="history">
+      <div class="header"><h1>История</h1></div>
+      <div class="content">
+        <div id="history-list"></div>
+      </div>
+    </div>
+
+    <div class="screen" data-screen="history-detail">
+      <div class="header">
+        <button class="back" onclick="goTab('history')">←</button>
+        <h1 id="hist-title">24 мая · День B</h1>
+      </div>
+      <div class="content">
+        <div id="history-detail-body"></div>
+      </div>
+    </div>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav" id="bottom-nav">
+      <button class="nav-item active" data-nav="workout" onclick="goTab('workout')">
+        <span class="ni">🏋️</span>Тренировка
+      </button>
+      <button class="nav-item" data-nav="program" onclick="goTab('program')">
+        <span class="ni">📋</span>Программа
+      </button>
+      <button class="nav-item" data-nav="exercises" onclick="goTab('exercises')">
+        <span class="ni">💪</span>Упражнения
+      </button>
+      <button class="nav-item" data-nav="history" onclick="goTab('history')">
+        <span class="ni">📅</span>История
+      </button>
+    </nav>
+
+    <!-- Modals -->
+    <div class="modal-overlay" id="modal">
+      <div class="modal-sheet" id="modal-body"></div>
+    </div>
+
+    <div class="modal-overlay centered" id="confirm-modal">
+      <div class="modal-sheet" id="confirm-body"></div>
+    </div>
+  </div>
+
+  <script>
+    const MOCK = {
+      lastSession: { day: 'A', date: '18 мая' },
+      draftSession: {
+        date: '24 мая 2026, 18:40',
+        day: 'B',
+        exId: 'e3',
+        setIndex: 1,
+        phase: 'ready',
+        loggedSets: [{ kg: 80, reps: 8 }],
+      },
+      days: [
+        {
+          id: 'A',
+          label: 'A',
+          exercises: [
+            { id: 'e1', nameRu: 'Жим лёжа', nameEn: 'Bench press', sets: 3, reps: 10 },
+            { id: 'e2', nameRu: 'Жим гантелей', nameEn: 'Dumbbell press', sets: 3, reps: 12 },
+            { id: 'e5', nameRu: 'Разводка', nameEn: 'Flyes', sets: 3, reps: 12 },
+          ],
+        },
+        {
+          id: 'B',
+          label: 'B',
+          exercises: [
+            { id: 'e3', nameRu: 'Присед', nameEn: 'Squat', sets: 4, reps: 8 },
+            { id: 'e4', nameRu: 'Становая', nameEn: 'Deadlift', sets: 3, reps: 6 },
+            { id: 'e6', nameRu: 'Выпады', nameEn: 'Lunges', sets: 3, reps: 10 },
+            { id: 'e7', nameRu: 'Подъём на носки', nameEn: 'Calf raise', sets: 4, reps: 15 },
+          ],
+        },
+        {
+          id: 'C',
+          label: 'C',
+          exercises: [
+            { id: 'e8', nameRu: 'Подтягивания', nameEn: 'Pull-ups', sets: 4, reps: 8 },
+            { id: 'e9', nameRu: 'Тяга в наклоне', nameEn: 'Barbell row', sets: 3, reps: 10 },
+          ],
+        },
+      ],
+      categories: [
+        { id: 'chest', name: 'Грудь', icon: '🫁' },
+        { id: 'legs', name: 'Ноги', icon: '🦵' },
+        { id: 'back', name: 'Спина', icon: '🔙' },
+        { id: 'arms', name: 'Руки', icon: '💪' },
+        { id: 'core', name: 'Кор', icon: '🎯' },
+        { id: 'glutes', name: 'Ягодицы', icon: '🍑' },
+      ],
+      exercises: [
+        { id: 'e1', cat: 'chest', nameRu: 'Жим лёжа', nameEn: 'Bench press', archived: false },
+        { id: 'e2', cat: 'chest', nameRu: 'Жим гантелей', nameEn: 'Dumbbell press', archived: false },
+        { id: 'e5', cat: 'chest', nameRu: 'Разводка', nameEn: 'Flyes', archived: false },
+        { id: 'e3', cat: 'legs', nameRu: 'Присед', nameEn: 'Squat', archived: false },
+        { id: 'e4', cat: 'legs', nameRu: 'Становая', nameEn: 'Deadlift', archived: false },
+        { id: 'e6', cat: 'legs', nameRu: 'Выпады', nameEn: 'Lunges', archived: false },
+        { id: 'e7', cat: 'legs', nameRu: 'Подъём на носки', nameEn: 'Calf raise', archived: false },
+        { id: 'e8', cat: 'back', nameRu: 'Подтягивания', nameEn: 'Pull-ups', archived: false },
+        { id: 'e9', cat: 'back', nameRu: 'Тяга в наклоне', nameEn: 'Barbell row', archived: false },
+        { id: 'e10', cat: 'arms', nameRu: 'Бицепс EZ', nameEn: 'EZ bar curl', archived: true },
+      ],
+      history: [
+        {
+          id: 's1',
+          date: '18 мая 2026',
+          day: 'A',
+          items: [
+            { exId: 'e1', status: 'done', sets: [{ reps: 10, kg: 60 }, { skipped: true }, { reps: 8, kg: 60 }] },
+            { exId: 'e2', status: 'done', sets: [{ reps: 12, kg: 22 }, { reps: 12, kg: 22 }, { reps: 10, kg: 22 }] },
+            { exId: 'e5', status: 'skip' },
+          ],
+        },
+        {
+          id: 's2',
+          date: '15 мая 2026',
+          day: 'C',
+          items: [
+            { exId: 'e8', status: 'done', sets: [{ reps: 8, kg: 0 }, { reps: 7, kg: 0 }, { reps: 6, kg: 0 }] },
+            { exId: 'e9', status: 'done', sets: [{ reps: 10, kg: 50 }, { reps: 10, kg: 50 }, { reps: 9, kg: 50 }] },
+          ],
+        },
+      ],
+    };
+
+    const state = {
+      screen: 'workout-home',
+      tab: 'workout',
+      pickedDay: 'B',
+      workout: {
+        day: 'B',
+        done: {},
+        skipped: new Set(),
+        current: null,
+        active: null,
+      },
+      exTab: 'active',
+      screenStack: [],
+      draftDismissed: false,
+    };
+
+    function exById(id) {
+      return MOCK.exercises.find((e) => e.id === id);
+    }
+
+    function dayById(id) {
+      return MOCK.days.find((d) => d.id === id);
+    }
+
+    function go(screen) {
+      if (state.screen !== screen) state.screenStack.push(state.screen);
+      showScreen(screen);
+      if (screen === 'workout-summary') renderSummary();
+    }
+
+    function showScreen(screen) {
+      if (screen !== 'workout-active') clearRestTimer();
+      state.screen = screen;
+      const inWorkout = screen.startsWith('workout-') && screen !== 'workout-home';
+      document.getElementById('bottom-nav').style.display = inWorkout ? 'none' : 'grid';
+      document.querySelectorAll('.screen').forEach((el) => {
+        el.classList.toggle('active', el.dataset.screen === screen);
+      });
+    }
+
+    function goTab(tab) {
+      state.tab = tab;
+      state.screenStack = [];
+      const main = {
+        workout: 'workout-home',
+        program: 'program',
+        exercises: 'exercises',
+        history: 'history',
+      };
+      showScreen(main[tab]);
+      document.querySelectorAll('.nav-item').forEach((n) => {
+        n.classList.toggle('active', n.dataset.nav === tab);
+      });
+      if (tab === 'program') renderProgram();
+      if (tab === 'exercises') renderCategories();
+      if (tab === 'history') renderHistory();
+    }
+
+    history.backScreen = function () {
+      const prev = state.screenStack.pop() || 'exercises';
+      showScreen(prev);
+    };
+
+    // --- Workout flow ---
+    function renderDayChips() {
+      const el = document.getElementById('day-chips');
+      el.innerHTML = MOCK.days
+        .map(
+          (d) =>
+            `<button type="button" class="chip ${state.pickedDay === d.id ? 'selected' : ''}" data-day="${d.id}" onclick="pickDay('${d.id}')">День ${d.label}</button>`
+        )
+        .join('');
+    }
+
+    function pickDay(id) {
+      state.pickedDay = id;
+      renderDayChips();
+    }
+
+    function startWorkout() {
+      state.workout = { day: state.pickedDay, done: {}, skipped: new Set(), current: null, active: null };
+      document.getElementById('picked-day-label').textContent = state.pickedDay;
+      renderWorkoutExercisePick();
+      go('workout-pick-exercise');
+    }
+
+    function renderWorkoutExercisePick() {
+      const day = dayById(state.workout.day);
+      const el = document.getElementById('workout-exercise-list');
+      el.innerHTML = day.exercises
+        .map((ex) => {
+          const full = exById(ex.id) || ex;
+          return `<div class="row" onclick="openExerciseWorkout('${ex.id}')">
+            <div class="icon">💪</div>
+            <div class="body">
+              <div class="title">${full.nameRu || ex.nameRu}</div>
+              <div class="sub">${full.nameEn || ex.nameEn} · ${ex.sets}×${ex.reps}</div>
+            </div>
+            <span class="chevron">›</span>
+          </div>`;
+        })
+        .join('');
+    }
+
+    function openExerciseWorkout(exId) {
+      const day = dayById(state.workout.day);
+      const ex = day.exercises.find((e) => e.id === exId);
+      const full = exById(exId);
+      state.workout.current = exId;
+      clearRestTimer();
+      state.workout.active = {
+        totalSets: ex.sets,
+        planReps: ex.reps,
+        setIndex: 0,
+        phase: 'ready',
+        loggedSets: [],
+        restDefault: 90,
+        restSecondsLeft: 90,
+        restTimerId: null,
+      };
+      document.getElementById('active-ex-title').textContent = full.nameRu;
+      document.getElementById('active-ex-sub').textContent =
+        `${full.nameEn} · план ${ex.sets}×${ex.reps}`;
+      renderActiveExercise();
+      go('workout-active');
+    }
+
+    function lastLoggedKg() {
+      const a = state.workout.active;
+      if (a?.loggedSets?.length) {
+        const last = [...a.loggedSets].reverse().find((s) => !s.skipped && s.kg != null);
+        if (last) return last.kg;
+      }
+      return getLastWeightFromHistory(state.workout.current);
+    }
+
+    function getLastWeightFromHistory(exId) {
+      for (const session of MOCK.history) {
+        const item = session.items.find((i) => i.exId === exId && i.status !== 'skip' && i.sets);
+        if (!item) continue;
+        const lastSet = [...item.sets].reverse().find((s) => !s.skipped && s.kg != null);
+        if (lastSet) return lastSet.kg;
+      }
+      return '';
+    }
+
+    function exerciseInProgram(exId) {
+      return MOCK.days.some((d) => d.exercises.some((e) => e.id === exId));
+    }
+
+    function renderSetProgress() {
+      const a = state.workout.active;
+      const el = document.getElementById('set-progress');
+      let html = '';
+      for (let i = 0; i < a.totalSets; i++) {
+        let cls = 'dot';
+        if (i < a.loggedSets.length) {
+          cls += a.loggedSets[i].skipped ? ' skipped' : ' done';
+        }         else if (i === a.setIndex) cls += ' current';
+        html += `<div class="${cls}"></div>`;
+      }
+      el.innerHTML = html;
+    }
+
+    function renderDoneSetsList() {
+      const a = state.workout.active;
+      const el = document.getElementById('done-sets-list');
+      if (a.loggedSets.length === 0) {
+        el.innerHTML = '';
+        return;
+      }
+      el.innerHTML =
+        '<div class="label">Подходы</div>' +
+        a.loggedSets
+          .map((s, i) => {
+            if (s.skipped) {
+              return `<div class="done-set-item skipped">
+                <strong>Подход ${i + 1}</strong>
+                <span>пропуск</span>
+              </div>`;
+            }
+            return `<div class="done-set-item">
+              <strong>Подход ${i + 1}</strong>
+              <span>${s.kg} кг × ${s.reps}</span>
+            </div>`;
+          })
+          .join('');
+    }
+
+    function formatSetsSummary(sets) {
+      if (!sets || !sets.length) return 'без подходов';
+      const done = sets.filter((s) => !s.skipped).length;
+      const skip = sets.filter((s) => s.skipped).length;
+      if (done && skip) return `${done} сделано · ${skip} пропуск`;
+      if (skip) return `${skip} пропуск`;
+      return `${done} подходов`;
+    }
+
+    function dumbbellSvg() {
+      return `<svg class="dumbbell-lift" viewBox="0 0 120 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect x="6" y="16" width="18" height="24" rx="4" fill="url(#db-grad)"/>
+        <rect x="96" y="16" width="18" height="24" rx="4" fill="url(#db-grad)"/>
+        <rect x="24" y="26" width="72" height="6" rx="3" fill="#5f3dc4"/>
+        <defs>
+          <linearGradient id="db-grad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#667eea"/>
+            <stop offset="100%" stop-color="#764ba2"/>
+          </linearGradient>
+        </defs>
+      </svg>`;
+    }
+
+    function renderActiveExercise() {
+      const a = state.workout.active;
+      if (!a) return;
+      renderSetProgress();
+      renderDoneSetsList();
+      const c = document.getElementById('sets-container');
+      c.classList.remove('card-live');
+      const n = a.setIndex + 1;
+
+      if (a.phase === 'ready') {
+        c.innerHTML = `
+          <span class="set-status waiting">Ожидание</span>
+          <div class="lift-stage lift-stage-static">${dumbbellSvg()}</div>
+          <div class="set-focus waiting">
+            <div class="set-num">${n}</div>
+            <div class="set-of">подход из ${a.totalSets}</div>
+            <p class="muted" style="margin-top:12px">План: <strong>${a.planReps}</strong> повторений</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="beginWorkSet()">Начать подход</button>
+          <div class="text-actions">
+            <button type="button" class="text-link danger" onclick="confirmSkipSet()">Пропустить подход</button>
+          </div>
+          <p class="muted" style="text-align:center;margin-top:10px;font-size:12px">Когда встанешь к снаряду — нажми «Начать»</p>
+        `;
+        return;
+      }
+
+      if (a.phase === 'working') {
+        c.classList.add('card-live');
+        c.innerHTML = `
+          <span class="set-status active">Подход идёт</span>
+          <div class="lift-stage">${dumbbellSvg()}</div>
+          <div class="set-focus working">
+            <div class="set-num">${n}</div>
+            <div class="set-of">подход из ${a.totalSets}</div>
+            <p class="muted" style="margin-top:8px">Цель: <strong>${a.planReps}</strong> повторений</p>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="beginLogSet()">Записать результат</button>
+          <div class="text-actions">
+            <button type="button" class="text-link" onclick="confirmCancelWorkSet()">Вернуться</button>
+            <span class="muted">·</span>
+            <button type="button" class="text-link danger" onclick="confirmSkipSet()">Пропустить подход</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (a.phase === 'log') {
+        const kg = lastLoggedKg();
+        const lastHint =
+          kg !== '' && kg !== null
+            ? `<p class="muted" style="margin-bottom:12px;font-size:13px">Прошлый раз: <strong>${kg} кг</strong></p>`
+            : '';
+        const isLast = a.setIndex === a.totalSets - 1;
+        c.innerHTML = `
+          <div class="label">Подход ${n} — результат</div>
+          ${lastHint}
+          <div class="log-fields">
+            <div>
+              <label>Вес, кг</label>
+              <input type="number" id="input-kg" placeholder="${kg !== '' ? kg : '0'}" value="" />
+            </div>
+            <div>
+              <label>Повторения</label>
+              <input type="number" id="input-reps" value="${a.planReps}" />
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="saveCurrentSet()">
+            ${isLast ? 'Сохранить' : 'Сохранить'}
+          </button>
+          <div class="text-actions">
+            <button type="button" class="text-link" onclick="cancelLogSet()">Назад</button>
+            <span class="muted">·</span>
+            <button type="button" class="text-link danger" onclick="confirmSkipSet()">Пропустить подход</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (a.phase === 'rest') {
+        const nextN = a.setIndex + 1;
+        const pct = Math.max(0, (a.restSecondsLeft / a.restDefault) * 100);
+        c.innerHTML = `
+          <div class="rest-timer" id="rest-timer-box">
+            <div class="rest-label">Отдых</div>
+            <div class="rest-clock" id="rest-clock">${formatRestTime(a.restSecondsLeft)}</div>
+            <p class="muted" style="margin-top:8px">Дальше: подход <strong>${nextN}</strong> из ${a.totalSets}</p>
+          </div>
+          <div class="rest-bar-wrap">
+            <div class="rest-bar" id="rest-bar" style="width:${pct}%"></div>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="confirmSkipRest()">Пропустить отдых</button>
+          <div class="rest-actions">
+            <button type="button" class="btn btn-light" onclick="addRestSeconds(30)">+30 сек</button>
+            <button type="button" class="btn btn-light" onclick="addRestSeconds(-15)">−15 сек</button>
+          </div>
+        `;
+      }
+    }
+
+    function formatRestTime(sec) {
+      const s = Math.max(0, sec);
+      const m = Math.floor(s / 60);
+      const r = s % 60;
+      return `${m}:${String(r).padStart(2, '0')}`;
+    }
+
+    function updateRestDisplay() {
+      const a = state.workout.active;
+      if (!a || a.phase !== 'rest') return;
+      const clock = document.getElementById('rest-clock');
+      const bar = document.getElementById('rest-bar');
+      const box = document.getElementById('rest-timer-box');
+      if (clock) clock.textContent = formatRestTime(a.restSecondsLeft);
+      if (bar) bar.style.width = `${Math.max(0, (a.restSecondsLeft / a.restDefault) * 100)}%`;
+      if (box) box.classList.toggle('rest-done', a.restSecondsLeft <= 0);
+    }
+
+    function clearRestTimer() {
+      const a = state.workout.active;
+      if (a?.restTimerId) {
+        clearInterval(a.restTimerId);
+        a.restTimerId = null;
+      }
+    }
+
+    function startRest() {
+      const a = state.workout.active;
+      clearRestTimer();
+      a.phase = 'rest';
+      a.restSecondsLeft = a.restDefault;
+      renderActiveExercise();
+      a.restTimerId = setInterval(() => {
+        a.restSecondsLeft -= 1;
+        updateRestDisplay();
+        if (a.restSecondsLeft <= 0) endRest();
+      }, 1000);
+    }
+
+    function endRest() {
+      clearRestTimer();
+      const a = state.workout.active;
+      if (!a) return;
+      a.phase = 'ready';
+      renderActiveExercise();
+      if (navigator.vibrate) navigator.vibrate([8, 40, 8]);
+    }
+
+    function skipRest() {
+      endRest();
+    }
+
+    function confirmSkipRest() {
+      showConfirm({
+        title: 'Пропустить отдых?',
+        text: 'Сразу перейдёшь к следующему подходу.',
+        ok: 'Пропустить',
+        onOk: skipRest,
+      });
+    }
+
+    function addRestSeconds(delta) {
+      const a = state.workout.active;
+      if (!a || a.phase !== 'rest') return;
+      a.restSecondsLeft = Math.max(0, a.restSecondsLeft + delta);
+      if (a.restSecondsLeft > a.restDefault) a.restDefault = a.restSecondsLeft;
+      updateRestDisplay();
+    }
+
+    function beginWorkSet() {
+      state.workout.active.phase = 'working';
+      renderActiveExercise();
+      if (navigator.vibrate) navigator.vibrate(12);
+    }
+
+    function cancelWorkSet() {
+      state.workout.active.phase = 'ready';
+      renderActiveExercise();
+    }
+
+    function beginLogSet() {
+      state.workout.active.phase = 'log';
+      renderActiveExercise();
+    }
+
+    function cancelLogSet() {
+      state.workout.active.phase = 'working';
+      renderActiveExercise();
+    }
+
+    function advanceAfterSet(withRest) {
+      const a = state.workout.active;
+      if (a.setIndex >= a.totalSets) {
+        completeExercise();
+        return;
+      }
+      if (withRest) startRest();
+      else {
+        a.phase = 'ready';
+        renderActiveExercise();
+      }
+    }
+
+    function saveCurrentSet() {
+      const a = state.workout.active;
+      const kgEl = document.getElementById('input-kg');
+      const kgRaw = kgEl.value.trim();
+      const kg = kgRaw === '' ? 0 : Number(kgRaw);
+      const reps = Number(document.getElementById('input-reps').value) || 0;
+      a.loggedSets.push({ kg, reps });
+      a.setIndex += 1;
+      advanceAfterSet(true);
+    }
+
+    function skipCurrentSet() {
+      const a = state.workout.active;
+      a.loggedSets.push({ skipped: true });
+      a.setIndex += 1;
+      advanceAfterSet(false);
+    }
+
+    function confirmSkipSet() {
+      const n = state.workout.active.setIndex + 1;
+      showConfirm({
+        title: 'Пропустить подход?',
+        text: `Подход ${n} будет отмечен как пропуск. Это нельзя отменить.`,
+        ok: 'Пропустить',
+        danger: true,
+        onOk: skipCurrentSet,
+      });
+    }
+
+    function confirmCancelWorkSet() {
+      showConfirm({
+        title: 'Вернуться?',
+        text: 'Подход не будет засчитан. Можно снова нажать «Начать подход».',
+        ok: 'Вернуться',
+        onOk: cancelWorkSet,
+      });
+    }
+
+    function completeExercise() {
+      clearRestTimer();
+      const id = state.workout.current;
+      const a = state.workout.active;
+      state.workout.done[id] = { sets: a ? [...a.loggedSets] : [] };
+      state.workout.active = null;
+      renderWhatsNext();
+      go('workout-whats-next');
+    }
+
+    function skipExercise() {
+      clearRestTimer();
+      state.workout.skipped.add(state.workout.current);
+      state.workout.active = null;
+      renderWhatsNext();
+      go('workout-whats-next');
+    }
+
+    function confirmSkipExercise() {
+      const ex = exById(state.workout.current);
+      const name = ex ? ex.nameRu : 'упражнение';
+      showConfirm({
+        title: 'Пропустить упражнение?',
+        text: `«${name}» целиком будет пропущено в этой тренировке.`,
+        ok: 'Пропустить',
+        danger: true,
+        onOk: skipExercise,
+      });
+    }
+
+    function confirmFinishWorkout() {
+      showConfirm({
+        title: 'Завершить тренировку?',
+        text: 'Несохранённые подходы не запишутся. Итог можно посмотреть перед выходом.',
+        ok: 'Завершить',
+        danger: true,
+        onOk: () => {
+          clearRestTimer();
+          go('workout-summary');
+        },
+      });
+    }
+
+    function openWorkoutMenu() {
+      const body = document.getElementById('modal-body');
+      body.innerHTML = `
+        <h2 style="margin-bottom:4px;font-size:18px">Тренировка</h2>
+        <p class="muted" style="margin-bottom:16px;font-size:13px">Редкие действия — с подтверждением</p>
+        <button type="button" class="menu-action danger" onclick="closeModal(); confirmSkipExercise()">Пропустить упражнение</button>
+        <button type="button" class="menu-action danger" onclick="closeModal(); confirmFinishWorkout()">Завершить тренировку</button>
+        <button type="button" class="btn btn-light" style="margin-top:8px" onclick="closeModal()">Закрыть</button>
+      `;
+      document.getElementById('modal').classList.add('open');
+    }
+
+    let confirmCallback = null;
+
+    function showConfirm({ title, text, ok, danger, onOk }) {
+      confirmCallback = onOk;
+      const body = document.getElementById('confirm-body');
+      body.innerHTML = `
+        <h2 style="font-size:18px;margin-bottom:8px">${title}</h2>
+        <p class="muted" style="margin-bottom:20px;font-size:14px;line-height:1.45">${text}</p>
+        <button type="button" class="btn ${danger ? 'btn-primary' : 'btn-primary'}" style="${danger ? 'background:linear-gradient(135deg,#fa5252,#e03131);box-shadow:0 4px 16px rgba(224,49,49,.35)' : ''}" onclick="runConfirm()">${ok}</button>
+        <button type="button" class="btn btn-ghost" style="margin-top:4px" onclick="closeConfirm()">Отмена</button>
+      `;
+      document.getElementById('confirm-modal').classList.add('open');
+    }
+
+    function runConfirm() {
+      const fn = confirmCallback;
+      closeConfirm();
+      if (fn) fn();
+    }
+
+    function closeConfirm() {
+      confirmCallback = null;
+      document.getElementById('confirm-modal').classList.remove('open');
+    }
+
+    function renderWhatsNext() {
+      const day = dayById(state.workout.day);
+      const el = document.getElementById('whats-next-list');
+      el.innerHTML = day.exercises
+        .map((ex) => {
+          const full = exById(ex.id);
+          let badge = '<span class="badge badge-plan">осталось</span>';
+          if (state.workout.done[ex.id]) {
+            const sub = formatSetsSummary(state.workout.done[ex.id].sets);
+            const hasSkip = state.workout.done[ex.id].sets?.some((s) => s.skipped);
+            badge = hasSkip
+              ? `<span class="badge badge-skip">${sub}</span>`
+              : '<span class="badge badge-done">сделано</span>';
+          }
+          if (state.workout.skipped.has(ex.id)) badge = '<span class="badge badge-skip">пропуск</span>';
+          const disabled = state.workout.done[ex.id] || state.workout.skipped.has(ex.id);
+          return `<div class="row" style="${disabled ? 'opacity:.55' : ''}" onclick="${disabled ? '' : `openExerciseWorkout('${ex.id}')`}">
+            <div class="body">
+              <div class="title">${full.nameRu}</div>
+              <div class="sub">${ex.sets}×${ex.reps}</div>
+            </div>
+            ${badge}
+          </div>`;
+        })
+        .join('');
+    }
+
+    function renderSummary() {
+      const day = dayById(state.workout.day);
+      const el = document.getElementById('summary-list');
+      el.innerHTML = day.exercises
+        .map((ex) => {
+          const full = exById(ex.id);
+          let st = 'badge-plan';
+          let txt = 'не начато';
+          if (state.workout.done[ex.id]) {
+            const sets = state.workout.done[ex.id].sets;
+            const hasSkip = sets.some((s) => s.skipped);
+            st = hasSkip ? 'badge-skip' : 'badge-done';
+            txt = formatSetsSummary(sets);
+          }
+          if (state.workout.skipped.has(ex.id)) {
+            st = 'badge-skip';
+            txt = 'пропущено';
+          }
+          return `<div class="card" style="padding:12px 14px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <strong>${full.nameRu}</strong>
+              <span class="badge ${st}">${txt}</span>
+            </div>
+          </div>`;
+        })
+        .join('');
+    }
+
+    function finishWorkout() {
+      alert('Mock: сессия сохранена');
+      goTab('workout');
+    }
+
+    // --- Program ---
+    function renderProgram() {
+      if (MOCK.days.length === 0) {
+        document.getElementById('program-days').innerHTML = `
+          <div class="hero" style="text-align:center;padding:32px 20px">
+            <div style="font-size:40px;margin-bottom:12px">📋</div>
+            <div style="font-weight:700;margin-bottom:8px">У вас пока нет программы</div>
+            <p class="muted" style="margin-bottom:16px">Добавьте первый тренировочный день</p>
+            <button class="btn btn-primary" type="button">+ Создать первый день</button>
+          </div>`;
+        return;
+      }
+      document.getElementById('program-days').innerHTML = MOCK.days
+        .map(
+          (d) => `<div class="row" onclick="openProgramDay('${d.id}')">
+            <div class="icon">${d.label}</div>
+            <div class="body">
+              <div class="title">День ${d.label}</div>
+              <div class="sub">${d.exercises.length} упражнений</div>
+            </div>
+            <span class="chevron">›</span>
+          </div>`
+        )
+        .join('');
+    }
+
+    function openProgramDay(id) {
+      const d = dayById(id);
+      document.getElementById('program-day-title').textContent = `День ${d.label}`;
+      document.getElementById('program-day-exercises').innerHTML = d.exercises
+        .map((ex) => {
+          const full = exById(ex.id);
+          return `<div class="card">
+            <strong>${full.nameRu}</strong>
+            <div class="muted">${full.nameEn}</div>
+            <div style="margin-top:8px"><span class="badge badge-plan">${ex.sets} × ${ex.reps}</span></div>
+          </div>`;
+        })
+        .join('');
+      go('program-day');
+    }
+
+    // --- Exercises ---
+    function setExTab(tab) {
+      state.exTab = tab;
+      document.getElementById('tab-active-ex').classList.toggle('active', tab === 'active');
+      document.getElementById('tab-arch-ex').classList.toggle('active', tab === 'archive');
+      renderCategories();
+    }
+
+    function renderCategories() {
+      const el = document.getElementById('category-list');
+      el.innerHTML = MOCK.categories
+        .map((cat) => {
+          const count = MOCK.exercises.filter(
+            (e) => e.cat === cat.id && (state.exTab === 'archive' ? e.archived : !e.archived)
+          ).length;
+          if (count === 0 && state.exTab === 'active') return '';
+          return `<div class="row" onclick="openCategory('${cat.id}')">
+            <div class="icon">${cat.icon}</div>
+            <div class="body">
+              <div class="title">${cat.name}</div>
+              <div class="sub">${count} упражн.</div>
+            </div>
+            <span class="chevron">›</span>
+          </div>`;
+        })
+        .join('');
+    }
+
+    function openCategory(catId) {
+      const cat = MOCK.categories.find((c) => c.id === catId);
+      document.getElementById('cat-title').textContent = cat.name;
+      const list = MOCK.exercises.filter(
+        (e) => e.cat === catId && (state.exTab === 'archive' ? e.archived : !e.archived)
+      );
+      document.getElementById('exercise-list').innerHTML =
+        list
+          .map(
+            (e) => `<div class="row" onclick="openExerciseDetail('${e.id}')">
+              <div class="body">
+                <div class="title">${e.nameRu}</div>
+                <div class="sub">${e.nameEn}</div>
+              </div>
+              <span class="chevron">›</span>
+            </div>`
+          )
+          .join('') || '<p class="muted">Пусто</p>';
+      go('exercise-category');
+    }
+
+    let detailExId = null;
+    function openExerciseDetail(id) {
+      detailExId = id;
+      const e = exById(id);
+      document.getElementById('ex-detail-title').textContent = e.nameRu;
+      document.getElementById('ex-detail-en').textContent = e.nameEn;
+      document.getElementById('ex-detail-cat').textContent =
+        MOCK.categories.find((c) => c.id === e.cat).name;
+      document.getElementById('archive-btn').textContent = e.archived ? 'Вернуть из архива' : 'В архив';
+      go('exercise-detail');
+    }
+
+    function archiveCurrent() {
+      const e = exById(detailExId);
+      if (e.archived) {
+        e.archived = false;
+        openExerciseDetail(detailExId);
+        return;
+      }
+      const inProgram = exerciseInProgram(detailExId);
+      const doArchive = () => {
+        if (inProgram) {
+          MOCK.days.forEach((d) => {
+            d.exercises = d.exercises.filter((x) => x.id !== detailExId);
+          });
+        }
+        e.archived = true;
+        history.backScreen();
+      };
+      if (inProgram) {
+        showConfirm({
+          title: 'В архив?',
+          text:
+            'Это упражнение используется в программе. При архивации оно удалится из ваших планов, но останется в истории. Продолжить?',
+          ok: 'В архив',
+          danger: true,
+          onOk: doArchive,
+        });
+      } else {
+        doArchive();
+      }
+    }
+
+    function checkDraftSession() {
+      if (!MOCK.draftSession || state.draftDismissed) return;
+      const d = MOCK.draftSession;
+      showConfirm({
+        title: 'Активная тренировка',
+        text: `Найдена активная тренировка от ${d.date}. Продолжить или начать новую? (старая будет удалена)`,
+        ok: 'Продолжить',
+        onOk: resumeDraftSession,
+      });
+      const body = document.getElementById('confirm-body');
+      const okBtn = body.querySelector('.btn-primary');
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'btn btn-danger-ghost';
+      row.style.marginTop = '8px';
+      row.textContent = 'Начать новую';
+      row.onclick = () => {
+        closeConfirm();
+        MOCK.draftSession = null;
+        state.draftDismissed = true;
+      };
+      okBtn.insertAdjacentElement('afterend', row);
+    }
+
+    function resumeDraftSession() {
+      const d = MOCK.draftSession;
+      state.workout = {
+        day: d.day,
+        done: {},
+        skipped: new Set(),
+        current: d.exId,
+        active: {
+          totalSets: dayById(d.day).exercises.find((e) => e.id === d.exId).sets,
+          planReps: dayById(d.day).exercises.find((e) => e.id === d.exId).reps,
+          setIndex: d.setIndex,
+          phase: d.phase,
+          loggedSets: [...d.loggedSets],
+          restDefault: 90,
+          restSecondsLeft: 90,
+          restTimerId: null,
+        },
+      };
+      MOCK.draftSession = null;
+      const full = exById(d.exId);
+      document.getElementById('active-ex-title').textContent = full.nameRu;
+      document.getElementById('active-ex-sub').textContent = `${full.nameEn} · день ${d.day}`;
+      renderActiveExercise();
+      go('workout-active');
+    }
+
+    // --- History ---
+    function renderHistory() {
+      document.getElementById('history-list').innerHTML = MOCK.history
+        .map(
+          (s) => `<div class="row" onclick="openHistoryDetail('${s.id}')">
+            <div class="body">
+              <div class="title">${s.date}</div>
+              <div class="sub">День ${s.day}</div>
+            </div>
+            <span class="chevron">›</span>
+          </div>`
+        )
+        .join('');
+    }
+
+    function openHistoryDetail(id) {
+      const s = MOCK.history.find((h) => h.id === id);
+      document.getElementById('hist-title').textContent = `${s.date} · День ${s.day}`;
+      document.getElementById('history-detail-body').innerHTML = s.items
+        .map((item) => {
+          const ex = exById(item.exId);
+          if (item.status === 'skip') {
+            return `<div class="card">
+              <div style="display:flex;justify-content:space-between">
+                <strong>${ex.nameRu}</strong>
+                <span class="badge badge-skip">пропуск</span>
+              </div>
+            </div>`;
+          }
+          const sets = item.sets
+            .map((set, i) => {
+              if (set.skipped) {
+                return `<div style="font-size:13px;margin-top:4px;color:#c92a2a">Подход ${i + 1}: пропуск</div>`;
+              }
+              return `<div class="muted" style="font-size:13px;margin-top:4px">Подход ${i + 1}: ${set.reps} × ${set.kg} кг</div>`;
+            })
+            .join('');
+          const hasSkip = item.sets.some((x) => x.skipped);
+          return `<div class="card">
+            <strong>${ex.nameRu}</strong>
+            <span class="badge ${hasSkip ? 'badge-skip' : 'badge-done'}" style="float:right">${hasSkip ? 'с пропусками' : 'сделано'}</span>
+            <div style="clear:both;margin-top:8px">${sets}</div>
+          </div>`;
+        })
+        .join('');
+      go('history-detail');
+    }
+
+    // --- Modals ---
+    function openModal(type) {
+      const body = document.getElementById('modal-body');
+      if (type === 'new-exercise') {
+        body.innerHTML = `
+          <h2 style="margin-bottom:16px">Новое упражнение</h2>
+          <div class="label">Категория</div>
+          <select style="width:100%;padding:12px;margin-bottom:12px;border-radius:12px;border:1px solid var(--border)">
+            ${MOCK.categories.map((c) => `<option>${c.name}</option>`).join('')}
+          </select>
+          <div class="label">Название RU</div>
+          <input style="width:100%;padding:12px;margin-bottom:12px;border-radius:12px;border:1px solid var(--border)" placeholder="Жим лёжа" />
+          <div class="label">Название EN</div>
+          <input style="width:100%;padding:12px;margin-bottom:16px;border-radius:12px;border:1px solid var(--border)" placeholder="Bench press" />
+          <button class="btn btn-primary" onclick="closeModal()">Сохранить (mock)</button>
+        `;
+      }
+      if (type === 'add-to-day') {
+        body.innerHTML = `
+          <h2 style="margin-bottom:16px">Добавить в день</h2>
+          <p class="muted" style="margin-bottom:12px">Выбор из моего каталога</p>
+          <div class="row"><div class="body"><div class="title">Присед</div><div class="sub">Squat</div></div></div>
+          <div class="label" style="margin-top:12px">Подходы</div>
+          <input type="number" value="4" style="width:100%;padding:12px;margin-bottom:8px;border-radius:12px;border:1px solid var(--border)" />
+          <div class="label">Повторения</div>
+          <input type="number" value="8" style="width:100%;padding:12px;margin-bottom:16px;border-radius:12px;border:1px solid var(--border)" />
+          <button class="btn btn-primary" onclick="closeModal()">Добавить (mock)</button>
+        `;
+      }
+      document.getElementById('modal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('open');
+    }
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target.id === 'modal') closeModal();
+    });
+    document.getElementById('confirm-modal').addEventListener('click', (e) => {
+      if (e.target.id === 'confirm-modal') closeConfirm();
+    });
+
+    // Init
+    renderDayChips();
+    renderProgram();
+    renderCategories();
+    renderHistory();
+    setTimeout(checkDraftSession, 400);
+  </script>
+</body>
+</html>

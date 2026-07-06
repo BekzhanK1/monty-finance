@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { LoadingScreen } from '../components/LoadingScreen';
 
+const DEV_BYPASS_AUTH = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+
 export function LoginPage() {
   const navigate = useNavigate();
   const { login, isLoading, isReady, error, isAuthenticated } = useAuth();
@@ -44,7 +46,7 @@ export function LoginPage() {
           fullWidth
           maw={280}
         >
-          Войти через Telegram
+          {DEV_BYPASS_AUTH ? 'Войти (dev, user #1)' : 'Войти через Telegram'}
         </Button>
       </Stack>
     </Center>
