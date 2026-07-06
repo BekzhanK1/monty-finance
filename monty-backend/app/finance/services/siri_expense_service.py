@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.finance.models import Category, TransactionType
+from app.finance.services.siri_logger import SiriLog
 
 _openai_client: OpenAI | None = None
 
@@ -20,14 +21,25 @@ def _get_openai_client() -> OpenAI:
     return _openai_client
 
 
-def match_expense_category(db: Session, category_text: str) -> Category | None:
+def match_expense_category(
+    db: Session,
+    category_text: str,
+    *,
+    log: SiriLog,
+) -> Category | None:
     categories = (
         db.query(Category)
         .filter(Category.type == TransactionType.EXPENSE)
         .order_by(Category.id)
         .all()
     )
+    log.info(
+        "loaded expense categories",
+        categories_count=len(categories),
+        categories=[{"id": c.id, "name": c.name} for c in categories],
+    )
     if not categories:
+        log.info("no expense categories in database")
         return None
 
     catalog = [{"id": category.id, "name": category.name} for category in categories]
@@ -40,6 +52,8 @@ def match_expense_category(db: Session, category_text: str) -> Category | None:
 Если ни одна категория не подходит достаточно хорошо, верни category_id: null.
 
 Ответь строго JSON: {{"category_id": <number или null>}}"""
+
+    log.info("calling OpenAI for category match", category_text=category_text)
 
     try:
         client = _get_openai_client()
@@ -56,12 +70,16 @@ def match_expense_category(db: Session, category_text: str) -> Category | None:
             temperature=0,
             response_format={"type": "json_object"},
         )
-        data = json.loads(response.choices[0].message.content or "{}")
+        raw_content = response.choices[0].message.content or "{}"
+        log.info("OpenAI category match response", raw_response=raw_content)
+
+        data = json.loads(raw_content)
         category_id = data.get("category_id")
         if category_id is None:
+            log.info("OpenAI returned null category_id")
             return None
 
-        return (
+        matched = (
             db.query(Category)
             .filter(
                 Category.id == int(category_id),
@@ -69,7 +87,20 @@ def match_expense_category(db: Session, category_text: str) -> Category | None:
             )
             .first()
         )
-    except Exception:
+        if matched:
+            log.info(
+                "category matched",
+                category_id=matched.id,
+                category_name=matched.name,
+            )
+        else:
+            log.info(
+                "OpenAI category_id not found in database",
+                category_id=category_id,
+            )
+        return matched
+    except Exception as exc:
+        log.error("OpenAI category match failed", exc=exc)
         return None
 
 
@@ -89,7 +120,9 @@ def generate_expense_confirmation_message(
     amount: int,
     category_text: str,
     user_name: str,
+    log: SiriLog,
 ) -> str:
+    log.info("calling OpenAI for confirmation message")
     try:
         client = _get_openai_client()
         response = client.chat.completions.create(
@@ -120,12 +153,16 @@ def generate_expense_confirmation_message(
         )
         message = (response.choices[0].message.content or "").strip()
         if message:
+            log.info("OpenAI confirmation message generated", message=message)
             return message
-    except Exception:
-        pass
+        log.info("OpenAI confirmation message empty, using fallback")
+    except Exception as exc:
+        log.error("OpenAI confirmation message failed", exc=exc)
 
-    return _fallback_confirmation_message(
+    fallback = _fallback_confirmation_message(
         category_name=category_name,
         category_icon=category_icon,
         amount=amount,
     )
+    log.info("using fallback confirmation message", message=fallback)
+    return fallback

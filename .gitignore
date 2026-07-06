@@ -30,6 +30,7 @@ Thumbs.db
 # Logs & debug
 *.log
 logs/
+log/
 
 # Build & dist
 dist/
