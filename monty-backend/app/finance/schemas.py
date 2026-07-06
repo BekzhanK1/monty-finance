@@ -92,8 +92,7 @@ class CategoryUpdate(BaseModel):
 
 class SiriExpenseRequest(BaseModel):
     user_id: int
-    category_text: str = Field(min_length=1)
-    amount: int = Field(gt=0)
+    raw_text: str = Field(min_length=1)
 
 
 class SiriExpenseResponse(BaseModel):

@@ -8,9 +8,9 @@ from app.finance.models import Transaction, User
 from app.finance.schemas import SiriExpenseRequest, SiriExpenseResponse
 from app.finance.services.digest_service import send_transaction_notification
 from app.finance.services.siri_expense_service import (
-    CATEGORY_NOT_FOUND_MESSAGE,
+    SiriParseError,
     generate_expense_confirmation_message,
-    match_expense_category,
+    parse_siri_expenses,
 )
 from app.finance.services.siri_logger import SiriLog
 from app.middleware.basic_auth import verify_siri_basic_auth
@@ -39,12 +39,14 @@ def siri_expense(
     )
 
     try:
-        category_text = body.category_text.strip()
-        if not category_text:
+        raw_text = body.raw_text.strip()
+        if not raw_text:
             response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-            result = SiriExpenseResponse(message=CATEGORY_NOT_FOUND_MESSAGE)
+            result = SiriExpenseResponse(
+                message="Не понял запрос. Скажите, например: «500 бензин»."
+            )
             log.info(
-                "rejected empty category_text",
+                "rejected empty raw_text",
                 http_status=response.status_code,
                 response=result.model_dump(),
             )
@@ -73,54 +75,62 @@ def siri_expense(
             household_id=user.household_id,
         )
 
-        category = match_expense_category(db, category_text, log=log)
-        if not category:
+        try:
+            parsed_items = parse_siri_expenses(db, raw_text, log=log)
+        except SiriParseError as exc:
             response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
-            result = SiriExpenseResponse(message=CATEGORY_NOT_FOUND_MESSAGE)
+            result = SiriExpenseResponse(message=exc.message)
             log.info(
-                "category not matched",
-                category_text=category_text,
+                "parse failed",
+                raw_text=raw_text,
                 http_status=response.status_code,
                 response=result.model_dump(),
             )
             return result
 
-        transaction = Transaction(
-            user_id=user.id,
-            category_id=category.id,
-            amount=body.amount,
-            comment=category_text,
-            transaction_date=datetime.utcnow(),
-        )
-        db.add(transaction)
+        saved_transactions: list[Transaction] = []
+        for item in parsed_items:
+            transaction = Transaction(
+                user_id=user.id,
+                category_id=item.category.id,
+                amount=item.amount,
+                comment=item.comment,
+                transaction_date=datetime.utcnow(),
+            )
+            db.add(transaction)
+            saved_transactions.append(transaction)
+
         db.commit()
-        db.refresh(transaction)
 
-        log.info(
-            "transaction saved",
-            transaction_id=transaction.id,
-            user_id=transaction.user_id,
-            category_id=transaction.category_id,
-            amount=transaction.amount,
-            comment=transaction.comment,
-            transaction_date=transaction.transaction_date.isoformat(),
-        )
+        for transaction, item in zip(saved_transactions, parsed_items, strict=True):
+            db.refresh(transaction)
+            log.info(
+                "transaction saved",
+                transaction_id=transaction.id,
+                user_id=transaction.user_id,
+                category_id=transaction.category_id,
+                amount=transaction.amount,
+                comment=transaction.comment,
+                transaction_date=transaction.transaction_date.isoformat(),
+            )
 
-        notification_sent = send_transaction_notification(
-            db=db,
-            category_icon=category.icon,
-            category_name=category.name,
-            amount=body.amount,
-            user_name=user.first_name or "Пользователь",
-            comment=category_text,
-        )
-        log.info("telegram notification", sent=notification_sent)
+            notification_sent = send_transaction_notification(
+                db=db,
+                category_icon=item.category.icon,
+                category_name=item.category.name,
+                amount=item.amount,
+                user_name=user.first_name or "Пользователь",
+                comment=item.comment,
+            )
+            log.info(
+                "telegram notification",
+                transaction_id=transaction.id,
+                sent=notification_sent,
+            )
 
         message = generate_expense_confirmation_message(
-            category_name=category.name,
-            category_icon=category.icon,
-            amount=body.amount,
-            category_text=category_text,
+            saved_items=parsed_items,
+            raw_text=raw_text,
             user_name=user.first_name or "Пользователь",
             log=log,
         )
@@ -128,6 +138,7 @@ def siri_expense(
         log.info(
             "request completed",
             http_status=200,
+            transactions_count=len(parsed_items),
             response=result.model_dump(),
         )
         return result
