@@ -153,7 +153,7 @@ def generate_expense_confirmation_message(
         )
         message = (response.choices[0].message.content or "").strip()
         if message:
-            log.info("OpenAI confirmation message generated", message=message)
+            log.info("OpenAI confirmation message generated", response_text=message)
             return message
         log.info("OpenAI confirmation message empty, using fallback")
     except Exception as exc:
@@ -164,5 +164,5 @@ def generate_expense_confirmation_message(
         category_icon=category_icon,
         amount=amount,
     )
-    log.info("using fallback confirmation message", message=fallback)
+    log.info("using fallback confirmation message", response_text=fallback)
     return fallback

@@ -37,10 +37,10 @@ class SiriLog:
     def __init__(self) -> None:
         self.request_id = uuid.uuid4().hex[:8]
 
-    def info(self, message: str, **fields: Any) -> None:
-        append_siri_log(f"[req={self.request_id}] {message}", **fields)
+    def info(self, event: str, **fields: Any) -> None:
+        append_siri_log(f"[req={self.request_id}] {event}", **fields)
 
-    def error(self, message: str, exc: BaseException | None = None, **fields: Any) -> None:
+    def error(self, event: str, exc: BaseException | None = None, **fields: Any) -> None:
         if exc is not None:
             fields = {
                 **fields,
@@ -48,4 +48,4 @@ class SiriLog:
                 "error": str(exc),
                 "traceback": traceback.format_exc(),
             }
-        append_siri_log(f"[req={self.request_id}] ERROR {message}", **fields)
+        append_siri_log(f"[req={self.request_id}] ERROR {event}", **fields)
