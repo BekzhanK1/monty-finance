@@ -90,6 +90,16 @@ class CategoryUpdate(BaseModel):
     icon: Optional[str] = None
 
 
+class SiriExpenseRequest(BaseModel):
+    user_id: int
+    category_text: str = Field(min_length=1)
+    amount: int = Field(gt=0)
+
+
+class SiriExpenseResponse(BaseModel):
+    message: str
+
+
 class AnalyticsResponse(BaseModel):
     total_income: int
     total_expenses: int

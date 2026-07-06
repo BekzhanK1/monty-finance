@@ -21,6 +21,9 @@ class Settings(BaseSettings):
 
     ENABLE_DEV_AUTH: bool = False
     DEV_AUTH_USER_ID: int = 1
+
+    SIRI_BASIC_AUTH_USERNAME: str = ""
+    SIRI_BASIC_AUTH_PASSWORD: str = ""
     
     class Config:
         env_file = ".env"

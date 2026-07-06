@@ -8,6 +8,7 @@ from app.finance.routers import (
     categories,
     digest,
     goals,
+    integrations,
     settings,
     transactions,
 )
@@ -63,6 +64,7 @@ app.include_router(goals.router)
 app.include_router(digest.router)
 app.include_router(settings.router)
 app.include_router(analytics.router)
+app.include_router(integrations.router)
 app.include_router(food_router)
 
 
