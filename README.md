@@ -148,3 +148,4 @@ make frontend-run
 ```
 
 Дополнительно см. [`monty-frontend/README.md`](monty-frontend/README.md).
+test
