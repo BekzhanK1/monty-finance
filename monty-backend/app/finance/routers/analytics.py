@@ -8,7 +8,7 @@ from app.core.config import get_db
 from app.finance.models import User, Transaction, TransactionType, CategoryGroup
 from app.finance.schemas import AnalyticsResponse
 from app.middleware.auth import get_current_user
-from app.finance.services.analytics_helpers import large_one_off_expense_total
+from app.finance.services.analytics_helpers import category_breakdown, large_one_off_expense_total
 from app.finance.services.budget_period_service import build_budgets_with_spent, date_range_to_datetimes
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
@@ -23,15 +23,7 @@ def _parse_boundary_date(s: Optional[str], default: date) -> date:
     return date.fromisoformat(raw[:10])
 
 
-def _build_analytics_response(
-    db: Session,
-    transactions: list,
-    window_start: datetime,
-    window_end: datetime,
-    period_start_str: str,
-    period_end_str: str,
-    comparison_previous_period: Optional[dict],
-) -> AnalyticsResponse:
+def _period_totals(transactions: list) -> tuple[int, int, int]:
     total_income = sum(
         t.amount for t in transactions if t.category.type == TransactionType.INCOME
     )
@@ -47,47 +39,35 @@ def _build_analytics_response(
         if t.category.type == TransactionType.EXPENSE
         and t.category.group == CategoryGroup.SAVINGS
     )
+    return total_income, total_expenses, total_savings
+
+
+def _load_transactions(db: Session, start: datetime, end: datetime, *, end_inclusive: bool) -> list:
+    query = (
+        db.query(Transaction)
+        .options(joinedload(Transaction.user), joinedload(Transaction.category))
+        .filter(Transaction.transaction_date >= start)
+    )
+    if end_inclusive:
+        query = query.filter(Transaction.transaction_date <= end)
+    else:
+        query = query.filter(Transaction.transaction_date < end)
+    return query.all()
+
+
+def _build_analytics_response(
+    db: Session,
+    transactions: list,
+    window_start: datetime,
+    window_end: datetime,
+    period_start_str: str,
+    period_end_str: str,
+    prev_transactions: Optional[list] = None,
+) -> AnalyticsResponse:
+    total_income, total_expenses, total_savings = _period_totals(transactions)
     balance = total_income - total_expenses
 
-    by_category = {}
-    for t in transactions:
-        cat_name = t.category.name
-        cat_icon = t.category.icon
-        cat_type = t.category.type
-        cat_group = t.category.group
-
-        if cat_name not in by_category:
-            by_category[cat_name] = {
-                "name": cat_name,
-                "icon": cat_icon,
-                "income": 0,
-                "expense": 0,
-                "savings": 0,
-            }
-        if cat_type == TransactionType.INCOME:
-            by_category[cat_name]["income"] += t.amount
-        elif cat_group == CategoryGroup.SAVINGS:
-            by_category[cat_name]["savings"] += t.amount
-        else:
-            by_category[cat_name]["expense"] += t.amount
-
-    def _cat_type(v):
-        if v["income"] > 0:
-            return "income"
-        if v["savings"] > 0:
-            return "savings"
-        return "expense"
-
-    by_category_list = [
-        {
-            "name": v["name"],
-            "icon": v["icon"],
-            "amount": v["expense"] or v["savings"] or v["income"],
-            "type": _cat_type(v),
-        }
-        for v in by_category.values()
-    ]
-    by_category_list.sort(key=lambda x: x["amount"], reverse=True)
+    by_category_list = category_breakdown(transactions, prev_transactions)
 
     by_group = {}
     for t in transactions:
@@ -148,12 +128,22 @@ def _build_analytics_response(
     budgets_with_spent = build_budgets_with_spent(db, window_start, window_end)
     large_one_off = large_one_off_expense_total(transactions)
 
+    comparison_previous_period = None
+    if prev_transactions is not None:
+        prev_income, prev_expenses, prev_savings = _period_totals(prev_transactions)
+        comparison_previous_period = {
+            "total_income": prev_income,
+            "total_expenses": prev_expenses,
+            "total_savings": prev_savings,
+            "balance": prev_income - prev_expenses,
+        }
+
     return AnalyticsResponse(
         total_income=total_income,
         total_expenses=total_expenses,
         total_savings=total_savings,
         balance=balance,
-        by_category=by_category_list[:10],
+        by_category=by_category_list,
         by_group=by_group_list,
         daily_data=daily_list,
         top_expenses=top_expenses,
@@ -175,35 +165,10 @@ def get_analytics(
     end_date = datetime.utcnow()
     start_date = end_date - timedelta(days=30 * months)
 
-    transactions = (
-        db.query(Transaction)
-        .options(joinedload(Transaction.user))
-        .filter(
-            Transaction.transaction_date >= start_date,
-            Transaction.transaction_date <= end_date,
-        )
-        .all()
-    )
+    transactions = _load_transactions(db, start_date, end_date, end_inclusive=True)
 
     prev_start = start_date - timedelta(days=30 * months)
-    prev_transactions = db.query(Transaction).filter(
-        Transaction.transaction_date >= prev_start,
-        Transaction.transaction_date < start_date,
-    ).all()
-    prev_income = sum(
-        t.amount for t in prev_transactions if t.category.type == TransactionType.INCOME
-    )
-    prev_expenses = sum(
-        t.amount
-        for t in prev_transactions
-        if t.category.type == TransactionType.EXPENSE
-        and t.category.group != CategoryGroup.SAVINGS
-    )
-    comparison_previous_period = {
-        "total_income": prev_income,
-        "total_expenses": prev_expenses,
-        "balance": prev_income - prev_expenses,
-    }
+    prev_transactions = _load_transactions(db, prev_start, start_date, end_inclusive=False)
 
     period_start_str = start_date.date().isoformat()
     period_end_str = end_date.date().isoformat()
@@ -215,7 +180,7 @@ def get_analytics(
         end_date,
         period_start_str,
         period_end_str,
-        comparison_previous_period,
+        prev_transactions,
     )
 
 
@@ -237,39 +202,17 @@ def get_analytics_for_period(
 
     window_start, window_end = date_range_to_datetimes(start_d, end_d)
 
-    transactions = (
-        db.query(Transaction)
-        .options(joinedload(Transaction.user))
-        .filter(
-            Transaction.transaction_date >= window_start,
-            Transaction.transaction_date <= window_end,
-        )
-        .all()
-    )
+    transactions = _load_transactions(db, window_start, window_end, end_inclusive=True)
 
     delta = window_end - window_start
-    comparison_previous_period = None
+    prev_transactions = None
     if delta.total_seconds() > 0:
-        prev_end_dt = window_start
-        prev_start_dt = window_start - delta
-        prev_transactions = db.query(Transaction).filter(
-            Transaction.transaction_date >= prev_start_dt,
-            Transaction.transaction_date < prev_end_dt,
-        ).all()
-        prev_income = sum(
-            t.amount for t in prev_transactions if t.category.type == TransactionType.INCOME
+        prev_transactions = _load_transactions(
+            db,
+            window_start - delta,
+            window_start,
+            end_inclusive=False,
         )
-        prev_expenses = sum(
-            t.amount
-            for t in prev_transactions
-            if t.category.type == TransactionType.EXPENSE
-            and t.category.group != CategoryGroup.SAVINGS
-        )
-        comparison_previous_period = {
-            "total_income": prev_income,
-            "total_expenses": prev_expenses,
-            "balance": prev_income - prev_expenses,
-        }
 
     period_start_str = start_d.isoformat()
     period_end_str = end_d.isoformat()
@@ -281,5 +224,5 @@ def get_analytics_for_period(
         window_end,
         period_start_str,
         period_end_str,
-        comparison_previous_period,
+        prev_transactions,
     )
