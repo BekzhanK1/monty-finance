@@ -28,6 +28,7 @@ import {
   gradientButton,
   heroVioletShell,
   modalShellResponsive,
+  pageStackPb,
 } from '../theme/dashboardChrome';
 
 type ServiceDef = {
@@ -259,12 +260,12 @@ export function AllServicesPage() {
   const [soonService, setSoonService] = useState<ServiceDef | null>(null);
 
   return (
-    <Container size="sm" p="md" pb={100}>
+    <Container size="sm" px="xs" pb={pageStackPb}>
       <Text fw={700} size="xl" mb="lg" className="animate-fade-in">
         Все сервисы
       </Text>
 
-      <SimpleGrid cols={{ base: 3, sm: 4 }} spacing="lg" verticalSpacing="xl">
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md" verticalSpacing="lg">
         {services.map((s) => (
           <ServiceTile
             key={s.title}

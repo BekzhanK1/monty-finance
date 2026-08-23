@@ -13,6 +13,7 @@ import {
   SegmentedControl,
   TextInput,
   Button,
+  Drawer,
   Modal,
   NumberInput,
   Select,
@@ -24,7 +25,7 @@ import { transactionsApi, categoriesApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Transaction, Category } from '../types';
-import { modalShellResponsive } from '../theme/dashboardChrome';
+import { modalShellResponsive, pageStackPb, sheetDrawerProps } from '../theme/dashboardChrome';
 
 const TIMEZONE = 'Asia/Almaty';
 
@@ -206,7 +207,7 @@ export function TransactionsPage() {
 
   if (loading && transactions.length === 0) {
     return (
-      <Container size="sm" pb={100}>
+      <Container size="sm" px="xs" pb={pageStackPb}>
         <LoadingSkeleton />
       </Container>
     );
@@ -217,7 +218,7 @@ export function TransactionsPage() {
     : 'История транзакций';
 
   return (
-    <Container size="sm" pb={100}>
+    <Container size="sm" px="xs" pb={pageStackPb}>
       <Stack gap="lg">
         {/* Header */}
         <Box className="animate-slide-down">
@@ -475,17 +476,14 @@ export function TransactionsPage() {
       </Stack>
 
       {/* Edit Modal */}
-      <Modal
-        opened={editModalOpen}
-        onClose={() => { 
+      {(() => {
+        const closeEdit = () => {
           haptic('light');
-          setEditModalOpen(false); 
-          setEditingTx(null); 
-        }}
-        title={<Text fw={700} size="lg">Редактировать транзакцию</Text>}
-        {...modalShellResponsive(!!isNarrow)}
-      >
-        {editingTx && (
+          setEditModalOpen(false);
+          setEditingTx(null);
+        };
+        const title = <Text fw={700} size="lg">Редактировать транзакцию</Text>;
+        const body = editingTx && (
           <Stack gap="md">
             <Select
               label="Категория"
@@ -554,8 +552,17 @@ export function TransactionsPage() {
               </Group>
             )}
           </Stack>
-        )}
-      </Modal>
+        );
+        return isNarrow ? (
+          <Drawer opened={editModalOpen} onClose={closeEdit} title={title} {...sheetDrawerProps(true)}>
+            {body}
+          </Drawer>
+        ) : (
+          <Modal opened={editModalOpen} onClose={closeEdit} title={title} {...modalShellResponsive(false)}>
+            {body}
+          </Modal>
+        );
+      })()}
     </Container>
   );
 }

@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   AppShell,
-  Burger,
   Group,
   ScrollArea,
   Text,
@@ -28,13 +27,12 @@ import { useMantineColorScheme } from '@mantine/core';
 const navItems = [
   { icon: IconHome, label: 'Главная', path: '/' },
   { icon: IconList, label: 'История', path: '/transactions' },
-  { icon: IconChartBar, label: 'Аналитика', path: '/analytics' },
-  { icon: IconApps, label: 'Все сервисы', path: '/services' },
-  { icon: IconSettings, label: 'Настройки', path: '/settings' },
+  { icon: IconChartBar, label: 'Анализ', path: '/analytics' },
+  { icon: IconApps, label: 'Сервисы', path: '/services' },
+  { icon: IconSettings, label: 'Ещё', path: '/settings' },
 ];
 
 export function Layout() {
-  const [opened, setOpened] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { haptic } = useTelegram();
@@ -44,7 +42,6 @@ export function Layout() {
   useEffect(() => {
     const index = navItems.findIndex(item => item.path === location.pathname);
     if (index !== -1) {
-      // Track active index for potential future use
       console.debug('Active nav index:', index);
     }
   }, [location.pathname]);
@@ -52,7 +49,6 @@ export function Layout() {
   const handleNavClick = (path: string) => {
     haptic('light');
     navigate(path);
-    setOpened(false);
   };
 
   const handleAddClick = () => {
@@ -67,13 +63,13 @@ export function Layout() {
 
   return (
     <AppShell
-      header={{ height: 60 }}
+      header={{ height: { base: 52, sm: 60 } }}
       navbar={{
         width: 250,
         breakpoint: 'sm',
-        collapsed: { mobile: !opened },
+        collapsed: { mobile: true },
       }}
-      padding="md"
+      padding={{ base: 'xs', sm: 'md' }}
       styles={{
         main: {
           background: colorScheme === 'dark' 
@@ -94,18 +90,9 @@ export function Layout() {
       >
         <Group h="100%" px="md" justify="space-between" className="animate-slide-down">
           <Group>
-            <Burger
-              opened={opened}
-              onClick={() => {
-                haptic('light');
-                setOpened((o) => !o);
-              }}
-              hiddenFrom="sm"
-              size="sm"
-            />
             <Text 
               fw={700} 
-              size="xl"
+              size="lg"
               className="gradient-text"
               style={{
                 background: colorScheme === 'dark'
@@ -209,10 +196,11 @@ export function Layout() {
             : 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(20px)',
           borderTop: `1px solid ${colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-          padding: '8px 4px 8px 4px',
+          padding: '6px 2px',
+          paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
           display: location.pathname.startsWith('/food') ? 'none' : 'grid',
           gridTemplateColumns: `repeat(${navItems.length}, 1fr)`,
-          gap: '4px',
+          gap: '2px',
           zIndex: 100,
           boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.1)',
         }}
@@ -228,14 +216,15 @@ export function Layout() {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                padding: '8px 4px',
+                justifyContent: 'center',
+                padding: '6px 2px',
+                minHeight: 48,
                 borderRadius: '12px',
                 color: isActive 
                   ? '#667eea' 
                   : (colorScheme === 'dark' ? theme.colors.gray[5] : theme.colors.gray[6]),
                 minWidth: 0,
                 position: 'relative',
-                transform: isActive ? 'translateY(-4px)' : 'translateY(0)',
               }}
             >
               {isActive && (
@@ -253,7 +242,7 @@ export function Layout() {
                   className="animate-scale-in"
                 />
               )}
-              <item.icon size={22} style={{ marginTop: isActive ? '4px' : '0' }} />
+              <item.icon size={22} />
               <Text 
                 size="xs" 
                 mt={2}
@@ -263,7 +252,8 @@ export function Layout() {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   maxWidth: '100%',
-                  fontSize: '11px',
+                  fontSize: '10px',
+                  lineHeight: 1.2,
                 }}
               >
                 {item.label}

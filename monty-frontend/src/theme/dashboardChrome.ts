@@ -1,8 +1,12 @@
 import type { CSSProperties } from 'react';
-import type { MantineColorScheme, ModalProps } from '@mantine/core';
+import type { DrawerProps, MantineColorScheme, ModalProps } from '@mantine/core';
 
 /** Match [`DashboardPage`](../pages/DashboardPage.tsx): glass cards, violet hero, spacing. */
-export const PAGE_WITH_BOTTOM_NAV_PB = 100;
+/** Bottom nav + iPhone home indicator. Use as Container `pb`. */
+export const PAGE_WITH_BOTTOM_NAV_PB = 'calc(96px + env(safe-area-inset-bottom, 0px))';
+export const pageStackPb = PAGE_WITH_BOTTOM_NAV_PB;
+
+export const TAP_MIN = 44;
 
 function isDarkScheme(colorScheme: MantineColorScheme): boolean {
   if (colorScheme === 'dark') return true;
@@ -64,6 +68,28 @@ const modalSafeAreaStyles: ModalProps['styles'] = {
     paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--mantine-spacing-md))',
   },
 };
+
+/** Bottom sheet on the phone; side drawer on desktop. */
+export function sheetDrawerProps(isNarrow: boolean): Partial<DrawerProps> {
+  if (!isNarrow) {
+    return { position: 'right', size: 'md', radius: 'lg' };
+  }
+  return {
+    position: 'bottom',
+    size: 'auto',
+    radius: 'lg',
+    styles: {
+      content: {
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        maxHeight: '90dvh',
+      },
+      body: {
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--mantine-spacing-md))',
+      },
+    },
+  };
+}
 
 /** Default modals: fullscreen on narrow viewports so content is not clipped. */
 export function modalShellResponsive(isNarrow: boolean): Partial<ModalProps> {

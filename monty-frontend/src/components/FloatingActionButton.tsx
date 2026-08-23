@@ -22,8 +22,8 @@ export function FloatingActionButton() {
       className="hover-lift"
       style={{
         position: 'fixed',
-        bottom: 88,
-        right: 20,
+        bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+        right: 16,
         zIndex: 1000,
         boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)',
       }}

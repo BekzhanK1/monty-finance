@@ -82,7 +82,8 @@ export function FoodLayout() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              padding: '6px 2px',
+              padding: '8px 2px',
+              minHeight: 48,
               borderRadius: 10,
               color: isActive
                 ? '#667eea'

@@ -21,7 +21,7 @@ import { settingsApi, categoriesApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Settings, BudgetConfig } from '../types';
-import { modalShellResponsive } from '../theme/dashboardChrome';
+import { modalShellResponsive, pageStackPb } from '../theme/dashboardChrome';
 
 const GROUP_LABELS: Record<string, string> = {
   BASE: 'База',
@@ -173,7 +173,7 @@ export function SettingsPage() {
 
   if (loading) {
     return (
-      <Container size="sm" pb={100}>
+      <Container size="sm" px="xs" pb={pageStackPb}>
         <LoadingSkeleton />
       </Container>
     );
@@ -191,7 +191,7 @@ export function SettingsPage() {
   };
 
   return (
-    <Container size="sm" pb={100}>
+    <Container size="sm" px="xs" pb={pageStackPb}>
       <Stack gap="lg">
         {/* Header */}
         <Box className="animate-slide-down">
@@ -361,10 +361,10 @@ export function SettingsPage() {
                     padding="md"
                     radius="lg"
                     withBorder
-                    className="hover-lift"
                     style={{
                       background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.5)',
                       cursor: 'pointer',
+                      minHeight: 52,
                     }}
                     onClick={() => openEditCategory(budget)}
                   >

@@ -18,6 +18,7 @@ import { categoriesApi, transactionsApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Category } from '../types';
+import { pageStackPb } from '../theme/dashboardChrome';
 
 export function AddTransactionPage() {
   const navigate = useNavigate();
@@ -80,14 +81,14 @@ export function AddTransactionPage() {
 
   if (loading) {
     return (
-      <Container size="sm" pb={100}>
+      <Container size="sm" px="xs" pb={pageStackPb}>
         <LoadingSkeleton />
       </Container>
     );
   }
 
   return (
-    <Container size="sm" p="md" pb={100}>
+    <Container size="sm" px="xs" pb={pageStackPb}>
       <Stack gap="lg">
         {/* Header */}
         <Group justify="space-between" className="animate-slide-down">
@@ -153,8 +154,8 @@ export function AddTransactionPage() {
             className="gradient-text"
             style={{ 
               fontFamily: 'monospace', 
-              fontSize: '3rem',
-              minHeight: 80,
+              fontSize: 'clamp(1.8rem, 8vw, 3rem)',
+              minHeight: 64,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -185,7 +186,7 @@ export function AddTransactionPage() {
                     size="xl"
                     variant="light"
                     radius="xl"
-                    h={64}
+                    h={56}
                     onClick={() => handleNumberClick(key)}
                     className="hover-scale"
                     style={{

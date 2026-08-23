@@ -17,6 +17,7 @@ import { IconTarget, IconTrendingUp, IconWallet, IconPigMoney } from '@tabler/ic
 import { budgetsApi, goalsApi, settingsApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { FloatingActionButton } from '../components/FloatingActionButton';
+import { pageStackPb } from '../theme/dashboardChrome';
 import type { DashboardResponse, Goal } from '../types';
 
 function formatNumber(num: number): string {
@@ -85,8 +86,8 @@ export function DashboardPage() {
   const afterPlannedSpending = totalBudget > 0 ? totalBudget - expensesBudget : 0;
 
   return (
-    <Container size="sm" p="md" pb={100}>
-      <Stack gap="lg">
+    <Container size="sm" px="xs" pb={pageStackPb}>
+      <Stack gap="md">
         {/* Общий бюджет */}
         {totalBudget > 0 && (
           <Card 
@@ -230,13 +231,48 @@ export function DashboardPage() {
         </Card>
 
         {/* Total Budget Summary - More spacious for 6-figure numbers */}
-        <SimpleGrid cols={{ base: 2, xs: 3 }} spacing="md">
+        <Card
+          hiddenFrom="sm"
+          shadow="md"
+          padding="md"
+          radius="xl"
+          withBorder
+          className="stagger-item"
+          style={{
+            background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
+          }}
+        >
+          <Stack gap="sm">
+            <Group justify="space-between" wrap="nowrap">
+              <Group gap={8}>
+                <IconTrendingUp size={18} style={{ color: '#ef4444' }} />
+                <Text size="sm" c="dimmed">Потрачено</Text>
+              </Group>
+              <Text fw={700}>{formatNumber(expensesSpent)} ₸ · {spentPercent}%</Text>
+            </Group>
+            <Group justify="space-between" wrap="nowrap">
+              <Group gap={8}>
+                <IconPigMoney size={18} style={{ color: '#14b8a6' }} />
+                <Text size="sm" c="dimmed">Накопления</Text>
+              </Group>
+              <Text fw={700} c="teal">{formatNumber(savingsSpent)} ₸</Text>
+            </Group>
+            <Group justify="space-between" wrap="nowrap">
+              <Group gap={8}>
+                <IconWallet size={18} style={{ color: totalRemaining < 0 ? '#ef4444' : '#10b981' }} />
+                <Text size="sm" c="dimmed">Осталось</Text>
+              </Group>
+              <Text fw={700} c={totalRemaining < 0 ? 'red' : 'green'}>{formatNumber(totalRemaining)} ₸</Text>
+            </Group>
+          </Stack>
+        </Card>
+        <SimpleGrid cols={3} spacing="md" visibleFrom="sm">
           <Card 
             shadow="md" 
             padding="lg" 
             radius="xl" 
             withBorder
-            className="stagger-item hover-lift"
+            className="stagger-item"
             style={{
               background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
               backdropFilter: 'blur(10px)',
@@ -252,7 +288,7 @@ export function DashboardPage() {
             padding="lg" 
             radius="xl" 
             withBorder
-            className="stagger-item hover-lift"
+            className="stagger-item"
             style={{
               background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
               backdropFilter: 'blur(10px)',
@@ -267,7 +303,7 @@ export function DashboardPage() {
             padding="lg" 
             radius="xl" 
             withBorder
-            className="stagger-item hover-lift"
+            className="stagger-item"
             style={{
               background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
               backdropFilter: 'blur(10px)',

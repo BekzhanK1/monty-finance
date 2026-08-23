@@ -17,6 +17,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { analyticsApi, settingsApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { pageStackPb } from '../theme/dashboardChrome';
 import type { Analytics, Settings } from '../types';
 
 type CategoryRow = Analytics['by_category'][number];
@@ -320,7 +321,7 @@ export function AnalyticsPage() {
 
   if (loading && !analytics) {
     return (
-      <Container size="sm" pb={100}>
+      <Container size="sm" px="xs" pb={pageStackPb}>
         <LoadingSkeleton />
       </Container>
     );
@@ -333,8 +334,8 @@ export function AnalyticsPage() {
   const progressPct = daysTotal > 0 ? Math.min(100, (elapsed / daysTotal) * 100) : 0;
 
   return (
-    <Container size="sm" pb={100}>
-      <Stack gap="lg">
+    <Container size="sm" px="xs" pb={pageStackPb}>
+      <Stack gap="md">
         <Box className="animate-slide-down">
           <Text fw={700} size="xl" mb="xs">Аналитика</Text>
           <Text size="sm" c="dimmed">Отслеживайте свои финансы</Text>
@@ -342,13 +343,16 @@ export function AnalyticsPage() {
 
         <Card 
           shadow="md" 
-          padding="md" 
+          padding="sm" 
           radius="xl" 
           withBorder
           className="stagger-item"
           style={{
-            background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
-            backdropFilter: 'blur(10px)',
+            background: colorScheme === 'dark' ? 'rgba(26, 26, 46, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(12px)',
+            position: 'sticky',
+            top: 0,
+            zIndex: 20,
           }}
         >
           <SegmentedControl
@@ -365,6 +369,7 @@ export function AnalyticsPage() {
             ]}
             fullWidth
             radius="lg"
+            size="sm"
           />
           {period === 'current' && (
             <Group justify="space-between" align="center" mt="md">
@@ -422,7 +427,7 @@ export function AnalyticsPage() {
                 <IconWallet size={24} style={{ color: '#667eea' }} />
                 <Text size="sm" c="dimmed">Остаток доходов</Text>
               </Group>
-              <Text fw={800} size="2.5rem" lh={1.2} className="gradient-text">
+              <Text fw={800} size="xl" lh={1.2} className="gradient-text">
                 {formatNumber(analytics.balance ?? 0)} ₸
               </Text>
               <Text size="xs" c="dimmed" mt="sm">
@@ -430,67 +435,72 @@ export function AnalyticsPage() {
               </Text>
             </Card>
 
-            <SimpleGrid cols={3} spacing="md" className="stagger-item">
-              <Card 
-                shadow="md" 
-                padding="md" 
-                radius="xl" 
+            <Card
+              shadow="md"
+              padding="md"
+              radius="xl"
+              withBorder
+              className="stagger-item"
+              style={{
+                background: colorScheme === 'dark'
+                  ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)'
+                  : 'linear-gradient(135deg, rgba(254, 242, 242, 0.9) 0%, rgba(254, 226, 226, 0.9) 100%)',
+              }}
+            >
+              <Group justify="space-between" align="flex-end" wrap="nowrap">
+                <Box>
+                  <Group gap={6} mb={4}>
+                    <IconTrendingDown size={18} style={{ color: '#ef4444' }} />
+                    <Text size="xs" c="dimmed">Потрачено</Text>
+                  </Group>
+                  <Text size="xl" fw={800} c="red">{formatNumber(analytics.total_expenses || 0)} ₸</Text>
+                </Box>
+                <PeriodDelta
+                  current={analytics.total_expenses || 0}
+                  previous={analytics.comparison_previous_period?.total_expenses}
+                  kind="expense"
+                />
+              </Group>
+            </Card>
+            <SimpleGrid cols={2} spacing="sm" className="stagger-item">
+              <Card
+                shadow="md"
+                padding="md"
+                radius="xl"
                 withBorder
-                className="hover-lift"
                 style={{
-                  background: colorScheme === 'dark' 
+                  background: colorScheme === 'dark'
                     ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)'
                     : 'linear-gradient(135deg, rgba(236, 253, 245, 0.9) 0%, rgba(209, 250, 229, 0.9) 100%)',
-                  backdropFilter: 'blur(10px)',
                 }}
               >
-                <IconTrendingUp size={20} style={{ color: '#10b981', marginBottom: '8px' }} />
-                <Text size="xs" c="dimmed" mb={4}>Пришло</Text>
-                <Text size="lg" fw={700} c="green">{formatNumber(analytics.total_income || 0)} ₸</Text>
+                <Group gap={6} mb={4}>
+                  <IconTrendingUp size={16} style={{ color: '#10b981' }} />
+                  <Text size="xs" c="dimmed">Пришло</Text>
+                </Group>
+                <Text size="md" fw={700} c="green">{formatNumber(analytics.total_income || 0)} ₸</Text>
                 <PeriodDelta
                   current={analytics.total_income || 0}
                   previous={analytics.comparison_previous_period?.total_income}
                   kind="income"
                 />
               </Card>
-              <Card 
-                shadow="md" 
-                padding="md" 
-                radius="xl" 
+              <Card
+                shadow="md"
+                padding="md"
+                radius="xl"
                 withBorder
-                className="hover-lift"
                 style={{
-                  background: colorScheme === 'dark' 
-                    ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%)'
-                    : 'linear-gradient(135deg, rgba(254, 242, 242, 0.9) 0%, rgba(254, 226, 226, 0.9) 100%)',
-                  backdropFilter: 'blur(10px)',
-                }}
-              >
-                <IconTrendingDown size={20} style={{ color: '#ef4444', marginBottom: '8px' }} />
-                <Text size="xs" c="dimmed" mb={4}>Потрачено</Text>
-                <Text size="lg" fw={700} c="red">{formatNumber(analytics.total_expenses || 0)} ₸</Text>
-                <PeriodDelta
-                  current={analytics.total_expenses || 0}
-                  previous={analytics.comparison_previous_period?.total_expenses}
-                  kind="expense"
-                />
-              </Card>
-              <Card 
-                shadow="md" 
-                padding="md" 
-                radius="xl" 
-                withBorder
-                className="hover-lift"
-                style={{
-                  background: colorScheme === 'dark' 
+                  background: colorScheme === 'dark'
                     ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)'
                     : 'linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(219, 234, 254, 0.9) 100%)',
-                  backdropFilter: 'blur(10px)',
                 }}
               >
-                <IconTarget size={20} style={{ color: '#3b82f6', marginBottom: '8px' }} />
-                <Text size="xs" c="dimmed" mb={4}>Отложено</Text>
-                <Text size="lg" fw={700} c="blue">{formatNumber(analytics.total_savings ?? 0)} ₸</Text>
+                <Group gap={6} mb={4}>
+                  <IconTarget size={16} style={{ color: '#3b82f6' }} />
+                  <Text size="xs" c="dimmed">Отложено</Text>
+                </Group>
+                <Text size="md" fw={700} c="blue">{formatNumber(analytics.total_savings ?? 0)} ₸</Text>
                 <PeriodDelta
                   current={analytics.total_savings ?? 0}
                   previous={analytics.comparison_previous_period?.total_savings}

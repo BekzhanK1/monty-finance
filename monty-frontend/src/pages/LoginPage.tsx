@@ -22,7 +22,7 @@ export function LoginPage() {
   }
 
   return (
-    <Center h="100vh" p="md">
+    <Center h="100dvh" p="md" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom, 0px))' }}>
       <Stack align="center" gap="xl">
         <ThemeIcon size={80} radius="xl" variant="light" color="blue">
           <IconWallet size={40} />

@@ -10,6 +10,8 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   background-attachment: fixed;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 #root {
@@ -17,8 +19,8 @@ html, body {
 }
 
 .mantine-Container-root {
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: max(12px, env(safe-area-inset-left, 0px));
+  padding-right: max(12px, env(safe-area-inset-right, 0px));
 }
 
 @media (min-width: 768px) {
@@ -30,18 +32,20 @@ html, body {
 
 /* Enhanced Card Styles */
 .mantine-Card-root {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.2s ease;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-.mantine-Card-root:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+@media (hover: hover) and (pointer: fine) {
+  .mantine-Card-root:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  }
 }
 
 .mantine-Card-root:active {
-  transform: translateY(0);
+  transform: none;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -52,9 +56,11 @@ html, body {
   border-radius: 12px;
 }
 
-.mantine-Button-root:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+@media (hover: hover) and (pointer: fine) {
+  .mantine-Button-root:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
 }
 
 .mantine-Button-root:active {
@@ -66,8 +72,10 @@ html, body {
   transition: all 0.2s ease;
 }
 
-.mantine-ActionIcon-root:hover {
-  transform: scale(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .mantine-ActionIcon-root:hover {
+    transform: scale(1.1);
+  }
 }
 
 .mantine-ActionIcon-root:active {
