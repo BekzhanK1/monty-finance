@@ -149,3 +149,14 @@ def siri_expense(
         return SiriExpenseResponse(
             message="Произошла ошибка при записи расхода. Попробуйте ещё раз."
         )
+
+
+@router.get("/categories", response_model=list[str])
+def get_categories_for_siri(
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_siri_basic_auth),
+):
+    from app.finance.models import Category
+
+    categories = db.query(Category.name).all()
+    return [category.name for category in categories]
