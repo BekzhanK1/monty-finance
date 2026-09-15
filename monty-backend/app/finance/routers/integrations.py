@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_db, settings
-from app.finance.models import Transaction, User
+from app.finance.models import Category, Transaction, User
 from app.finance.schemas import SiriExpenseRequest, SiriExpenseResponse
 from app.finance.services.digest_service import send_transaction_notification
 from app.finance.services.siri_expense_service import (
@@ -149,3 +149,12 @@ def siri_expense(
         return SiriExpenseResponse(
             message="Произошла ошибка при записи расхода. Попробуйте ещё раз."
         )
+
+
+@router.get("/categories", response_model=list[str])
+def get_categories_for_siri(
+    db: Session = Depends(get_db),
+    _: None = Depends(verify_siri_basic_auth),
+):
+    categories = db.query(Category.name).all()
+    return [category.name for category in categories]
