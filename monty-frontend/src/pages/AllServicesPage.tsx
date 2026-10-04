@@ -14,7 +14,6 @@ import {
   Text,
   ThemeIcon,
   UnstyledButton,
-  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconHome,
@@ -23,7 +22,10 @@ import {
   IconPlane,
   IconSparkles,
 } from '@tabler/icons-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { IconDownload, IconSettings } from '@tabler/icons-react';
+import { transactionsApi } from '../services/finance';
+import { ListRow, PageHeader, Section } from '../ui';
 import {
   gradientButton,
   heroVioletShell,
@@ -129,7 +131,6 @@ function ComingSoonModal({
   onClose: () => void;
   isNarrow: boolean;
 }) {
-  const { colorScheme } = useMantineColorScheme();
   if (!service) return null;
 
   const Icon = service.icon;
@@ -149,7 +150,7 @@ function ComingSoonModal({
           py="xl"
           px="lg"
           style={{
-            ...heroVioletShell(colorScheme),
+            ...heroVioletShell(),
             borderRadius: isNarrow ? 0 : 'var(--mantine-radius-xl) var(--mantine-radius-xl) 0 0',
             textAlign: 'center',
           }}
@@ -258,13 +259,36 @@ function ComingSoonModal({
 export function AllServicesPage() {
   const isNarrow = useMediaQuery('(max-width: 36em)');
   const [soonService, setSoonService] = useState<ServiceDef | null>(null);
+  const navigate = useNavigate();
+  const rowIcon = (icon: React.ReactNode) => (
+    <ThemeIcon size={30} radius="md" variant="light">{icon}</ThemeIcon>
+  );
 
   return (
-    <Container size="sm" px="xs" pb={pageStackPb}>
-      <Text fw={700} size="xl" mb="lg" className="animate-fade-in">
-        Все сервисы
-      </Text>
+    <Container size="sm" pb={pageStackPb}>
+      <PageHeader title="Ещё" />
 
+      <Section title="Monty" style={{ marginTop: 12, marginBottom: 24 }}>
+        <ListRow
+          leading={rowIcon(<IconSettings size={18} />)}
+          title="Настройки"
+          subtitle="Бюджеты, цель, категории, день зарплаты"
+          onClick={() => navigate('/settings')}
+          chevron
+        />
+        <ListRow
+          divider
+          leading={rowIcon(<IconDownload size={18} />)}
+          title="Экспорт в CSV"
+          subtitle="Все операции"
+          onClick={() => void transactionsApi.exportCsv()}
+          chevron
+        />
+      </Section>
+
+      <Text size="xs" fw={600} tt="uppercase" px={4} mb={6} style={{ color: 'var(--monty-section-header)', letterSpacing: 0.4 }}>
+        Сервисы
+      </Text>
       <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md" verticalSpacing="lg">
         {services.map((s) => (
           <ServiceTile

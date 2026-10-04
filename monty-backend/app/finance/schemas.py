@@ -84,6 +84,8 @@ class DashboardResponse(BaseModel):
     total_savings_goal: int
     current_savings: int
     budgets: list[BudgetWithSpent]
+    period_start: Optional[date] = None
+    period_end: Optional[date] = None
 
 
 class CategoryCreate(BaseModel):

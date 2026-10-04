@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage';
-import { AddTransactionPage } from './pages/AddTransactionPage';
+import { HomePage } from './features/home/HomePage';
+import { AddTransactionPage } from './features/add/AddTransactionPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
-import { TransactionsPage } from './pages/TransactionsPage';
+import { HistoryPage } from './features/history/HistoryPage';
 import { AllServicesPage } from './pages/AllServicesPage';
 import { FoodLayout } from './food/FoodLayout';
 import { FoodCatalogPage } from './food/pages/FoodCatalogPage';
@@ -42,8 +42,8 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardPage />} />
-        <Route path="transactions" element={<TransactionsPage />} />
+        <Route index element={<HomePage />} />
+        <Route path="transactions" element={<HistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="services" element={<AllServicesPage />} />

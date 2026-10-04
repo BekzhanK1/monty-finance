@@ -27,6 +27,9 @@ export interface DashboardResponse {
   total_savings_goal: number;
   current_savings: number;
   budgets: BudgetWithSpent[];
+  /** Inclusive salary-to-salary period, `YYYY-MM-DD`. */
+  period_start?: string;
+  period_end?: string;
 }
 
 export interface Goal {

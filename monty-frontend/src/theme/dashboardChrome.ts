@@ -1,56 +1,42 @@
 import type { CSSProperties } from 'react';
-import type { DrawerProps, MantineColorScheme, ModalProps } from '@mantine/core';
+import type { DrawerProps, ModalProps } from '@mantine/core';
 
-/** Match [`DashboardPage`](../pages/DashboardPage.tsx): glass cards, violet hero, spacing. */
-/** Bottom nav + iPhone home indicator. Use as Container `pb`. */
-export const PAGE_WITH_BOTTOM_NAV_PB = 'calc(96px + env(safe-area-inset-bottom, 0px))';
+/** Shared page chrome on top of the design tokens in `tokens.css` (Telegram theme aware). */
+/** Bottom tab bar + iPhone home indicator. Use as Container `pb`. */
+export const PAGE_WITH_BOTTOM_NAV_PB = 'var(--monty-page-pb)';
 export const pageStackPb = PAGE_WITH_BOTTOM_NAV_PB;
 
 export const TAP_MIN = 44;
 
-function isDarkScheme(colorScheme: MantineColorScheme): boolean {
-  if (colorScheme === 'dark') return true;
-  if (colorScheme === 'light') return false;
-  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)')) {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  }
-  return false;
-}
 
-export function heroVioletShell(colorScheme: MantineColorScheme): CSSProperties {
-  const dark = isDarkScheme(colorScheme);
+/** Hero card: accent-tinted surface. */
+export function heroVioletShell(): CSSProperties {
   return {
-    background:
-      dark
-        ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)'
-        : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%)',
-    backdropFilter: 'blur(10px)',
-    border:
-      dark ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.05)',
+    background: 'color-mix(in srgb, var(--monty-accent) 10%, var(--monty-surface))',
+    border: 'none',
   };
 }
 
-export function glassSectionShell(colorScheme: MantineColorScheme): CSSProperties {
-  const dark = isDarkScheme(colorScheme);
+/** Section card on the page background. */
+export function glassSectionShell(): CSSProperties {
   return {
-    background: dark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
-    backdropFilter: 'blur(10px)',
+    background: 'var(--monty-surface)',
+    border: 'none',
   };
 }
 
-/** Inner rows (same idea as `BudgetCard` non-savings). */
-export function insetRowShell(colorScheme: MantineColorScheme): CSSProperties {
-  const dark = isDarkScheme(colorScheme);
+/** Row inside a section card. */
+export function insetRowShell(): CSSProperties {
   return {
-    background: dark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.5)',
+    background: 'var(--monty-surface-2)',
+    border: 'none',
   };
 }
 
 export const gradientButton = {
   size: 'lg' as const,
-  radius: 'xl' as const,
-  variant: 'gradient' as const,
-  gradient: { from: 'blue', to: 'violet', deg: 135 },
+  radius: 'md' as const,
+  variant: 'filled' as const,
 };
 
 export const modalShell = {

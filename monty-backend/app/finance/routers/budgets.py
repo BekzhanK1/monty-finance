@@ -30,4 +30,6 @@ def get_current_budgets(
         total_savings_goal=target_amount,
         current_savings=current_savings,
         budgets=budget_items,
+        period_start=period_start,
+        period_end=period_end,
     )

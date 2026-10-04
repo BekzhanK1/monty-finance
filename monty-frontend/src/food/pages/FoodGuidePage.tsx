@@ -13,7 +13,7 @@ import {
   Table,
   Text,
   Title,
-  useMantineColorScheme,
+  useComputedColorScheme,
 } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight, IconNotebook } from '@tabler/icons-react';
 import { Link } from 'react-router-dom';
@@ -39,7 +39,7 @@ function normalizeDish(d: FoodDish): FoodDish {
 }
 
 export function FoodGuidePage() {
-  const { colorScheme } = useMantineColorScheme();
+  const colorScheme = useComputedColorScheme('light');
   const { haptic } = useTelegram();
   const [weekOffset, setWeekOffset] = useState(0);
   const [slots, setSlots] = useState<FoodMealSlot[]>([]);
@@ -223,7 +223,7 @@ export function FoodGuidePage() {
               radius="xl"
               withBorder
               className="stagger-item"
-              style={glassSectionShell(colorScheme)}
+              style={glassSectionShell()}
             >
               <Text fw={800} size="md" tt="capitalize" mb="sm">
                 {weekdayLong(day)}{' '}
