@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.food.models import FoodDish, FoodMealCategory
 from app.food.services.pantry_ingredient_seed import seed_pantry_default_ingredients
+from app.food.services.warehouses import ensure_default_warehouse
 
 DEFAULT_CATEGORIES: list[tuple[str, int]] = [
     ("Завтрак", 0),
@@ -58,6 +59,8 @@ def seed_default_dishes(db: Session, household_id: int) -> None:
 
 
 def ensure_household_food_ready(db: Session, household_id: int) -> None:
+    ensure_default_warehouse(db, household_id=household_id)
+    db.commit()
     ensure_default_categories(db, household_id)
     seed_default_dishes(db, household_id)
     seed_pantry_default_ingredients(db, household_id)

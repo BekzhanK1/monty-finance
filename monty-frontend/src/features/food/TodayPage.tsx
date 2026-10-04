@@ -4,9 +4,11 @@ import { IconBasket, IconCheck, IconChevronRight } from '@tabler/icons-react';
 import { haptic } from '../../lib/telegram';
 import { EmptyState, ListRow, PageHeader, Section, useSnackbar } from '../../ui';
 import { foodApi } from './api';
+import { useWarehouseId } from './WarehouseContext';
 import { useFoodMutation, useToday } from './queries';
 import { SLOTS, formatQty, readinessLabel, stockNote } from './format';
 import { ReadinessBadge } from './components/ReadinessBadge';
+import { WarehouseSwitcher } from './components/WarehouseSwitcher';
 import type { MealSlot, PantryItem } from './types';
 
 const todayFormat = new Intl.DateTimeFormat('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -15,13 +17,15 @@ export function TodayPage() {
   const navigate = useNavigate();
   const { data, isPending, isError, refetch } = useToday();
   const snack = useSnackbar();
-  const lowStock = useFoodMutation(foodApi.shoppingLowStock);
+  const wid = useWarehouseId();
+  const lowStock = useFoodMutation(() => foodApi.shoppingLowStock(wid));
 
   const subtitle = todayFormat.format(new Date());
 
   return (
     <Container size="sm" pb="var(--monty-page-pb)">
       <PageHeader title="Кухня" subtitle={subtitle.charAt(0).toUpperCase() + subtitle.slice(1)} onBack={() => navigate('/services')} />
+      <WarehouseSwitcher />
 
       {isError ? (
         <EmptyState icon="⚠️" title="Не удалось загрузить" action={{ label: 'Повторить', onClick: () => void refetch() }} />
@@ -92,7 +96,8 @@ export function TodayPage() {
 function TodayMeals({ slots }: { slots: MealSlot[] }) {
   const navigate = useNavigate();
   const snack = useSnackbar();
-  const cook = useFoodMutation(foodApi.cookSlot);
+  const wid = useWarehouseId();
+  const cook = useFoodMutation((slotId: number) => foodApi.cookSlot(slotId, wid));
   const uncook = useFoodMutation(foodApi.uncookSlot);
 
   if (slots.length === 0) {

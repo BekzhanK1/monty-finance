@@ -16,6 +16,8 @@ import { PantryPage } from './features/food/PantryPage';
 import { RecipesPage } from './features/food/RecipesPage';
 import { RecipePage } from './features/food/RecipePage';
 import { RecipeEditorPage } from './features/food/RecipeEditorPage';
+import { TransferNewPage } from './features/food/TransferNewPage';
+import { TransfersPage } from './features/food/TransfersPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -57,6 +59,8 @@ function App() {
           <Route path="recipes/new" element={<RecipeEditorPage />} />
           <Route path="recipes/:id" element={<RecipePage />} />
           <Route path="recipes/:id/edit" element={<RecipeEditorPage />} />
+          <Route path="transfers" element={<TransfersPage />} />
+          <Route path="transfers/new" element={<TransferNewPage />} />
           {/* Old Food v1 routes */}
           <Route path="catalog" element={<Navigate to="/food/recipes" replace />} />
           <Route path="guide" element={<Navigate to="/food/recipes" replace />} />

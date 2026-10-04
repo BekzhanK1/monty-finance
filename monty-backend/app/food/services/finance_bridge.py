@@ -1,4 +1,4 @@
-"""Create a Finance expense from a finalized Food shopping list."""
+"""Record a Finance expense for a completed Food shopping trip."""
 
 from datetime import datetime
 from decimal import Decimal
@@ -31,51 +31,6 @@ def resolve_grocery_category_id(db: Session) -> int:
     if not row:
         raise HTTPException(status_code=400, detail="Нет категории расходов в Finance")
     return row.id
-
-
-def shopping_list_total_amount(lst: FoodShoppingList) -> int:
-    total = Decimal(0)
-    for it in lst.items or []:
-        if it.actual_price is not None:
-            total += Decimal(it.actual_price)
-    return int(total.quantize(Decimal("1")))
-
-
-def finalize_shopping_list_to_finance(
-    db: Session,
-    *,
-    lst: FoodShoppingList,
-    user_id: int,
-    user_name: str,
-) -> tuple[Transaction, int]:
-    if lst.linked_transaction_id:
-        raise HTTPException(status_code=400, detail="Список уже оформлен в Finance")
-
-    total = shopping_list_total_amount(lst)
-    if total <= 0:
-        raise HTTPException(
-            status_code=400,
-            detail="Укажите цены на позициях списка перед оформлением в Finance",
-        )
-
-    category_id = resolve_grocery_category_id(db)
-    comment = f"Food: {lst.title}"[:255]
-
-    tx = Transaction(
-        user_id=user_id,
-        category_id=category_id,
-        amount=total,
-        comment=comment,
-        transaction_date=datetime.utcnow(),
-    )
-    db.add(tx)
-    db.flush()
-    lst.status = "done"
-    lst.linked_transaction_id = tx.id
-    db.commit()
-    db.refresh(tx)
-    db.refresh(lst)
-    return tx, total
 
 
 def record_grocery_expense(

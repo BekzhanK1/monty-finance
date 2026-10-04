@@ -17,6 +17,7 @@ import { IconCalendarPlus, IconDots, IconMinus, IconPencil, IconPlus, IconArchiv
 import { haptic } from '../../lib/telegram';
 import { EmptyState, PageHeader, Section, useSnackbar } from '../../ui';
 import { foodApi } from './api';
+import { useWarehouseId } from './WarehouseContext';
 import { useAvailability, useDishes, useFoodMutation, useMealCategories } from './queries';
 import { SLOTS, addDays, formatQty, isoDate } from './format';
 import { ReadinessBadge } from './components/ReadinessBadge';
@@ -60,8 +61,9 @@ function RecipeView({ dish, initialServings }: { dish: Dish; initialServings: nu
   const [servings, setServings] = useState(initialServings);
   const [planning, setPlanning] = useState(false);
   const availability = useAvailability(dish.id, servings);
-  const cook = useFoodMutation(() => foodApi.cookDish(dish.id, servings));
-  const buy = useFoodMutation(() => foodApi.dishToShopping(dish.id, servings));
+  const wid = useWarehouseId();
+  const cook = useFoodMutation(() => foodApi.cookDish(dish.id, wid, servings));
+  const buy = useFoodMutation(() => foodApi.dishToShopping(dish.id, wid, servings));
   const archive = useFoodMutation(() => foodApi.archiveDish(dish.id));
 
   const category = categories.find(c => c.id === dish.meal_category_id)?.name;

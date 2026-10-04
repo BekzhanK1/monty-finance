@@ -18,15 +18,18 @@ import {
   TextInput,
   UnstyledButton,
 } from '@mantine/core';
-import { IconMinus, IconPlus, IconSearch } from '@tabler/icons-react';
+import { IconArrowsExchange, IconHistory, IconMinus, IconPlus, IconSearch } from '@tabler/icons-react';
 import { haptic } from '../../lib/telegram';
-import { EmptyState, PageHeader, Section, useSnackbar } from '../../ui';
+import { EmptyState, ListRow, PageHeader, Section, useSnackbar } from '../../ui';
 import { foodApi } from './api';
-import { useFoodMutation, useIngredients, usePantry, useUnits } from './queries';
+import { useWarehouseId } from './WarehouseContext';
+import { useFoodMutation, useIngredients, useMovements, usePantry, useUnits } from './queries';
+import { useWarehouses } from './WarehouseContext';
 import { LOCATIONS, addDays, formatQty, isoDate, parseIsoDate, stepFor, stockNote, unitLabel } from './format';
 import { ProductPicker } from './components/ProductPicker';
+import { WarehouseSwitcher } from './components/WarehouseSwitcher';
 import { QtyUnitInput } from './components/QtyUnitInput';
-import type { Location, PantryItem } from './types';
+import type { Location, MovementKind, PantryItem } from './types';
 
 type Filter = 'all' | 'attention' | Location;
 
@@ -64,6 +67,8 @@ export function PantryPage() {
         }
       />
 
+      <WarehouseSwitcher />
+
       <Stack gap="sm" mt="sm">
         <TextInput
           placeholder="Найти продукт"
@@ -99,7 +104,7 @@ export function PantryPage() {
           action={{ label: 'Добавить продукт', onClick: () => setAdding(true) }}
         />
       ) : groups.length === 0 ? (
-        <EmptyState icon="🔍" title="Ничего не найдено" />
+        <ElsewhereHint query={query} />
       ) : (
         <Stack gap="lg" mt="md">
           {groups.map(group => (
@@ -124,6 +129,25 @@ export function PantryPage() {
       <EditSheet item={editing} onClose={() => setEditing(null)} />
       <AddSheet opened={adding} onClose={() => setAdding(false)} />
     </Container>
+  );
+}
+
+/** When a search finds nothing here, say which other warehouse has it («где лежит»). */
+function ElsewhereHint({ query }: { query: string }) {
+  const { current } = useWarehouses();
+  const q = query.trim().toLowerCase();
+  const all = usePantry('all');
+  const elsewhere = q
+    ? (all.data ?? []).filter(i => i.warehouse_id !== current?.id && i.quantity > 0 && i.ingredient_name.toLowerCase().includes(q))
+    : [];
+  if (!elsewhere.length) return <EmptyState icon="🔍" title="Ничего не найдено" />;
+  return (
+    <Section title="Есть на других складах" style={{ marginTop: 16 }}>
+      {elsewhere.map((i, n) => (
+        <ListRow key={i.id} divider={n > 0} title={i.ingredient_name} subtitle={i.warehouse_name}
+          trailing={<Text size="sm" fw={500} className="monty-tabular">{formatQty(i.quantity, i.unit_code)}</Text>} />
+      ))}
+    </Section>
   );
 }
 
@@ -203,6 +227,8 @@ function EditSheet({ item, onClose }: { item: PantryItem | null; onClose: () => 
     min_quantity: typeof f.min === 'number' && f.min > 0 ? f.min : null,
   }));
   const remove = useFoodMutation(foodApi.deletePantry);
+  const { warehouses } = useWarehouses();
+  const [historyFor, setHistoryFor] = useState<PantryItem | null>(null);
   const toList = useFoodMutation((p: PantryItem) => foodApi.addShoppingItem({
     label: p.ingredient_name, ingredient_id: p.ingredient_id,
   }));
@@ -248,6 +274,17 @@ function EditSheet({ item, onClose }: { item: PantryItem | null; onClose: () => 
             Сохранить
           </Button>
           <Group grow>
+            {warehouses.length > 1 && item.quantity > 0 && (
+              <Button variant="default" leftSection={<IconArrowsExchange size={16} />}
+                onClick={() => { onClose(); navigate(`/food/transfers/new?from=${item.warehouse_id}&item=${item.id}`); }}>
+                Переместить
+              </Button>
+            )}
+            <Button variant="default" leftSection={<IconHistory size={16} />} onClick={() => setHistoryFor(item)}>
+              История
+            </Button>
+          </Group>
+          <Group grow>
             <Button variant="default" loading={toList.isPending}
               onClick={async () => {
                 await toList.mutateAsync(item);
@@ -264,6 +301,50 @@ function EditSheet({ item, onClose }: { item: PantryItem | null; onClose: () => 
           </Group>
         </Stack>
       )}
+      <MovementsSheet item={historyFor} onClose={() => setHistoryFor(null)} />
+    </Drawer>
+  );
+}
+
+const KIND_LABEL: Record<MovementKind, string> = {
+  receipt: 'Поступление',
+  purchase: 'Покупка',
+  cook: 'Готовка',
+  adjust: 'Корректировка',
+  transfer_out: 'Перемещение',
+  transfer_in: 'Перемещение',
+  transfer_cancel: 'Отмена перемещения',
+  writeoff: 'Списание',
+};
+
+const movedAt = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+function MovementsSheet({ item, onClose }: { item: PantryItem | null; onClose: () => void }) {
+  const { data, isPending } = useMovements(item?.id ?? null);
+  return (
+    <Drawer opened={item !== null} onClose={onClose} position="bottom" size="70%" radius="lg"
+      title={<Text fw={700} size="lg">История · {item?.ingredient_name}</Text>}
+      styles={{ body: { paddingBottom: 'calc(16px + var(--monty-safe-bottom))' } }}>
+      {isPending ? <Skeleton h={160} radius="lg" /> : !data?.length ? (
+        <EmptyState icon="🗒️" title="Движений пока нет" />
+      ) : (
+        <Section>
+          {data.map((m, i) => (
+            <ListRow
+              key={m.id}
+              divider={i > 0}
+              title={`${KIND_LABEL[m.kind]}${m.transfer_number ? ` № ${m.transfer_number}` : ''}`}
+              subtitle={[movedAt.format(new Date(/[zZ]$/.test(m.created_at) ? m.created_at : `${m.created_at}Z`)), m.note, m.user_name]
+                .filter(Boolean).join(' · ')}
+              trailing={
+                <Text fw={600} className="monty-tabular" style={{ color: m.quantity > 0 ? 'var(--monty-income)' : 'var(--monty-text)', whiteSpace: 'nowrap' }}>
+                  {m.quantity > 0 ? '+' : '−'}{formatQty(Math.abs(m.quantity), m.unit_code)}
+                </Text>
+              }
+            />
+          ))}
+        </Section>
+      )}
     </Drawer>
   );
 }
@@ -279,6 +360,7 @@ function AddSheet({ opened, onClose }: { opened: boolean; onClose: () => void })
   const [location, setLocation] = useState<Location | null>(null);
   const [expires, setExpires] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const wid = useWarehouseId();
   const add = useFoodMutation(foodApi.addPantry);
 
   const pcs = units.find(u => u.code === 'pcs')?.id ?? null;
@@ -294,7 +376,7 @@ function AddSheet({ opened, onClose }: { opened: boolean; onClose: () => void })
     try {
       await add.mutateAsync({
         ingredient_id: ingredientId, name: name.trim(), quantity, unit_id: effectiveUnit,
-        location, expires_on: expires,
+        location, expires_on: expires, warehouse_id: wid,
       });
       haptic('success');
       snack(`«${name.trim()}» добавлено в запасы`);

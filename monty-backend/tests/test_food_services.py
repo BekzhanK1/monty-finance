@@ -57,7 +57,7 @@ def test_availability_converts_units_and_scales_servings(db):
     f.stock(flour, 1, "kg")
     f.stock(eggs, 3, "pcs")
 
-    pantry = load_pantry(db, household_id=1)
+    pantry = load_pantry(db, household_id=1, warehouse_id=f.home.id)
     lines = check_availability(dish_needs(_dish(db, dish.id)), pantry)
     assert [line.status for line in lines] == ["ok", "ok", "always_home"]
     assert lines[0].have == Decimal(1000)
@@ -73,9 +73,9 @@ def test_readiness_missing_and_unit_mismatch(db):
     f = Food(db)
     milk = f.ingredient("Молоко", "ml")
     dish = f.dish("Каша", [(milk, 300, "ml")])
-    assert readiness(check_availability(dish_needs(_dish(db, dish.id)), load_pantry(db, household_id=1))) == "missing"
+    assert readiness(check_availability(dish_needs(_dish(db, dish.id)), load_pantry(db, household_id=1, warehouse_id=f.home.id))) == "missing"
     f.stock(milk, 2, "pcs")
-    [line] = check_availability(dish_needs(_dish(db, dish.id)), load_pantry(db, household_id=1))
+    [line] = check_availability(dish_needs(_dish(db, dish.id)), load_pantry(db, household_id=1, warehouse_id=f.home.id))
     assert line.status == "unit_mismatch"
 
 
@@ -86,7 +86,7 @@ def test_consume_subtracts_in_pantry_units_and_never_goes_negative(db):
     flour_row = f.stock(flour, 1, "kg")
     eggs_row = f.stock(eggs, 3, "pcs")
 
-    consumed = consume(db, dish_needs(_dish(db, dish.id)), load_pantry(db, household_id=1))
+    consumed = consume(db, dish_needs(_dish(db, dish.id)), load_pantry(db, household_id=1, warehouse_id=f.home.id))
     db.commit()
     db.refresh(flour_row)
     db.refresh(eggs_row)
@@ -98,15 +98,15 @@ def test_consume_subtracts_in_pantry_units_and_never_goes_negative(db):
 def test_add_stock_merges_converts_and_rejects_incompatible(db):
     f = Food(db)
     milk = f.ingredient("Молоко", "ml", category="dairy")
-    row = add_stock(db, household_id=1, ingredient=milk, quantity=Decimal(1), unit=f.unit("l"))
+    row = add_stock(db, household_id=1, warehouse_id=f.home.id, ingredient=milk, quantity=Decimal(1), unit=f.unit("l"))
     db.commit()
     assert row.location == "fridge"
-    add_stock(db, household_id=1, ingredient=milk, quantity=Decimal(500), unit=f.unit("ml"))
+    add_stock(db, household_id=1, warehouse_id=f.home.id, ingredient=milk, quantity=Decimal(500), unit=f.unit("ml"))
     db.commit()
     db.refresh(row)
     assert Decimal(row.quantity) == Decimal("1.5") and row.unit.code == "l"
     with pytest.raises(UnitMismatchError):
-        add_stock(db, household_id=1, ingredient=milk, quantity=Decimal(2), unit=f.unit("pcs"))
+        add_stock(db, household_id=1, warehouse_id=f.home.id, ingredient=milk, quantity=Decimal(2), unit=f.unit("pcs"))
 
 
 def test_shopping_from_menu_is_idempotent_and_subtracts_stock(db):
@@ -119,7 +119,7 @@ def test_shopping_from_menu_is_idempotent_and_subtracts_stock(db):
     f.stock(rice, 1, "kg")  # enough rice
 
     lst = shop.get_or_create_current_list(db, household_id=1)
-    assert shop.add_from_menu(db, lst, household_id=1, date_from=date(2026, 10, 5), date_to=date(2026, 10, 11)) == 2
+    assert shop.add_from_menu(db, lst, household_id=1, warehouse_id=f.home.id, date_from=date(2026, 10, 5), date_to=date(2026, 10, 11)) == 2
     db.commit()
     lst = shop.reload_list(db, lst.id)
     items = {it.label: it for it in lst.items}
@@ -129,7 +129,7 @@ def test_shopping_from_menu_is_idempotent_and_subtracts_stock(db):
     assert items["Лук"].sources == "Плов, Салат"
 
     # Running it again adds nothing.
-    assert shop.add_from_menu(db, lst, household_id=1, date_from=date(2026, 10, 5), date_to=date(2026, 10, 11)) == 0
+    assert shop.add_from_menu(db, lst, household_id=1, warehouse_id=f.home.id, date_from=date(2026, 10, 5), date_to=date(2026, 10, 11)) == 0
 
 
 def test_manual_add_merges_same_product(db):
@@ -151,7 +151,7 @@ def test_low_stock_tops_up_to_minimum(db):
     eggs = f.ingredient("Яйца", "pcs")
     f.stock(eggs, 2, "pcs", min_quantity=Decimal(10))
     lst = shop.get_or_create_current_list(db, household_id=1)
-    assert shop.add_low_stock(db, lst, household_id=1) == 1
+    assert shop.add_low_stock(db, lst, household_id=1, warehouse_id=f.home.id) == 1
     db.commit()
     [item] = shop.reload_list(db, lst.id).items
     assert (item.label, float(item.quantity), item.sources) == ("Яйца", 8.0, "заканчивается")
@@ -172,7 +172,7 @@ def test_complete_moves_bought_to_pantry_and_carries_over_the_rest(db):
         it.checked = it.label != "Хлеб"
     db.commit()
 
-    result = shop.complete(db, lst, household_id=1, to_pantry=True)
+    result = shop.complete(db, lst, household_id=1, to_pantry=True, warehouse_id=f.home.id)
     assert result.moved_to_pantry == 2 and result.skipped == []
     assert [it.label for it in result.new_list.items] == ["Хлеб"]
     assert result.new_list.id != lst.id and shop.get_or_create_current_list(db, household_id=1).id == result.new_list.id

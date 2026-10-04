@@ -6,7 +6,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_db
-from app.food.deps import get_food_household_id
+from app.finance.models import User
+from app.food.deps import get_food_household_id, get_food_warehouse
+from app.food.models import FoodWarehouse
+from app.middleware.auth import get_current_user
 from app.food.models import FoodDish, FoodDishIngredient, FoodMealSlot
 from app.food.schemas import (
     FoodAvailabilityLine,
@@ -84,9 +87,11 @@ def get_today(
     day: date | None = Query(None),
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
+    warehouse: FoodWarehouse = Depends(get_food_warehouse),
 ):
+    """Today in the given warehouse (readiness, expiring and low stock are per warehouse)."""
     today = day or local_today()
-    pantry = load_pantry(db, household_id=household_id)
+    pantry = load_pantry(db, household_id=household_id, warehouse_id=warehouse.id)
     slots = (
         db.query(FoodMealSlot)
         .options(*slot_load_options())
@@ -128,6 +133,8 @@ def cook_slot(
     body: FoodCookBody | None = None,
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
+    warehouse: FoodWarehouse = Depends(get_food_warehouse),
+    current_user: User = Depends(get_current_user),
 ):
     """Mark the meal as cooked and, by default, write its ingredients off the pantry."""
     body = body or FoodCookBody()
@@ -137,7 +144,8 @@ def cook_slot(
     consumed = []
     if body.consume and slot.dish is not None:
         consumed = consume(db, dish_needs(slot.dish, body.servings or slot.servings),
-                           load_pantry(db, household_id=household_id))
+                           load_pantry(db, household_id=household_id, warehouse_id=warehouse.id),
+                           user_id=current_user.id, note=slot.dish.title)
     slot.cooked_at = datetime.utcnow()
     db.commit()
     slot = _get_slot(db, household_id, slot_id)
@@ -163,9 +171,11 @@ def dish_availability(
     servings: int | None = Query(None, ge=1, le=50),
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
+    warehouse: FoodWarehouse = Depends(get_food_warehouse),
 ):
     dish = _get_dish(db, household_id, dish_id)
-    lines = check_availability(dish_needs(dish, servings), load_pantry(db, household_id=household_id))
+    lines = check_availability(dish_needs(dish, servings),
+                               load_pantry(db, household_id=household_id, warehouse_id=warehouse.id))
     return FoodDishAvailability(
         dish_id=dish.id,
         servings=servings or dish.servings_default or 1,
@@ -192,10 +202,14 @@ def cook_dish(
     body: FoodCookBody | None = None,
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
+    warehouse: FoodWarehouse = Depends(get_food_warehouse),
+    current_user: User = Depends(get_current_user),
 ):
     body = body or FoodCookBody()
     dish = _get_dish(db, household_id, dish_id)
-    consumed = consume(db, dish_needs(dish, body.servings), load_pantry(db, household_id=household_id))
+    consumed = consume(db, dish_needs(dish, body.servings),
+                       load_pantry(db, household_id=household_id, warehouse_id=warehouse.id),
+                       user_id=current_user.id, note=dish.title)
     db.commit()
     return FoodCookResponse(consumed=_consumed_lines(consumed))
 
@@ -206,11 +220,13 @@ def dish_to_shopping(
     body: FoodCookBody | None = None,
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
+    warehouse: FoodWarehouse = Depends(get_food_warehouse),
 ):
     """Put what the dish is missing on the current shopping list."""
     dish = _get_dish(db, household_id, dish_id)
     lst = shop.get_or_create_current_list(db, household_id=household_id)
-    added = shop.add_for_dish(db, lst, household_id=household_id, dish=dish, servings=(body.servings if body else None))
+    added = shop.add_for_dish(db, lst, household_id=household_id, warehouse_id=warehouse.id, dish=dish,
+                              servings=(body.servings if body else None))
     db.commit()
     return FoodShoppingAddResult(list=shopping_list_to_response(shop.reload_list(db, lst.id)), added=added)
 

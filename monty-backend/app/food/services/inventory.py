@@ -1,7 +1,8 @@
 """Home stock: what a dish needs vs what is in the pantry, cooking (consume) and restocking.
 
-One pantry row per ingredient per household. Quantities convert between compatible
-units (kg↔g, l↔ml); anything else is reported as a unit mismatch and never guessed.
+One stock row per ingredient per warehouse; every change is journaled (services/warehouses.py).
+Quantities convert between compatible units (kg↔g, l↔ml); anything else is reported as a
+unit mismatch and never guessed.
 """
 
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ from typing import Literal
 from sqlalchemy.orm import Session, selectinload
 
 from app.food.models import FoodDish, FoodDishIngredient, FoodIngredient, FoodPantryItem, FoodUnit
+from app.food.services import warehouses
 from app.food.services.aisles import aisle_for, default_location
 from app.food.services.units import convert
 
@@ -37,11 +39,11 @@ class LineAvailability:
     status: LineStatus
 
 
-def load_pantry(db: Session, *, household_id: int) -> dict[int, FoodPantryItem]:
+def load_pantry(db: Session, *, household_id: int, warehouse_id: int) -> dict[int, FoodPantryItem]:
     rows = (
         db.query(FoodPantryItem)
         .options(selectinload(FoodPantryItem.unit), selectinload(FoodPantryItem.ingredient))
-        .filter(FoodPantryItem.household_id == household_id)
+        .filter(FoodPantryItem.household_id == household_id, FoodPantryItem.warehouse_id == warehouse_id)
         .all()
     )
     return {row.ingredient_id: row for row in rows}
@@ -108,8 +110,15 @@ class Consumed:
     shortfall: bool  # pantry had less than the recipe asked for
 
 
-def consume(db: Session, needs: list[Need], pantry: dict[int, FoodPantryItem]) -> list[Consumed]:
-    """Subtract `needs` from the pantry (never below zero). Caller commits."""
+def consume(
+    db: Session,
+    needs: list[Need],
+    pantry: dict[int, FoodPantryItem],
+    *,
+    user_id: int | None = None,
+    note: str | None = None,
+) -> list[Consumed]:
+    """Subtract `needs` from one warehouse's stock (never below zero), journaled as cooking. Caller commits."""
     consumed: list[Consumed] = []
     for need in needs:
         if need.always_home:
@@ -125,6 +134,7 @@ def consume(db: Session, needs: list[Need], pantry: dict[int, FoodPantryItem]) -
         taken = min(stock, amount)
         if taken <= 0:
             continue
+        warehouses.record(db, row, -taken, "cook", user_id=user_id, note=note)
         row.quantity = stock - taken
         row.updated_at = datetime.utcnow()
         consumed.append(Consumed(row.ingredient_id, need.name, taken, row_code, shortfall=taken < amount))
@@ -139,30 +149,39 @@ def add_stock(
     db: Session,
     *,
     household_id: int,
+    warehouse_id: int,
     ingredient: FoodIngredient,
     quantity: Decimal,
     unit: FoodUnit,
     location: str | None = None,
+    kind: str = "receipt",
+    user_id: int | None = None,
+    transfer_id: int | None = None,
+    note: str | None = None,
 ) -> FoodPantryItem:
-    """Add to the ingredient's pantry row, converting into its unit; creates the row if needed.
+    """Add to the ingredient's row in a warehouse, converting into its unit; creates the row if needed.
 
-    An empty row in an incompatible unit simply switches to the new unit.
+    An empty row in an incompatible unit simply switches to the new unit. Journaled as `kind`.
     """
+    journal = dict(user_id=user_id, transfer_id=transfer_id, note=note)
     row = (
         db.query(FoodPantryItem)
         .options(selectinload(FoodPantryItem.unit))
-        .filter(FoodPantryItem.household_id == household_id, FoodPantryItem.ingredient_id == ingredient.id)
+        .filter(FoodPantryItem.warehouse_id == warehouse_id, FoodPantryItem.ingredient_id == ingredient.id)
         .first()
     )
     if row is None:
         row = FoodPantryItem(
             household_id=household_id,
+            warehouse_id=warehouse_id,
             ingredient_id=ingredient.id,
             quantity=quantity,
             unit_id=unit.id,
             location=location or default_location(aisle_for(ingredient.category, ingredient.name)),
         )
         db.add(row)
+        db.flush()
+        warehouses.record(db, row, quantity, kind, **journal)
         return row
 
     row_code = row.unit.code if row.unit else ""
@@ -173,9 +192,9 @@ def add_stock(
                 f"«{ingredient.name}» уже лежит в запасах в единицах «{row.unit.name if row.unit else row_code}» — "
                 f"их нельзя сложить с «{unit.name}»."
             )
-        row.unit_id = unit.id
-        row.quantity = quantity
+        warehouses.set_quantity(db, row, quantity, unit_id=unit.id, kind=kind, **journal)
     else:
+        warehouses.record(db, row, converted, kind, **journal)
         row.quantity = Decimal(row.quantity) + converted
     if location:
         row.location = location

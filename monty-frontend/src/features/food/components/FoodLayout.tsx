@@ -3,6 +3,7 @@ import { Box, Text, UnstyledButton } from '@mantine/core';
 import { IconBasket, IconBook2, IconCalendarWeek, IconFridge, IconSun, type Icon } from '@tabler/icons-react';
 import { haptic } from '../../../lib/telegram';
 import { useFoodBootstrap } from '../queries';
+import { WarehouseProvider } from '../WarehouseContext';
 
 const TABS: { path: string; label: string; icon: Icon }[] = [
   { path: '/food', label: 'Сегодня', icon: IconSun },
@@ -22,10 +23,10 @@ export function FoodLayout() {
   const navigate = useNavigate();
   // Seeds default meal categories/units for a new household before any screen needs them.
   useFoodBootstrap();
-  const hideTabs = /^\/food\/recipes\/(new|\d+)/.test(pathname);
+  const hideTabs = /^\/food\/(recipes\/(new|\d+)|transfers)/.test(pathname);
 
   return (
-    <>
+    <WarehouseProvider>
       <Outlet />
       {!hideTabs && (
         <Box
@@ -73,6 +74,6 @@ export function FoodLayout() {
           })}
         </Box>
       )}
-    </>
+    </WarehouseProvider>
   );
 }
