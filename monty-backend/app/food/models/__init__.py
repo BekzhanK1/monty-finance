@@ -7,6 +7,12 @@ from app.food.models.pantry import FoodPantryItem
 from app.food.models.plan import FoodMealSlot
 from app.food.models.reminder import FoodReminderSent
 from app.food.models.shop import FoodShoppingItem, FoodShoppingList
+from app.food.models.warehouse import (
+    FoodStockMovement,
+    FoodStockTransfer,
+    FoodStockTransferLine,
+    FoodWarehouse,
+)
 
 __all__ = [
     "MVP_HOUSEHOLD_ID",
@@ -20,4 +26,8 @@ __all__ = [
     "FoodShoppingItem",
     "FoodPantryItem",
     "FoodReminderSent",
+    "FoodWarehouse",
+    "FoodStockTransfer",
+    "FoodStockTransferLine",
+    "FoodStockMovement",
 ]

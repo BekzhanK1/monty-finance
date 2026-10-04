@@ -21,10 +21,12 @@ import { IconCheck, IconDots, IconMenu2, IconPlus, IconRefreshAlert } from '@tab
 import { haptic } from '../../lib/telegram';
 import { EmptyState, PageHeader, Section, formatMoney, useSnackbar } from '../../ui';
 import { foodApi } from './api';
+import { useWarehouseId } from './WarehouseContext';
 import { useCompleteShopping, useFoodMutation, useIngredients, useShoppingList, useUnits } from './queries';
 import { AISLES, addDays, formatQty, isoDate, parseQuickAdd, startOfWeek } from './format';
 import { QtyUnitInput } from './components/QtyUnitInput';
 import { ProductPicker } from './components/ProductPicker';
+import { WarehouseSwitcher } from './components/WarehouseSwitcher';
 import { findIngredient, unitIdByCode } from './lookup';
 import type { Aisle, ShoppingItem } from './types';
 
@@ -40,11 +42,12 @@ export function ShoppingPage() {
 
   const add = useFoodMutation(foodApi.addShoppingItem);
   const toggle = useFoodMutation(({ id, checked }: { id: number; checked: boolean }) => foodApi.updateShoppingItem(id, { checked }));
+  const wid = useWarehouseId();
   const fromMenu = useFoodMutation(() => {
     const today = new Date();
-    return foodApi.shoppingFromMenu(isoDate(today), isoDate(addDays(startOfWeek(today), 6)));
+    return foodApi.shoppingFromMenu(isoDate(today), isoDate(addDays(startOfWeek(today), 6)), wid);
   });
-  const lowStock = useFoodMutation(foodApi.shoppingLowStock);
+  const lowStock = useFoodMutation(() => foodApi.shoppingLowStock(wid));
 
   const items = useMemo(() => list?.items ?? [], [list]);
   const open = items.filter(i => !i.checked);
@@ -298,6 +301,7 @@ function EditItemSheet({ item, onClose }: { item: ShoppingItem | null; onClose: 
 function CompleteSheet({ opened, count, onClose }: { opened: boolean; count: number; onClose: () => void }) {
   const snack = useSnackbar();
   const complete = useCompleteShopping();
+  const wid = useWarehouseId();
   const [toPantry, setToPantry] = useState(true);
   const [total, setTotal] = useState<number | string>('');
   const [error, setError] = useState<string | null>(null);
@@ -306,7 +310,7 @@ function CompleteSheet({ opened, count, onClose }: { opened: boolean; count: num
   const finish = async () => {
     setError(null);
     try {
-      const res = await complete.mutateAsync({ to_pantry: toPantry, total_amount: amount });
+      const res = await complete.mutateAsync({ to_pantry: toPantry, total_amount: amount, wid });
       haptic('success');
       const parts = [
         res.moved_to_pantry ? `в запасы: ${res.moved_to_pantry}` : null,
@@ -334,9 +338,15 @@ function CompleteSheet({ opened, count, onClose }: { opened: boolean; count: num
           checked={toPantry}
           onChange={e => setToPantry(e.currentTarget.checked)}
           label="Положить купленное в запасы"
-          description="Количество прибавится к тому, что уже есть дома"
+          description="Количество прибавится к тому, что уже есть на складе"
           size="md"
         />
+        {toPantry && (
+          <Group justify="space-between" wrap="nowrap">
+            <Text size="sm" style={{ color: 'var(--monty-hint)' }}>Склад</Text>
+            <WarehouseSwitcher />
+          </Group>
+        )}
         <NumberInput
           label="Сумма чека"
           description="Если указать — запишем расход в «Продукты» в финансах"

@@ -1,4 +1,4 @@
-"""Pantry / home stock — one row per ingredient per household (MVP)."""
+"""Stock on hand — one row per ingredient per warehouse."""
 
 from datetime import datetime
 
@@ -14,11 +14,12 @@ class FoodPantryItem(Base):
     __tablename__ = "food_pantry_items"
 
     __table_args__ = (
-        UniqueConstraint("household_id", "ingredient_id", name="uq_food_pantry_household_ingredient"),
+        UniqueConstraint("warehouse_id", "ingredient_id", name="uq_food_pantry_warehouse_ingredient"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
     household_id = Column(Integer, nullable=False, default=MVP_HOUSEHOLD_ID, index=True)
+    warehouse_id = Column(Integer, ForeignKey("food_warehouses.id"), nullable=False, index=True)
     ingredient_id = Column(Integer, ForeignKey("food_ingredients.id", ondelete="CASCADE"), nullable=False, index=True)
     quantity = Column(Numeric(12, 4), nullable=False)
     unit_id = Column(Integer, ForeignKey("food_units.id"), nullable=False)
@@ -32,3 +33,4 @@ class FoodPantryItem(Base):
 
     ingredient = relationship("FoodIngredient")
     unit = relationship("FoodUnit", foreign_keys=[unit_id])
+    warehouse = relationship("FoodWarehouse")

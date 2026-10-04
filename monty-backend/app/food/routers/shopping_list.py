@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 from app.core.config import get_db
 from app.finance.models import User
 from app.finance.services.digest_service import send_transaction_notification
-from app.food.deps import get_food_household_id
-from app.food.models import FoodIngredient, FoodShoppingItem, FoodShoppingList, FoodUnit
+from app.food.deps import get_food_household_id, get_food_warehouse
+from app.food.models import FoodIngredient, FoodShoppingItem, FoodShoppingList, FoodUnit, FoodWarehouse
 from app.food.schemas import (
     FoodShoppingAddResult,
     FoodShoppingComplete,
@@ -134,11 +134,13 @@ def add_from_menu(
     body: FoodShoppingDateRange,
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
+    warehouse: FoodWarehouse = Depends(get_food_warehouse),
 ):
     if body.date_to < body.date_from:
         raise HTTPException(status_code=400, detail="date_to must be >= date_from")
     lst = shop.get_or_create_current_list(db, household_id=household_id)
-    added = shop.add_from_menu(db, lst, household_id=household_id, date_from=body.date_from, date_to=body.date_to)
+    added = shop.add_from_menu(db, lst, household_id=household_id, warehouse_id=warehouse.id,
+                               date_from=body.date_from, date_to=body.date_to)
     db.commit()
     return FoodShoppingAddResult(list=_response(db, lst.id), added=added)
 
@@ -147,9 +149,10 @@ def add_from_menu(
 def add_low_stock(
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
+    warehouse: FoodWarehouse = Depends(get_food_warehouse),
 ):
     lst = shop.get_or_create_current_list(db, household_id=household_id)
-    added = shop.add_low_stock(db, lst, household_id=household_id)
+    added = shop.add_low_stock(db, lst, household_id=household_id, warehouse_id=warehouse.id)
     db.commit()
     return FoodShoppingAddResult(list=_response(db, lst.id), added=added)
 
@@ -160,8 +163,9 @@ def complete_list(
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
     current_user: User = Depends(get_current_user),
+    warehouse: FoodWarehouse = Depends(get_food_warehouse),
 ):
-    """Finish a shopping trip: bought items → pantry, optional receipt total → Finance expense."""
+    """Finish a shopping trip: bought items → the warehouse, optional receipt total → Finance expense."""
     lst = shop.get_or_create_current_list(db, household_id=household_id)
     bought = [it.label for it in lst.items if it.checked]
     if not bought:
@@ -182,7 +186,8 @@ def complete_list(
             comment=tx.comment,
         )
 
-    result = shop.complete(db, lst, household_id=household_id, to_pantry=body.to_pantry)
+    result = shop.complete(db, lst, household_id=household_id, to_pantry=body.to_pantry,
+                           warehouse_id=warehouse.id, user_id=current_user.id)
     return FoodShoppingCompleteResponse(
         list=shopping_list_to_response(result.new_list),
         moved_to_pantry=result.moved_to_pantry,

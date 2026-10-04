@@ -31,10 +31,12 @@ def db():
     session = SessionLocal()
     from app.food.models import (
         FoodDish, FoodDishIngredient, FoodIngredient, FoodMealCategory, FoodMealSlot,
-        FoodPantryItem, FoodShoppingItem, FoodShoppingList,
+        FoodPantryItem, FoodShoppingItem, FoodShoppingList, FoodStockMovement, FoodStockTransfer,
+        FoodStockTransferLine, FoodWarehouse,
     )
-    for model in (FoodShoppingItem, FoodShoppingList, FoodPantryItem, FoodMealSlot,
-                  FoodDishIngredient, FoodDish, FoodMealCategory, FoodIngredient):
+    for model in (FoodStockMovement, FoodStockTransferLine, FoodStockTransfer, FoodShoppingItem, FoodShoppingList,
+                  FoodPantryItem, FoodWarehouse, FoodMealSlot, FoodDishIngredient, FoodDish, FoodMealCategory,
+                  FoodIngredient):
         session.query(model).delete()
     session.query(Transaction).delete()
     session.query(Category).delete()

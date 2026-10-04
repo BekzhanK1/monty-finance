@@ -17,7 +17,17 @@ from app.food.schemas.meal import (
     FoodMealCategoryUpdate,
 )
 from app.food.schemas.kitchen import FoodTodayResponse
+from app.food.schemas.warehouse import (
+    FoodTransferCreate,
+    FoodTransferLineIn,
+    FoodTransferLineResponse,
+    FoodTransferResponse,
+    FoodWarehouseCreate,
+    FoodWarehouseResponse,
+    FoodWarehouseUpdate,
+)
 from app.food.schemas.pantry import (
+    FoodStockMovementResponse,
     FoodPantryAdjust,
     FoodPantryItemCreate,
     FoodPantryItemResponse,
@@ -40,9 +50,6 @@ from app.food.schemas.shop import (
     FoodShoppingComplete,
     FoodShoppingCompleteResponse,
     FoodShoppingDateRange,
-    FoodShoppingFinalizeResponse,
-    FoodShoppingGenerateBody,
-    FoodShoppingListPatch,
     FoodShoppingItemCreate,
     FoodShoppingItemPatch,
     FoodShoppingItemResponse,
@@ -69,9 +76,6 @@ __all__ = [
     "FoodMealSlotResponse",
     "FoodMenuCopyWeekBody",
     "FoodMenuCopyWeekResponse",
-    "FoodShoppingFinalizeResponse",
-    "FoodShoppingGenerateBody",
-    "FoodShoppingListPatch",
     "FoodShoppingListResponse",
     "FoodShoppingItemResponse",
     "FoodShoppingItemPatch",
@@ -90,4 +94,12 @@ __all__ = [
     "FoodShoppingComplete",
     "FoodShoppingCompleteResponse",
     "FoodShoppingDateRange",
+    "FoodStockMovementResponse",
+    "FoodTransferCreate",
+    "FoodTransferLineIn",
+    "FoodTransferLineResponse",
+    "FoodTransferResponse",
+    "FoodWarehouseCreate",
+    "FoodWarehouseResponse",
+    "FoodWarehouseUpdate",
 ]

@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 
 from app.food.models import FoodDish
-from app.food.services.inventory import Readiness, check_availability, dish_needs, load_pantry, readiness
+from app.food.services.inventory import Readiness, check_availability, dish_needs, readiness
 
 DishPantryStatus = Readiness
 
@@ -13,8 +13,7 @@ def calculate_dish_pantry_status(
     *,
     household_id: int,
     dish: FoodDish,
-    pantry: dict | None = None,
+    pantry: dict,
 ) -> DishPantryStatus:
-    """ready — everything in stock; partial — some of it; missing — nothing or no composition."""
-    stock = pantry if pantry is not None else load_pantry(db, household_id=household_id)
-    return readiness(check_availability(dish_needs(dish), stock))
+    """ready — everything in `pantry` (one warehouse's stock); partial — some of it; missing — nothing."""
+    return readiness(check_availability(dish_needs(dish), pantry))

@@ -32,4 +32,6 @@ def pantry_item_to_response(row: FoodPantryItem, today: date | None = None) -> F
         aisle=aisle_for(ing.category if ing else None, ing.name if ing else ""),
         status=status,
         days_left=days_left,
+        warehouse_id=row.warehouse_id,
+        warehouse_name=row.warehouse.name if row.warehouse else "",
     )

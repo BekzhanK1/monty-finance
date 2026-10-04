@@ -4,7 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.config import get_db
-from app.food.deps import get_food_household_id
+from app.food.deps import get_food_household_id, get_food_warehouse
+from app.food.models import FoodWarehouse
 from app.food.models import FoodDish, FoodMealSlot
 from app.food.schemas import (
     FoodMealSlotCreate,
@@ -33,6 +34,7 @@ def list_menu_slots(
     date_to: date = Query(..., alias="to"),
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
+    warehouse: FoodWarehouse = Depends(get_food_warehouse),
 ):
     if date_to < date_from:
         raise HTTPException(status_code=400, detail="Invalid date range")
@@ -46,7 +48,7 @@ def list_menu_slots(
         )
         .all()
     )
-    return slots_with_readiness(rows, load_pantry(db, household_id=household_id))
+    return slots_with_readiness(rows, load_pantry(db, household_id=household_id, warehouse_id=warehouse.id))
 
 
 @router.post("/menu/copy-week", response_model=FoodMenuCopyWeekResponse)

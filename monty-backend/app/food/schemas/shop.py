@@ -1,13 +1,6 @@
 from datetime import date, datetime
-from typing import Literal
 
 from pydantic import BaseModel, Field
-
-
-class FoodShoppingGenerateBody(BaseModel):
-    date_from: date
-    date_to: date
-    mode: Literal["new", "merge_draft"] = "new"
 
 
 class FoodShoppingItemResponse(BaseModel):
@@ -47,16 +40,6 @@ class FoodShoppingItemPatch(BaseModel):
     quantity: float | None = Field(None, gt=0)
     unit_id: int | None = None
     category: str | None = Field(None, max_length=32)
-
-
-class FoodShoppingListPatch(BaseModel):
-    status: Literal["draft", "active", "done"] | None = None
-
-
-class FoodShoppingFinalizeResponse(BaseModel):
-    list: FoodShoppingListResponse
-    transaction_id: str
-    total_amount: int
 
 
 class FoodShoppingItemCreate(BaseModel):

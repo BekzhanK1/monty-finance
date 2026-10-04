@@ -142,6 +142,7 @@ def list_dishes(
     meal_category_id: int | None = None,
     archived: bool = Query(False, description="true — only archived dishes"),
     include_pantry_status: bool = Query(False, description="Calculate pantry readiness status"),
+    warehouse_id: int | None = Query(None, description="Склад для статуса готовности; по умолчанию основной"),
     db: Session = Depends(get_db),
     household_id: int = Depends(get_food_household_id),
 ):
@@ -160,8 +161,10 @@ def list_dishes(
     if include_pantry_status:
         from app.food.services.dish_pantry_status import calculate_dish_pantry_status
         from app.food.services.inventory import load_pantry
+        from app.food.services.warehouses import resolve_warehouse
 
-        pantry = load_pantry(db, household_id=household_id)
+        warehouse = resolve_warehouse(db, household_id=household_id, warehouse_id=warehouse_id)
+        pantry = load_pantry(db, household_id=household_id, warehouse_id=warehouse.id)
         return [
             dish_to_response(d, pantry_status=calculate_dish_pantry_status(
                 db, household_id=household_id, dish=d, pantry=pantry))

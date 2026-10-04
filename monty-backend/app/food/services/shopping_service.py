@@ -164,8 +164,9 @@ def _already_listed(lst: FoodShoppingList, ingredient_id: int, unit_code: str) -
     return total
 
 
-def add_from_menu(db: Session, lst: FoodShoppingList, *, household_id: int, date_from: date, date_to: date) -> int:
-    """Add what the planned meals need beyond stock and what is already on the list (idempotent)."""
+def add_from_menu(db: Session, lst: FoodShoppingList, *, household_id: int, warehouse_id: int,
+                  date_from: date, date_to: date) -> int:
+    """Add what the planned meals need beyond the warehouse's stock and the list (idempotent)."""
     slots = (
         db.query(FoodMealSlot)
         .options(
@@ -181,17 +182,18 @@ def add_from_menu(db: Session, lst: FoodShoppingList, *, household_id: int, date
         )
         .all()
     )
-    return _add_needs(db, lst, household_id=household_id, needs_with_source=[
+    return _add_needs(db, lst, household_id=household_id, warehouse_id=warehouse_id, needs_with_source=[
         (need, slot.dish.title) for slot in slots if slot.dish for need in dish_needs(slot.dish, slot.servings)
     ])
 
 
-def add_for_dish(db: Session, lst: FoodShoppingList, *, household_id: int, dish: FoodDish, servings: int | None) -> int:
-    return _add_needs(db, lst, household_id=household_id,
+def add_for_dish(db: Session, lst: FoodShoppingList, *, household_id: int, warehouse_id: int,
+                 dish: FoodDish, servings: int | None) -> int:
+    return _add_needs(db, lst, household_id=household_id, warehouse_id=warehouse_id,
                       needs_with_source=[(need, dish.title) for need in dish_needs(dish, servings)])
 
 
-def _add_needs(db: Session, lst: FoodShoppingList, *, household_id: int, needs_with_source) -> int:
+def _add_needs(db: Session, lst: FoodShoppingList, *, household_id: int, warehouse_id: int, needs_with_source) -> int:
     # Sum per (ingredient, unit) first so one product from several dishes becomes one line.
     totals: dict[tuple[int, str], Decimal] = defaultdict(Decimal)
     meta: dict[tuple[int, str], tuple] = {}
@@ -205,7 +207,7 @@ def _add_needs(db: Session, lst: FoodShoppingList, *, household_id: int, needs_w
         if source not in sources[key]:
             sources[key].append(source)
 
-    pantry = load_pantry(db, household_id=household_id)
+    pantry = load_pantry(db, household_id=household_id, warehouse_id=warehouse_id)
     ingredients = {i.id: i for i in db.query(FoodIngredient).filter(
         FoodIngredient.id.in_({k[0] for k in totals})).all()} if totals else {}
     units = {u.id: u for u in db.query(FoodUnit).all()}
@@ -235,11 +237,15 @@ def _round_up(quantity: Decimal, unit_code: str) -> Decimal:
     return quantity.quantize(Decimal("0.01"), rounding="ROUND_CEILING")
 
 
-def add_low_stock(db: Session, lst: FoodShoppingList, *, household_id: int) -> int:
+def add_low_stock(db: Session, lst: FoodShoppingList, *, household_id: int, warehouse_id: int) -> int:
     rows = (
         db.query(FoodPantryItem)
         .options(selectinload(FoodPantryItem.unit), selectinload(FoodPantryItem.ingredient))
-        .filter(FoodPantryItem.household_id == household_id, FoodPantryItem.min_quantity.isnot(None))
+        .filter(
+            FoodPantryItem.household_id == household_id,
+            FoodPantryItem.warehouse_id == warehouse_id,
+            FoodPantryItem.min_quantity.isnot(None),
+        )
         .all()
     )
     entries: list[Entry] = []
@@ -263,8 +269,9 @@ class CompleteResult:
     skipped: list[str]
 
 
-def complete(db: Session, lst: FoodShoppingList, *, household_id: int, to_pantry: bool) -> CompleteResult:
-    """Close the list: bought items go to the pantry, unbought ones carry over to a fresh list."""
+def complete(db: Session, lst: FoodShoppingList, *, household_id: int, to_pantry: bool,
+             warehouse_id: int, user_id: int | None = None) -> CompleteResult:
+    """Close the list: bought items go to `warehouse_id`, unbought ones carry over to a fresh list."""
     moved = 0
     skipped: list[str] = []
     now = datetime.utcnow()
@@ -284,8 +291,8 @@ def complete(db: Session, lst: FoodShoppingList, *, household_id: int, to_pantry
                 db.add(ingredient)
                 db.flush()
             try:
-                add_stock(db, household_id=household_id, ingredient=ingredient,
-                          quantity=Decimal(item.quantity), unit=item.unit)
+                add_stock(db, household_id=household_id, warehouse_id=warehouse_id, ingredient=ingredient,
+                          quantity=Decimal(item.quantity), unit=item.unit, kind="purchase", user_id=user_id)
             except UnitMismatchError:
                 skipped.append(item.label)
                 continue

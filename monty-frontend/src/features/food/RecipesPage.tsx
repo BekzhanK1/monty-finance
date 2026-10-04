@@ -5,6 +5,7 @@ import { IconPlus, IconSearch } from '@tabler/icons-react';
 import { EmptyState, ListRow, PageHeader, Section } from '../../ui';
 import { useDishes, useMealCategories } from './queries';
 import { ReadinessBadge } from './components/ReadinessBadge';
+import { WarehouseSwitcher } from './components/WarehouseSwitcher';
 import type { Dish } from './types';
 
 type Filter = 'all' | 'ready' | number;
@@ -36,6 +37,8 @@ export function RecipesPage() {
           </ActionIcon>
         }
       />
+      <WarehouseSwitcher />
+
       <Stack gap="sm" mt="sm">
         <TextInput
           placeholder="Блюдо или продукт"

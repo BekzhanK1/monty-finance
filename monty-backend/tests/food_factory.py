@@ -11,6 +11,7 @@ from app.food.models import (
     FoodMealSlot,
     FoodPantryItem,
     FoodUnit,
+    FoodWarehouse,
 )
 from app.food.services.unit_seed import ensure_default_units
 
@@ -22,6 +23,13 @@ class Food:
         ensure_default_units(db)
         self.units = {u.code: u for u in db.query(FoodUnit).all()}
         self._category = None
+        self.home = self.warehouse("Дом", default=True)
+
+    def warehouse(self, name: str, default: bool = False) -> FoodWarehouse:
+        row = FoodWarehouse(household_id=self.household_id, name=name, is_default=default)
+        self.db.add(row)
+        self.db.commit()
+        return row
 
     def unit(self, code: str) -> FoodUnit:
         return self.units[code]
@@ -52,9 +60,9 @@ class Food:
         self.db.refresh(dish)
         return dish
 
-    def stock(self, ingredient, qty, unit: str, **extra):
-        row = FoodPantryItem(household_id=self.household_id, ingredient_id=ingredient.id,
-                             quantity=Decimal(str(qty)), unit_id=self.unit(unit).id, **extra)
+    def stock(self, ingredient, qty, unit: str, warehouse: FoodWarehouse | None = None, **extra):
+        row = FoodPantryItem(household_id=self.household_id, warehouse_id=(warehouse or self.home).id,
+                             ingredient_id=ingredient.id, quantity=Decimal(str(qty)), unit_id=self.unit(unit).id, **extra)
         self.db.add(row)
         self.db.commit()
         return row

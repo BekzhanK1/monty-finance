@@ -27,8 +27,8 @@
 | [`app/food/serialization.py`](monty-backend/app/food/serialization.py) | Сборка ответов API (блюдо со строками состава, слот меню с названием блюда) |
 | [`app/food/db_bootstrap.py`](monty-backend/app/food/db_bootstrap.py) | Добавление новых колонок в `food_dishes` на уже существующей SQLite/Postgres БД (проект без Alembic, основной путь — `create_all` при старте) |
 | [`app/food/models/shop.py`](monty-backend/app/food/models/shop.py) | Списки покупок и позиции |
-| [`app/food/models/pantry.py`](monty-backend/app/food/models/pantry.py) | Кладовая (остатки по продукту) |
-| [`app/food/services/shopping_generator.py`](monty-backend/app/food/services/shopping_generator.py) | Сборка списка покупок из меню за период |
+| [`app/food/models/pantry.py`](monty-backend/app/food/models/pantry.py) | Запасы (остатки по складу и продукту) |
+| [`app/food/models/warehouse.py`](monty-backend/app/food/models/warehouse.py) | Склады, документы перемещения, журнал движений |
 | [`app/food/services/telegram_reminder.py`](monty-backend/app/food/services/telegram_reminder.py) | Текст напоминания в Telegram «меню на завтра» (по слотам из БД) |
 | [`app/core/`](monty-backend/app/core/) | Конфиг, БД engine, `get_db` |
 | [`app/middleware/`](monty-backend/app/middleware/) | JWT / текущий пользователь |
@@ -122,7 +122,8 @@ Food 2.0 — экраны, решения и полный список эндп�
 | Рецепты | `GET/POST /food/dishes`, `PATCH /food/dishes/{id}`, `PUT /food/dishes/{id}/ingredients`, `GET /food/dishes/{id}/availability`, `POST /food/dishes/{id}/cook`, `POST /food/dishes/{id}/to-shopping` |
 | Меню | `GET /food/menu?from=…&to=…`, `POST/PATCH/DELETE /food/menu/slots[/{id}]`, `POST /food/menu/slots/{id}/cook`, `POST /food/menu/copy-week` |
 | Покупки | `GET /food/shopping-list`, `POST/PATCH/DELETE /food/shopping-list/items[/{id}]`, `POST /food/shopping-list/from-menu`, `/low-stock`, `/complete` |
-| Запасы | `GET/POST /food/pantry`, `PATCH/DELETE /food/pantry/{id}`, `POST /food/pantry/{id}/adjust` |
+| Запасы | `GET/POST /food/pantry?warehouse_id=`, `PATCH/DELETE /food/pantry/{id}`, `POST /food/pantry/{id}/adjust`, `GET /food/pantry/{id}/movements` |
+| Склады | `GET/POST /food/warehouses`, `PATCH/DELETE /food/warehouses/{id}`, `GET/POST /food/transfers`, `POST /food/transfers/{id}/cancel` |
 | Справочники | `GET /food/units`, `GET/POST/PATCH /food/ingredients`, `GET /food/meal-categories` |
 
 На MVP данные привязаны к одному «дому» (`household_id` в коде). Целевая схема домена и связка с Finance — в [`docs/food-data-model-v2.md`](docs/food-data-model-v2.md).

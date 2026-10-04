@@ -91,6 +91,8 @@ export interface PantryItem {
   aisle: Aisle;
   status: StockStatus;
   days_left: number | null;
+  warehouse_id: number;
+  warehouse_name: string;
 }
 
 export interface ShoppingItem {
@@ -147,4 +149,45 @@ export interface DishAvailability {
   servings: number;
   readiness: Readiness;
   lines: AvailabilityLine[];
+}
+
+export interface Warehouse {
+  id: number;
+  name: string;
+  emoji: string;
+  is_default: boolean;
+  sort_order: number;
+  items_count: number;
+  attention_count: number;
+}
+
+export interface Transfer {
+  id: number;
+  number: number;
+  from_warehouse_id: number;
+  from_warehouse_name: string;
+  to_warehouse_id: number;
+  to_warehouse_name: string;
+  comment: string | null;
+  created_at: string;
+  cancelled_at: string | null;
+  user_name: string | null;
+  lines: { ingredient_id: number; ingredient_name: string; quantity: number; unit_code: string }[];
+}
+
+export type MovementKind =
+  | 'receipt' | 'purchase' | 'cook' | 'adjust' | 'transfer_out' | 'transfer_in' | 'transfer_cancel' | 'writeoff';
+
+export interface StockMovement {
+  id: number;
+  created_at: string;
+  kind: MovementKind;
+  quantity: number;
+  unit_code: string;
+  warehouse_id: number;
+  warehouse_name: string;
+  transfer_id: number | null;
+  transfer_number: number | null;
+  note: string | null;
+  user_name: string | null;
 }

@@ -12,6 +12,8 @@ class FoodPantryItemCreate(BaseModel):
 
     ingredient_id: int | None = None
     name: str | None = Field(None, min_length=1, max_length=200)
+    # Target warehouse; defaults to the household's default warehouse.
+    warehouse_id: int | None = None
     quantity: float = Field(..., gt=0)
     unit_id: int
     note: str | None = Field(None, max_length=500)
@@ -57,3 +59,19 @@ class FoodPantryItemResponse(BaseModel):
     aisle: str = "other"
     status: StockStatus = "ok"
     days_left: int | None = None
+    warehouse_id: int
+    warehouse_name: str = ""
+
+
+class FoodStockMovementResponse(BaseModel):
+    id: int
+    created_at: datetime
+    kind: str
+    quantity: float
+    unit_code: str
+    warehouse_id: int
+    warehouse_name: str
+    transfer_id: int | None = None
+    transfer_number: int | None = None
+    note: str | None = None
+    user_name: str | None = None

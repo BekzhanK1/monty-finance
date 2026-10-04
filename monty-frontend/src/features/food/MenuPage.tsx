@@ -29,9 +29,11 @@ import {
 import { haptic } from '../../lib/telegram';
 import { ListRow, PageHeader, Section, useSnackbar } from '../../ui';
 import { foodApi } from './api';
+import { useWarehouseId } from './WarehouseContext';
 import { useDishes, useFoodMutation, useMealCategories, useMenu } from './queries';
 import { SLOTS, addDays, isoDate, parseIsoDate, readinessLabel, startOfWeek, weekDays, weekLabel } from './format';
 import { ReadinessBadge } from './components/ReadinessBadge';
+import { WarehouseSwitcher } from './components/WarehouseSwitcher';
 import type { Dish, MealSlot, SlotKey } from './types';
 
 const dayShort = new Intl.DateTimeFormat('ru-RU', { weekday: 'short' });
@@ -50,7 +52,8 @@ export function MenuPage() {
   const to = isoDate(days[6]);
   const menuQuery = useMenu(from, to);
   const slots = useMemo(() => menuQuery.data ?? [], [menuQuery.data]);
-  const toShopping = useFoodMutation(() => foodApi.shoppingFromMenu(isoDate(today) > from ? isoDate(today) : from, to));
+  const wid = useWarehouseId();
+  const toShopping = useFoodMutation(() => foodApi.shoppingFromMenu(isoDate(today) > from ? isoDate(today) : from, to, wid));
   const copyWeek = useFoodMutation(() => foodApi.copyWeek(from));
 
   const byDay = useMemo(() => {
@@ -97,6 +100,8 @@ export function MenuPage() {
           </Menu>
         }
       />
+
+      <WarehouseSwitcher />
 
       {/* Week switcher */}
       <Group justify="space-between" mt="sm" wrap="nowrap">
@@ -250,7 +255,8 @@ function SlotActions({ slot, onReplace, onDone }: { slot: MealSlot; onReplace: (
   const snack = useSnackbar();
   const update = useFoodMutation((servings: number) => foodApi.updateSlot(slot.id, { servings }));
   const remove = useFoodMutation(() => foodApi.deleteSlot(slot.id));
-  const cook = useFoodMutation(() => foodApi.cookSlot(slot.id));
+  const wid = useWarehouseId();
+  const cook = useFoodMutation(() => foodApi.cookSlot(slot.id, wid));
   const [servings, setServings] = useState(slot.servings);
 
   const changeServings = (next: number) => {
