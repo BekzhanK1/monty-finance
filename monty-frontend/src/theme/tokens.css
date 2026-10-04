@@ -19,6 +19,23 @@
   --fb-destructive: #e5484d;
   --fb-header: #f2f2f7;
   --monty-segment-indicator: var(--monty-surface);
+
+  /* Data viz — categorical slots 1–3 validated all-pairs for CVD on #fff (dataviz skill). */
+  --viz-1: #2a78d6;
+  --viz-2: #eb6834;
+  --viz-3: #1baf7a;
+  /* Sequential (one hue, light → dark) for magnitude, e.g. the spending calendar. */
+  --viz-seq-1: #b7d3f6;
+  --viz-seq-2: #86b6ef;
+  --viz-seq-3: #5598e7;
+  --viz-seq-4: #2a78d6;
+  --viz-seq-5: #184f95;
+  /* Ink for labels sitting on each sequential step (picked by the fill's luminance). */
+  --viz-seq-ink-1: #1b1b1b;
+  --viz-seq-ink-2: #1b1b1b;
+  --viz-seq-ink-3: #ffffff;
+  --viz-seq-ink-4: #ffffff;
+  --viz-seq-ink-5: #ffffff;
 }
 
 :root[data-mantine-color-scheme='dark'] {
@@ -34,6 +51,21 @@
   --fb-destructive: #ff6369;
   --fb-header: #000000;
   --monty-segment-indicator: color-mix(in srgb, var(--monty-text) 24%, var(--monty-surface));
+
+  /* Dark steps of the same hues, validated against #1c1c1e. */
+  --viz-1: #3987e5;
+  --viz-2: #d95926;
+  --viz-3: #199e70;
+  --viz-seq-1: #104281;
+  --viz-seq-2: #1c5cab;
+  --viz-seq-3: #2a78d6;
+  --viz-seq-4: #5598e7;
+  --viz-seq-5: #86b6ef;
+  --viz-seq-ink-1: #ffffff;
+  --viz-seq-ink-2: #ffffff;
+  --viz-seq-ink-3: #ffffff;
+  --viz-seq-ink-4: #0b0b0b;
+  --viz-seq-ink-5: #0b0b0b;
 }
 
 :root {
@@ -57,9 +89,12 @@
   --monty-negative: var(--monty-destructive);
   --monty-savings: #3e63dd;
   --monty-warning: #f76b15;
-  --monty-group-base: #3e63dd;
-  --monty-group-comfort: #d6409f;
-  --monty-group-savings: #12a594;
+  /* Budget groups are the three chart identities, so rings, bars and legends agree. */
+  --monty-group-base: var(--viz-1);
+  --monty-group-comfort: var(--viz-2);
+  --monty-group-savings: var(--viz-3);
+  --viz-grid: var(--monty-separator);
+  --viz-muted: color-mix(in srgb, var(--monty-hint) 70%, transparent);
 
   --monty-segment-track: color-mix(in srgb, var(--monty-text) 8%, transparent);
   --monty-radius-card: 18px;

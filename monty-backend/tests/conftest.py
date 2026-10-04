@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from app.core.config import SessionLocal, engine
 from app.core.migrations import run_migrations
-from app.finance.models import Category, CategoryGroup, Transaction, TransactionType, User
+from app.finance.models import Category, CategoryGroup, MonthlyBudget, Settings, Transaction, TransactionType, User
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -39,6 +39,8 @@ def db():
                   FoodIngredient):
         session.query(model).delete()
     session.query(Transaction).delete()
+    session.query(MonthlyBudget).delete()
+    session.query(Settings).delete()
     session.query(Category).delete()
     session.query(User).delete()
     session.add(User(id=1, telegram_id=111, first_name="Аня", is_active=True, household_id=1))
