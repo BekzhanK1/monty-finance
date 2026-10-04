@@ -87,35 +87,6 @@ export interface Settings {
   total_budget: string;
 }
 
-export interface Analytics {
-  total_income: number;
-  total_expenses: number;
-  total_savings: number;
-  balance: number;
-  by_category: {
-    name: string;
-    icon: string;
-    amount: number;
-    type: 'income' | 'expense' | 'savings';
-    previous_amount?: number;
-    change_pct?: number | null;
-  }[];
-  by_group: { group: string; amount: number; type: 'income' | 'expense' }[];
-  daily_data: { date: string; income: number; expense: number }[];
-  top_expenses?: { name: string; icon: string; amount: number; type: string }[];
-  by_user?: { user_id: number; user_name: string; income: number; expense: number; savings: number }[];
-  comparison_previous_period?: {
-    total_income: number;
-    total_expenses: number;
-    total_savings?: number;
-    balance: number;
-  };
-  period_start?: string;
-  period_end?: string;
-  large_one_off_total?: number;
-  budgets_with_spent?: BudgetWithSpent[];
-}
-
 export interface BudgetConfig {
   category_id: number;
   category_name: string;

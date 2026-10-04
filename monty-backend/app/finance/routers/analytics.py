@@ -5,11 +5,18 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.config import get_db
-from app.finance.models import User, Transaction, TransactionType, CategoryGroup
+from app.finance.models import Category, User, Transaction, TransactionType, CategoryGroup
 from app.finance.schemas import AnalyticsResponse
 from app.middleware.auth import get_current_user
 from app.finance.services.analytics_helpers import category_breakdown, large_one_off_expense_total
-from app.finance.services.budget_period_service import build_budgets_with_spent, date_range_to_datetimes
+from app.finance.services import analytics_service as av2
+from app.finance.services.budget_period_service import (
+    build_budgets_with_spent,
+    date_range_to_datetimes,
+    query_latest_budgets,
+)
+from app.finance.services.database import get_financial_period
+from app.finance.services.settings_service import SettingsService
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
@@ -226,3 +233,147 @@ def get_analytics_for_period(
         period_end_str,
         prev_transactions,
     )
+
+
+# ---------------------------------------------------------------------------
+# Analytics v2 — see services/analytics_service.py
+# ---------------------------------------------------------------------------
+
+HISTORY_DAYS = 180
+
+
+def _to_tx(t: Transaction) -> av2.Tx:
+    if t.category.type == TransactionType.INCOME:
+        kind = "income"
+    elif t.category.group == CategoryGroup.SAVINGS:
+        kind = "savings"
+    else:
+        kind = "expense"
+    return av2.Tx(
+        id=t.id,
+        amount=t.amount,
+        kind=kind,
+        group=t.category.group.value,
+        category_id=t.category_id,
+        category_name=t.category.name,
+        category_icon=t.category.icon,
+        comment=t.comment,
+        user_id=t.user_id,
+        user_name=(t.user.first_name if t.user else None) or "Без имени",
+        day=av2.local_day(t.transaction_date),
+    )
+
+
+def _txs_between(db: Session, start: date, end: date) -> list[av2.Tx]:
+    window_start, window_end = date_range_to_datetimes(start, end)
+    return [_to_tx(t) for t in _load_transactions(db, window_start, window_end, end_inclusive=True)]
+
+
+def _resolve_period(db: Session, start_date: Optional[str], end_date: Optional[str], today: date):
+    """Explicit range, or the current salary-to-salary period. Returns (start, end, previous range)."""
+    salary_day = SettingsService.get_salary_day(db)
+    if not start_date and not end_date:
+        start, end = get_financial_period(today, salary_day)
+        prev = get_financial_period(start - timedelta(days=1), salary_day)
+        return start, end, prev
+    start = _parse_boundary_date(start_date, today - timedelta(days=29))
+    end = _parse_boundary_date(end_date, today)
+    if start > end:
+        start, end = end, start
+    if (start, end) == get_financial_period(start, salary_day):
+        return start, end, get_financial_period(start - timedelta(days=1), salary_day)
+    length = (end - start).days + 1
+    return start, end, (start - timedelta(days=length), start - timedelta(days=1))
+
+
+def _expense_limits(db: Session) -> dict[int, int]:
+    return {b.category_id: b.limit_amount for b in query_latest_budgets(db).all()}
+
+
+@router.get("/overview")
+def analytics_overview(
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Everything the analytics screen shows for one period (default: current salary period)."""
+    today = av2.local_day(datetime.utcnow())
+    start, end, (prev_start, prev_end) = _resolve_period(db, start_date, end_date, today)
+    period = av2.Period(start=start, end=end, today=today)
+
+    txs = _txs_between(db, start, end)
+    prev_txs = _txs_between(db, prev_start, prev_end)
+    history = _txs_between(db, start - timedelta(days=HISTORY_DAYS), start - timedelta(days=1))
+
+    limits = _expense_limits(db)
+    groups_by_cat = {c.id: c.group for c in db.query(Category).all()}
+    budget_limit = sum(
+        amount for cat_id, amount in limits.items()
+        if groups_by_cat.get(cat_id) in (CategoryGroup.BASE, CategoryGroup.COMFORT)
+    )
+
+    cur, prev = av2.totals(txs), av2.totals(prev_txs)
+    cats = av2.categories(txs, prev_txs, limits)
+    weekdays = av2.weekday_averages(txs, period)
+    fc = av2.forecast(txs, period, budget_limit)
+    found = av2.anomalies(txs, history + txs)
+    struct = av2.structure(txs)
+
+    return {
+        "period": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "days_total": period.days_total,
+            "days_elapsed": period.days_elapsed,
+            "is_current": period.is_current,
+        },
+        "previous": {"start": prev_start.isoformat(), "end": prev_end.isoformat(), **prev.as_dict()},
+        "totals": cur.as_dict(),
+        "budget_limit": budget_limit,
+        "forecast": fc,
+        "cumulative": av2.cumulative_series(txs, period, budget_limit),
+        "structure": struct,
+        "categories": cats,
+        "weekdays": weekdays,
+        "heatmap": av2.heatmap(txs, period),
+        "top_expenses": av2.top_expenses(txs),
+        "anomalies": found,
+        "by_user": av2.by_user(txs),
+        "insights": av2.insights(cur=cur, prev=prev, cats=cats, weekdays=weekdays, fc=fc,
+                                 anomalies_found=found, struct=struct),
+    }
+
+
+@router.get("/trends")
+def analytics_trends(
+    periods: int = Query(6, ge=2, le=12),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Totals for the last N salary periods, oldest first."""
+    today = av2.local_day(datetime.utcnow())
+    salary_day = SettingsService.get_salary_day(db)
+    ranges = []
+    start, end = get_financial_period(today, salary_day)
+    for _ in range(periods):
+        ranges.append((start, end))
+        start, end = get_financial_period(start - timedelta(days=1), salary_day)
+    ranges.reverse()
+
+    txs = _txs_between(db, ranges[0][0], ranges[-1][1])
+    out = []
+    for p_start, p_end in ranges:
+        t = av2.totals([tx for tx in txs if p_start <= tx.day <= p_end])
+        out.append({"start": p_start.isoformat(), "end": p_end.isoformat(),
+                    "is_current": p_start <= today <= p_end, **t.as_dict()})
+    return out
+
+
+@router.get("/recurring")
+def analytics_recurring(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    today = av2.local_day(datetime.utcnow())
+    return av2.recurring(_txs_between(db, today - timedelta(days=HISTORY_DAYS), today), today)

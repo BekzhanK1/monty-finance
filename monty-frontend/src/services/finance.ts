@@ -1,5 +1,4 @@
 import type {
-  Analytics,
   BudgetConfig,
   Category,
   CategoryInput,
@@ -124,17 +123,6 @@ export const settingsApi = {
   },
   updateBudget: async (categoryId: number, limitAmount: number) => {
     const { data } = await api.post('/settings/budgets', { category_id: categoryId, limit_amount: limitAmount });
-    return data;
-  },
-};
-
-export const analyticsApi = {
-  get: async (months: number = 3) => {
-    const { data } = await api.get<Analytics>('/analytics', { params: { months } });
-    return data;
-  },
-  getPeriod: async (startDate?: string, endDate?: string) => {
-    const { data } = await api.get<Analytics>('/analytics/period', { params: { start_date: startDate, end_date: endDate } });
     return data;
   },
 };

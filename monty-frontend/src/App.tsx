@@ -4,7 +4,7 @@ import { LoginPage } from './pages/LoginPage';
 import { HomePage } from './features/home/HomePage';
 import { AddTransactionPage } from './features/add/AddTransactionPage';
 import { SettingsPage } from './pages/SettingsPage';
-import { AnalyticsPage } from './pages/AnalyticsPage';
+import { AnalyticsPage } from './features/analytics/AnalyticsPage';
 import { HistoryPage } from './features/history/HistoryPage';
 import { AllServicesPage } from './pages/AllServicesPage';
 import { Layout } from './components/Layout';
