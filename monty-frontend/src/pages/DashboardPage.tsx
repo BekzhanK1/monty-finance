@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -14,11 +14,11 @@ import {
   useMantineColorScheme,
 } from '@mantine/core';
 import { IconTarget, IconTrendingUp, IconWallet, IconPigMoney } from '@tabler/icons-react';
-import { budgetsApi, goalsApi, settingsApi } from '../api';
+import { useDashboard, useGoal, useSettings, useUpdateBudgetLimit } from '../features/finance/queries';
 import { useTelegram } from '../hooks/useTelegram';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { pageStackPb } from '../theme/dashboardChrome';
-import type { DashboardResponse, Goal } from '../types';
+import type { DashboardResponse } from '../types';
 
 function formatNumber(num: number): string {
   return new Intl.NumberFormat('ru-RU').format(num);
@@ -28,26 +28,18 @@ export function DashboardPage() {
   const navigate = useNavigate();
   const { haptic } = useTelegram();
   const { colorScheme } = useMantineColorScheme();
-  const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
-  const [goal, setGoal] = useState<Goal | null>(null);
-  const [totalBudget, setTotalBudget] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([budgetsApi.current(), goalsApi.get(), settingsApi.get()])
-      .then(([dash, g, settings]) => {
-        setDashboard(dash);
-        setGoal(g);
-        setTotalBudget(parseInt(settings?.total_budget || '0', 10));
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const dashboardQuery = useDashboard();
+  const goalQuery = useGoal();
+  const settingsQuery = useSettings();
+  const updateBudgetLimit = useUpdateBudgetLimit();
+  const dashboard = dashboardQuery.data ?? null;
+  const goal = goalQuery.data ?? null;
+  const totalBudget = parseInt(settingsQuery.data?.total_budget || '0', 10);
+  const loading = dashboardQuery.isPending || goalQuery.isPending || settingsQuery.isPending;
 
   const handleBudgetChange = async (categoryId: number, limitAmount: number) => {
-    await settingsApi.updateBudget(categoryId, limitAmount);
+    await updateBudgetLimit.mutateAsync({ categoryId, limitAmount });
     haptic('success');
-    const dash = await budgetsApi.current();
-    setDashboard(dash);
   };
 
   if (loading) {

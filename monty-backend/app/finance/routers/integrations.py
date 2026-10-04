@@ -1,12 +1,11 @@
-from datetime import datetime
-
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_db, settings
-from app.finance.models import Category, Transaction, User
+from app.finance.models import Category, Transaction, TransactionSource, User
 from app.finance.schemas import SiriExpenseRequest, SiriExpenseResponse
 from app.finance.services.digest_service import send_transaction_notification
+from app.finance.services.expense_parser import transaction_datetime
 from app.finance.services.siri_expense_service import (
     SiriParseError,
     generate_expense_confirmation_message,
@@ -95,7 +94,9 @@ def siri_expense(
                 category_id=item.category.id,
                 amount=item.amount,
                 comment=item.comment,
-                transaction_date=datetime.utcnow(),
+                transaction_date=transaction_datetime(item.local_date),
+                source=TransactionSource.SIRI.value,
+                raw_text=raw_text[:500],
             )
             db.add(transaction)
             saved_transactions.append(transaction)

@@ -13,7 +13,8 @@ import {
   Card,
   SimpleGrid,
 } from '@mantine/core';
-import { IconCheck, IconArrowLeft, IconBackspace } from '@tabler/icons-react';
+import { IconCheck, IconArrowLeft, IconBackspace, IconMicrophone } from '@tabler/icons-react';
+import { useVoiceInput } from '../features/voice/VoiceContext';
 import { categoriesApi, transactionsApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
@@ -23,6 +24,7 @@ import { pageStackPb } from '../theme/dashboardChrome';
 export function AddTransactionPage() {
   const navigate = useNavigate();
   const { haptic } = useTelegram();
+  const openVoice = useVoiceInput();
   const { colorScheme } = useMantineColorScheme();
   const [categories, setCategories] = useState<Category[]>([]);
   const [amount, setAmount] = useState<string>('');
@@ -102,6 +104,17 @@ export function AddTransactionPage() {
             radius="xl"
           >
             Назад
+          </Button>
+          <Button
+            variant="light"
+            leftSection={<IconMicrophone size={20} />}
+            onClick={() => {
+              haptic('medium');
+              openVoice({ onSaved: () => navigate('/') });
+            }}
+            radius="xl"
+          >
+            Голосом
           </Button>
         </Group>
 

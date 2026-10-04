@@ -9,12 +9,36 @@ import csv
 
 from app.core.config import get_db
 from app.finance.models import User, Category, Transaction
-from app.finance.schemas import TransactionCreate, TransactionResponse, TransactionUpdate
+from app.finance.schemas import TransactionBulkCreate, TransactionCreate, TransactionResponse, TransactionUpdate
 from app.middleware.auth import get_current_user
 from app.finance.services.database import get_financial_period
 from app.finance.services.digest_service import send_transaction_notification
+from app.finance.services.expense_parser import transaction_datetime
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
+
+def _build_transaction(data: TransactionCreate, user: User, category: Category) -> Transaction:
+    return Transaction(
+        user_id=user.id,
+        category_id=category.id,
+        amount=data.amount,
+        comment=data.comment,
+        transaction_date=transaction_datetime(data.transaction_date),
+        source=data.source,
+        raw_text=data.raw_text,
+    )
+
+
+def _notify(db: Session, transaction: Transaction, category: Category, user: User) -> None:
+    send_transaction_notification(
+        db=db,
+        category_icon=category.icon,
+        category_name=category.name,
+        amount=transaction.amount,
+        user_name=user.first_name or "Пользователь",
+        comment=transaction.comment,
+    )
+
 
 @router.post("", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
 def create_transaction(
@@ -28,29 +52,43 @@ def create_transaction(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Category not found"
         )
-    
-    transaction = Transaction(
-        user_id=current_user.id,
-        category_id=transaction_data.category_id,
-        amount=transaction_data.amount,
-        comment=transaction_data.comment,
-        transaction_date=datetime.utcnow()
-    )
-    
+
+    transaction = _build_transaction(transaction_data, current_user, category)
     db.add(transaction)
     db.commit()
     db.refresh(transaction)
-    
-    send_transaction_notification(
-        db=db,
-        category_icon=category.icon,
-        category_name=category.name,
-        amount=transaction_data.amount,
-        user_name=current_user.first_name or "Пользователь",
-        comment=transaction_data.comment
-    )
-    
+
+    _notify(db, transaction, category, current_user)
+
     return transaction
+
+
+@router.post("/bulk", response_model=List[TransactionResponse], status_code=status.HTTP_201_CREATED)
+def create_transactions_bulk(
+    body: TransactionBulkCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Save several transactions atomically (e.g. confirmed voice drafts)."""
+    category_ids = {item.category_id for item in body.items}
+    categories = {c.id: c for c in db.query(Category).filter(Category.id.in_(category_ids)).all()}
+    missing = category_ids - categories.keys()
+    if missing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Category not found: {sorted(missing)}"
+        )
+
+    transactions = [
+        _build_transaction(item, current_user, categories[item.category_id]) for item in body.items
+    ]
+    db.add_all(transactions)
+    db.commit()
+    for transaction in transactions:
+        db.refresh(transaction)
+        _notify(db, transaction, categories[transaction.category_id], current_user)
+
+    return transactions
 
 @router.get("", response_model=List[TransactionResponse])
 def get_transactions(

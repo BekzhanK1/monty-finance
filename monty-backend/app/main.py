@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 
-from app.core.config import Base, engine
 from app.finance.routers import (
     analytics,
     auth,
@@ -11,27 +10,18 @@ from app.finance.routers import (
     integrations,
     settings,
     transactions,
+    voice,
 )
+from app.core.migrations import run_migrations
 from app.finance.services.scheduler import scheduler, setup_scheduler
-from app.finance.db_bootstrap import ensure_users_household_id
-from app.food.db_bootstrap import (
-    ensure_food_dish_columns,
-    ensure_food_ingredient_columns,
-    ensure_food_shopping_columns,
-)
 from app.food.router import router as food_router
-import app.models  # noqa: F401 — register all ORM tables on Base.metadata
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
-    ensure_users_household_id()
-    ensure_food_dish_columns()
-    ensure_food_ingredient_columns()
-    ensure_food_shopping_columns()
+    run_migrations()
 
     setup_scheduler()
     scheduler.start()
@@ -65,6 +55,7 @@ app.include_router(digest.router)
 app.include_router(settings.router)
 app.include_router(analytics.router)
 app.include_router(integrations.router)
+app.include_router(voice.router)
 app.include_router(food_router)
 
 

@@ -1,56 +1,29 @@
-import json
-from dataclasses import dataclass
+"""Siri Shortcut flow: shared expense parser + a friendly spoken confirmation."""
 
-from openai import OpenAI
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
-from app.finance.models import Category, TransactionType
+from app.finance.services.expense_parser import (
+    AMOUNT_NOT_FOUND_MESSAGE,
+    CATEGORY_NOT_FOUND_MESSAGE,
+    ExpenseParseError,
+    ParsedExpense,
+    get_openai_client,
+    parse_expenses,
+)
 from app.finance.services.siri_logger import SiriLog
 
-_openai_client: OpenAI | None = None
+# Backwards-compatible names for callers of the original Siri-only parser.
+ParsedSiriExpense = ParsedExpense
+SiriParseError = ExpenseParseError
 
-CATEGORY_NOT_FOUND_MESSAGE = (
-    "Извините, я не нашёл по вашей категории ничего похожего."
-)
-AMOUNT_NOT_FOUND_MESSAGE = (
-    "Не понял сумму. Скажите, например: «500 бензин» или «2000 на пирожки»."
-)
-
-
-@dataclass(frozen=True)
-class ParsedSiriExpense:
-    category: Category
-    amount: int
-    comment: str
-
-
-class SiriParseError(Exception):
-    def __init__(self, message: str) -> None:
-        self.message = message
-        super().__init__(message)
-
-
-def _get_openai_client() -> OpenAI:
-    global _openai_client
-    if _openai_client is None:
-        _openai_client = OpenAI(api_key=settings.OPENAI_API_KEY or None)
-    return _openai_client
-
-
-def _load_expense_categories(db: Session, log: SiriLog) -> list[Category]:
-    categories = (
-        db.query(Category)
-        .filter(Category.type == TransactionType.EXPENSE)
-        .order_by(Category.id)
-        .all()
-    )
-    log.info(
-        "loaded expense categories",
-        categories_count=len(categories),
-        categories=[{"id": category.id, "name": category.name} for category in categories],
-    )
-    return categories
+__all__ = [
+    "AMOUNT_NOT_FOUND_MESSAGE",
+    "CATEGORY_NOT_FOUND_MESSAGE",
+    "ParsedSiriExpense",
+    "SiriParseError",
+    "generate_expense_confirmation_message",
+    "parse_siri_expenses",
+]
 
 
 def parse_siri_expenses(
@@ -58,125 +31,8 @@ def parse_siri_expenses(
     raw_text: str,
     *,
     log: SiriLog,
-) -> list[ParsedSiriExpense]:
-    categories = _load_expense_categories(db, log)
-    if not categories:
-        raise SiriParseError(CATEGORY_NOT_FOUND_MESSAGE)
-
-    categories_by_id = {category.id: category for category in categories}
-    catalog = [{"id": category.id, "name": category.name} for category in categories]
-    prompt = f"""Пользователь надиктовал расход(ы) на русском языке.
-Суммы всегда в тенге (₸). Верни amount целым числом в тенге.
-
-Текст пользователя: "{raw_text}"
-
-Доступные категории расходов:
-{json.dumps(catalog, ensure_ascii=False, indent=2)}
-
-Задача:
-1. Извлеки одну или несколько транзакций, если в тексте явно несколько расходов.
-2. Для каждой транзакции определи amount, category_id из списка категорий и короткий comment.
-3. Если сумму понять нельзя — верни {{"error": "amount"}}.
-4. Если для какой-то транзакции нет подходящей категории — верни {{"error": "category"}}.
-5. Если transactions пустой — верни {{"error": "amount"}}.
-
-Ответь строго JSON одного из видов:
-{{"transactions": [{{"amount": 500, "category_id": 5, "comment": "бензин"}}]}}
-или
-{{"error": "amount"}}
-или
-{{"error": "category"}}"""
-
-    log.info("calling OpenAI to parse raw_text", raw_text=raw_text)
-
-    try:
-        client = _get_openai_client()
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "Ты парсер финансовых расходов для семейного бюджета в Казахстане. "
-                        "Суммы только в тенге. Отвечай только валидным JSON."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=300,
-            temperature=0,
-            response_format={"type": "json_object"},
-        )
-        raw_content = response.choices[0].message.content or "{}"
-        log.info("OpenAI parse response", raw_response=raw_content)
-        data = json.loads(raw_content)
-    except Exception as exc:
-        log.error("OpenAI parse failed", exc=exc)
-        raise SiriParseError(AMOUNT_NOT_FOUND_MESSAGE) from exc
-
-    error = data.get("error")
-    if error == "amount":
-        log.info("OpenAI could not parse amount")
-        raise SiriParseError(AMOUNT_NOT_FOUND_MESSAGE)
-    if error == "category":
-        log.info("OpenAI could not match category")
-        raise SiriParseError(CATEGORY_NOT_FOUND_MESSAGE)
-
-    raw_transactions = data.get("transactions")
-    if not isinstance(raw_transactions, list) or not raw_transactions:
-        log.info("OpenAI returned empty transactions")
-        raise SiriParseError(AMOUNT_NOT_FOUND_MESSAGE)
-
-    parsed: list[ParsedSiriExpense] = []
-    for index, item in enumerate(raw_transactions):
-        if not isinstance(item, dict):
-            log.info("invalid transaction item", index=index, item=item)
-            raise SiriParseError(AMOUNT_NOT_FOUND_MESSAGE)
-
-        amount = item.get("amount")
-        category_id = item.get("category_id")
-        comment = str(item.get("comment") or raw_text).strip()[:255]
-
-        try:
-            amount_int = int(amount)
-        except (TypeError, ValueError):
-            log.info("invalid amount in transaction", index=index, amount=amount)
-            raise SiriParseError(AMOUNT_NOT_FOUND_MESSAGE)
-
-        if amount_int <= 0:
-            log.info("non-positive amount in transaction", index=index, amount=amount_int)
-            raise SiriParseError(AMOUNT_NOT_FOUND_MESSAGE)
-
-        if category_id is None:
-            log.info("null category_id in transaction", index=index, item=item)
-            raise SiriParseError(CATEGORY_NOT_FOUND_MESSAGE)
-
-        category = categories_by_id.get(int(category_id))
-        if category is None:
-            log.info(
-                "category_id not found in database",
-                index=index,
-                category_id=category_id,
-            )
-            raise SiriParseError(CATEGORY_NOT_FOUND_MESSAGE)
-
-        parsed.append(
-            ParsedSiriExpense(
-                category=category,
-                amount=amount_int,
-                comment=comment or raw_text[:255],
-            )
-        )
-        log.info(
-            "transaction parsed",
-            index=index,
-            amount=amount_int,
-            category_id=category.id,
-            category_name=category.name,
-            comment=comment,
-        )
-
-    return parsed
+) -> list[ParsedExpense]:
+    return parse_expenses(db, raw_text, log=log, include_income=False)
 
 
 def _format_saved_items(saved_items: list[ParsedSiriExpense]) -> str:
@@ -216,7 +72,7 @@ def generate_expense_confirmation_message(
 ) -> str:
     log.info("calling OpenAI for confirmation message", transactions_count=len(saved_items))
     try:
-        client = _get_openai_client()
+        client = get_openai_client()
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[

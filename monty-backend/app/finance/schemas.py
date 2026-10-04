@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 class UserBase(BaseModel):
@@ -45,7 +45,14 @@ class TransactionBase(BaseModel):
     comment: Optional[str] = None
 
 class TransactionCreate(TransactionBase):
-    pass
+    # Local calendar date (Asia/Almaty); omitted or today means "now".
+    transaction_date: Optional[date] = None
+    source: Literal["manual", "voice"] = "manual"
+    raw_text: Optional[str] = Field(default=None, max_length=500)
+
+
+class TransactionBulkCreate(BaseModel):
+    items: list[TransactionCreate] = Field(min_length=1, max_length=20)
 
 
 class TransactionUpdate(BaseModel):
@@ -58,6 +65,8 @@ class TransactionResponse(TransactionBase):
     id: str
     user_id: int
     transaction_date: datetime
+    source: str = "manual"
+    raw_text: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -114,3 +123,18 @@ class AnalyticsResponse(BaseModel):
     period_end: str = ""
     large_one_off_total: int = 0
     budgets_with_spent: list[BudgetWithSpent] = Field(default_factory=list)
+
+
+class VoiceDraft(BaseModel):
+    amount: int
+    category_id: int
+    category_name: str
+    category_icon: str
+    type: str
+    comment: str
+    transaction_date: Optional[date] = None
+
+
+class VoiceParseResponse(BaseModel):
+    text: str
+    drafts: list[VoiceDraft]

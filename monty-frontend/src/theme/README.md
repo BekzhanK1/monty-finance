@@ -264,6 +264,4 @@ The custom theme is integrated with Mantine's theme system in `src/main.tsx`. Th
 - `spacing.ts` - Spacing scale
 - `shadows.ts` - Shadow definitions
 - `types.ts` - TypeScript type definitions
-- `verify-theme.ts` - Theme verification script
-- `ThemeTest.tsx` - Visual theme testing component
 - `README.md` - This documentation file

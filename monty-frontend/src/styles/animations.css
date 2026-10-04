@@ -191,3 +191,20 @@
 .progress-animated {
   animation: progressFill 0.6s ease-out;
 }
+
+/* Voice input: recording indicator */
+@keyframes voice-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(250, 82, 82, 0.45); }
+  70% { box-shadow: 0 0 0 18px rgba(250, 82, 82, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(250, 82, 82, 0); }
+}
+
+.voice-pulse {
+  animation: voice-pulse 1.4s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-pulse {
+    animation: none;
+  }
+}
