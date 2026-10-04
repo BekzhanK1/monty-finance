@@ -12,13 +12,14 @@ import {
   ActionIcon,
   Modal,
   Select,
-  Box,
-  useMantineColorScheme,
+  useComputedColorScheme,
   Divider,
 } from '@mantine/core';
 import { IconPlus, IconTrash, IconPencil, IconTarget, IconWallet, IconCategory } from '@tabler/icons-react';
 import { settingsApi, categoriesApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
+import { useNavigate } from 'react-router-dom';
+import { PageHeader } from '../ui';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Settings, BudgetConfig } from '../types';
 import { modalShellResponsive, pageStackPb } from '../theme/dashboardChrome';
@@ -38,8 +39,9 @@ const GROUP_ICONS: Record<string, string> = {
 };
 
 export function SettingsPage() {
+  const navigate = useNavigate();
   const { haptic } = useTelegram();
-  const { colorScheme } = useMantineColorScheme();
+  const colorScheme = useComputedColorScheme('light');
   const isNarrow = useMediaQuery('(max-width: 36em)');
   const [settings, setSettings] = useState<Settings | null>(null);
   const [budgets, setBudgets] = useState<BudgetConfig[]>([]);
@@ -191,13 +193,9 @@ export function SettingsPage() {
   };
 
   return (
-    <Container size="sm" px="xs" pb={pageStackPb}>
+    <Container size="sm" pb={pageStackPb}>
       <Stack gap="lg">
-        {/* Header */}
-        <Box className="animate-slide-down">
-          <Text fw={700} size="xl" mb="xs">Настройки</Text>
-          <Text size="sm" c="dimmed">Управление бюджетом и категориями</Text>
-        </Box>
+        <PageHeader title="Настройки" subtitle="Бюджет, цель и категории" onBack={() => navigate('/services')} />
 
         {deleteError && (
           <Card 
@@ -225,7 +223,6 @@ export function SettingsPage() {
             background: colorScheme === 'dark'
               ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)'
               : 'linear-gradient(135deg, rgba(236, 253, 245, 0.9) 0%, rgba(209, 250, 229, 0.9) 100%)',
-            backdropFilter: 'blur(10px)',
           }}
         >
           <Group gap="xs" mb="lg">
@@ -266,7 +263,6 @@ export function SettingsPage() {
             background: colorScheme === 'dark'
               ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%)'
               : 'linear-gradient(135deg, rgba(239, 246, 255, 0.9) 0%, rgba(219, 234, 254, 0.9) 100%)',
-            backdropFilter: 'blur(10px)',
           }}
         >
           <Group gap="xs" mb="lg">
@@ -340,8 +336,7 @@ export function SettingsPage() {
               withBorder
               className="stagger-item"
               style={{
-                background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(10px)',
+                background: 'var(--monty-surface)',
                 animationDelay: `${(groupIndex + 3) * 0.1}s`,
               }}
             >
@@ -362,7 +357,7 @@ export function SettingsPage() {
                     radius="lg"
                     withBorder
                     style={{
-                      background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(255, 255, 255, 0.5)',
+                      background: 'var(--monty-surface)',
                       cursor: 'pointer',
                       minHeight: 52,
                     }}

@@ -16,7 +16,6 @@ import {
 } from '@mantine/core';
 import {
   IconAlertCircle,
-  IconCheck,
   IconMicrophone,
   IconPlayerStopFilled,
   IconRefresh,
@@ -182,7 +181,7 @@ export function VoiceSheet({ opened, onClose, autoStart = false, onSaved }: Voic
       onClose={handleClose}
       position="bottom"
       size="auto"
-      radius="xl"
+      radius="lg"
       title={<Text fw={700} size="lg">{step === 'review' ? 'Проверьте' : 'Голосовой ввод'}</Text>}
       styles={{
         content: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, maxHeight: '90dvh' },
@@ -210,11 +209,9 @@ export function VoiceSheet({ opened, onClose, autoStart = false, onSaved }: Voic
                     borderRadius: '50%',
                     display: 'grid',
                     placeItems: 'center',
-                    color: 'white',
-                    background: isRecording
-                      ? 'var(--mantine-color-red-6)'
-                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    boxShadow: '0 8px 24px rgba(102, 126, 234, 0.35)',
+                    color: isRecording ? 'white' : 'var(--monty-accent-text)',
+                    background: isRecording ? 'var(--monty-negative)' : 'var(--monty-accent)',
+                    boxShadow: '0 8px 24px color-mix(in srgb, var(--monty-accent) 35%, transparent)',
                   }}
                 >
                   {isRecording ? <IconPlayerStopFilled size={36} /> : <IconMicrophone size={40} />}
@@ -240,7 +237,6 @@ export function VoiceSheet({ opened, onClose, autoStart = false, onSaved }: Voic
               }}
               disabled={isRecording}
               size="md"
-              radius="xl"
               maxLength={500}
               rightSection={
                 <ActionIcon
@@ -298,7 +294,7 @@ export function VoiceSheet({ opened, onClose, autoStart = false, onSaved }: Voic
             {drafts.length > 1 && (
               <Group justify="space-between">
                 <Text c="dimmed" size="sm">Итого</Text>
-                <Text fw={700} ff="monospace" c={draftsBalance(drafts) >= 0 ? 'teal' : undefined}>
+                <Text fw={700} className="monty-tabular" style={{ color: draftsBalance(drafts) >= 0 ? 'var(--monty-income)' : 'var(--monty-text)' }}>
                   {draftsBalance(drafts) > 0 ? '+' : ''}{formatNumber(draftsBalance(drafts))} ₸
                 </Text>
               </Group>
@@ -307,7 +303,6 @@ export function VoiceSheet({ opened, onClose, autoStart = false, onSaved }: Voic
             <Group grow>
               <Button
                 variant="default"
-                radius="xl"
                 size="md"
                 leftSection={<IconRefresh size={18} />}
                 onClick={() => { haptic('light'); reset(); }}
@@ -315,11 +310,7 @@ export function VoiceSheet({ opened, onClose, autoStart = false, onSaved }: Voic
                 Заново
               </Button>
               <Button
-                radius="xl"
                 size="md"
-                variant="gradient"
-                gradient={{ from: 'blue', to: 'violet', deg: 135 }}
-                leftSection={<IconCheck size={18} />}
                 disabled={!allValid}
                 loading={saveMutation.isPending}
                 onClick={save}
@@ -354,7 +345,7 @@ function DraftCard({ draft, categories, onChange, onCategory, onRemove }: DraftC
   const isIncome = draft.type === 'INCOME';
 
   return (
-    <Card withBorder radius="lg" padding="sm">
+    <Card radius="lg" padding="sm" style={{ background: 'var(--monty-surface-2)' }}>
       <Stack gap={8}>
         <Group gap="xs" wrap="nowrap" align="flex-end">
           <NumberInput
@@ -370,7 +361,7 @@ function DraftCard({ draft, categories, onChange, onCategory, onRemove }: DraftC
             size="md"
             radius="lg"
             style={{ flex: 1 }}
-            styles={{ input: { fontWeight: 700, fontFamily: 'monospace', color: isIncome ? 'var(--mantine-color-teal-6)' : undefined } }}
+            styles={{ input: { fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: isIncome ? 'var(--monty-income)' : undefined } }}
             error={draft.amount > 0 ? undefined : true}
           />
           <ActionIcon variant="subtle" color="red" size="lg" radius="xl" onClick={onRemove} aria-label="Убрать">

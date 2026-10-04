@@ -62,6 +62,10 @@ export const transactionsApi = {
     });
     return data;
   },
+  createOne: async (item: TransactionInput) => {
+    const { data } = await api.post<Transaction>('/transactions', item);
+    return data;
+  },
   createBulk: async (items: TransactionInput[]) => {
     const { data } = await api.post<Transaction[]>('/transactions/bulk', { items });
     return data;

@@ -8,7 +8,7 @@ import {
   SegmentedControl,
   Progress,
   Box,
-  useMantineColorScheme,
+  useComputedColorScheme,
   SimpleGrid,
   ActionIcon,
 } from '@mantine/core';
@@ -143,7 +143,6 @@ function CategoryBreakdown({
   totalSavings: number;
   isCurrentPeriod: boolean;
 }) {
-  const { colorScheme } = useMantineColorScheme();
   const rows = categories.filter((c) => c.type === 'expense' || c.type === 'savings');
   if (rows.length === 0) return null;
 
@@ -155,8 +154,7 @@ function CategoryBreakdown({
       withBorder
       className="stagger-item"
       style={{
-        background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(10px)',
+        background: 'var(--monty-surface)',
       }}
     >
       <Text fw={600} size="md">Категории</Text>
@@ -219,7 +217,7 @@ function CategoryBreakdown({
 
 export function AnalyticsPage() {
   const { haptic } = useTelegram();
-  const { colorScheme } = useMantineColorScheme();
+  const colorScheme = useComputedColorScheme('light');
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('current');
@@ -420,7 +418,6 @@ export function AnalyticsPage() {
                 background: colorScheme === 'dark'
                   ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%)'
                   : 'linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%)',
-                backdropFilter: 'blur(10px)',
               }}
             >
               <Group gap="xs" mb="sm">
@@ -523,8 +520,7 @@ export function AnalyticsPage() {
               withBorder
               className="stagger-item"
               style={{
-                background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(10px)',
+                background: 'var(--monty-surface)',
               }}
             >
               <Group justify="space-between" mb="md">
@@ -556,8 +552,7 @@ export function AnalyticsPage() {
               withBorder
               className="stagger-item"
               style={{
-                background: colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(10px)',
+                background: 'var(--monty-surface)',
               }}
             >
               <Text fw={600} mb="lg" size="md">Расходы по дням</Text>

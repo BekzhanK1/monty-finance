@@ -1,8 +1,8 @@
 import { Stack, Card, Box } from '@mantine/core';
-import { useMantineColorScheme } from '@mantine/core';
+import { useComputedColorScheme } from '@mantine/core';
 
 export function LoadingSkeleton() {
-  const { colorScheme } = useMantineColorScheme();
+  const colorScheme = useComputedColorScheme('light');
   
   const skeletonBg = colorScheme === 'dark' 
     ? 'linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%)'
@@ -27,7 +27,7 @@ export function LoadingSkeleton() {
             w="60%"
             mb="md"
             style={{
-              background: skeletonBg,
+              backgroundImage: skeletonBg,
               backgroundSize: '200% 100%',
               borderRadius: '8px',
             }}
@@ -38,7 +38,7 @@ export function LoadingSkeleton() {
             w="100%"
             mb="sm"
             style={{
-              background: skeletonBg,
+              backgroundImage: skeletonBg,
               backgroundSize: '200% 100%',
               borderRadius: '8px',
             }}
@@ -48,7 +48,7 @@ export function LoadingSkeleton() {
             h={16}
             w="40%"
             style={{
-              background: skeletonBg,
+              backgroundImage: skeletonBg,
               backgroundSize: '200% 100%',
               borderRadius: '8px',
             }}

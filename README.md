@@ -46,23 +46,24 @@
 | [`src/services/index.ts`](monty-frontend/src/services/index.ts) | Сводный экспорт |
 | [`src/features/finance/queries.ts`](monty-frontend/src/features/finance/queries.ts) | TanStack Query: ключи, хуки чтения и мутации с инвалидацией |
 | [`src/features/voice/`](monty-frontend/src/features/voice/) | Голосовой ввод: запись (`useVoiceRecorder`), шторка подтверждения (`VoiceSheet`), `useVoiceInput()` |
+| [`src/features/home/`](monty-frontend/src/features/home/), [`add/`](monty-frontend/src/features/add/), [`history/`](monty-frontend/src/features/history/) | Экраны Главная, Добавление, История; чистая логика (`summary.ts`, `amountExpression.ts`, `history.ts`) покрыта тестами |
+| [`src/ui/`](monty-frontend/src/ui/) | Базовые компоненты: `AmountText`, `Section`, `ListRow`, `PageHeader`, `CategoryIcon`, `EmptyState`, форматтеры денег |
+| [`src/theme/tokens.css`](monty-frontend/src/theme/tokens.css) | Дизайн-токены `--monty-*` поверх `--tg-theme-*` (тема Telegram), фоллбэки для светлой/тёмной |
+| [`src/lib/telegram.ts`](monty-frontend/src/lib/telegram.ts) | Обёртка `Telegram.WebApp`: init, haptics, `BackButton`, синхронизация темы |
 | [`src/food/`](monty-frontend/src/food/) | UI Food: [`FoodLayout.tsx`](monty-frontend/src/food/FoodLayout.tsx) (вкладки: каталог, меню, **гид** — только просмотр меню и рецептов, **список** покупок, **склад**); страницы в [`food/pages/`](monty-frontend/src/food/pages/) |
 | [`src/api/index.ts`](monty-frontend/src/api/index.ts) | Реэкспорт из `services` для старых импортов `from '../api'` |
-| [`src/theme/dashboardChrome.ts`](monty-frontend/src/theme/dashboardChrome.ts) | Общие стили «как на главной» (градиент hero, glass-карточки, кнопки, модалки) |
+| [`src/theme/dashboardChrome.ts`](monty-frontend/src/theme/dashboardChrome.ts) | Хелперы для старых экранов (Food и др.): поверхности на токенах, пропсы модалок и шторок |
 
-Общие страницы finance по-прежнему в [`src/pages/`](monty-frontend/src/pages/), общий shell — [`src/components/Layout.tsx`](monty-frontend/src/components/Layout.tsx).
+Новые экраны — в [`src/features/`](monty-frontend/src/features/); в [`src/pages/`](monty-frontend/src/pages/) остались Анализ, Настройки, Сервисы и вход. Оболочка с таб-баром — [`src/components/Layout.tsx`](monty-frontend/src/components/Layout.tsx).
 
-### UI: единый стиль с главной
+### UI: дизайн-система
 
-Эталон вёрстки и визуала — **[`DashboardPage.tsx`](monty-frontend/src/pages/DashboardPage.tsx)** (главный экран после входа). На остальных экранах (Food, «Все сервисы», модалки) используйте те же приёмы:
+Интерфейс следует теме Telegram: цвета — только через токены `var(--monty-*)` из [`tokens.css`](monty-frontend/src/theme/tokens.css) (фон, поверхность, текст, hint, акцент, разделители; деньги — `--monty-income`, `--monty-negative`, группы — `--monty-group-*`). Не хардкодьте цвета и градиенты и не ветвитесь по `colorScheme` — токены уже переключаются.
 
-- **Контейнер:** `Container size="sm" p="md"`, с нижней навигацией — `pb={100}` (константа [`PAGE_WITH_BOTTOM_NAV_PB`](monty-frontend/src/theme/dashboardChrome.ts) в `dashboardChrome.ts`).
-- **Карточки блоков:** `Card` с `shadow="lg"` или `shadow="md"`, `padding="lg"`, `radius="xl"`, `withBorder`, классы `stagger-item`, `hover-lift` где уместно; фон — градиент с `backdropFilter: blur(10px)` (hero) или «матовое стекло» для секций (см. `heroVioletShell` / `glassSectionShell` в [`dashboardChrome.ts`](monty-frontend/src/theme/dashboardChrome.ts)).
-- **Вложенные строки** (элементы списка): `radius="lg"`, `padding="md"`, стиль как у карточек бюджета на главной (`insetRowShell`).
-- **Основные действия:** кнопка `variant="gradient"` с `gradient={{ from: 'blue', to: 'violet', deg: 135 }}`, `radius="xl"` (объект `gradientButton` в `dashboardChrome.ts`).
-- **Модалки:** как в [`SettingsPage.tsx`](monty-frontend/src/pages/SettingsPage.tsx) — `centered`, `radius="xl"`, `size="md"`, заголовок с иконкой и `Text fw={700} size="lg"`, поля `size="md"` и `radius="lg"`.
-
-Новые страницы и сервисы подключайте через общие хелперы из `dashboardChrome.ts`, чтобы не расходиться с главной.
+- **Страница:** `Container size="sm"` с `pb="var(--monty-page-pb)"` (таб-бар + safe area), заголовок — `PageHeader` (с `onBack` показывает нативную кнопку «Назад» Telegram).
+- **Группы контента:** `Section` (заголовок-капсом + скруглённая поверхность) со строками `ListRow` / `TransactionRow`.
+- **Суммы:** `AmountText` / `formatMoney` — табличные цифры, знак и цвет по типу операции.
+- **Действия:** обычный `Button` (primary = акцент Telegram); шторки — `Drawer position="bottom"`.
 
 Корневой [`Makefile`](Makefile) поднимает backend и frontend для локальной разработки.
 

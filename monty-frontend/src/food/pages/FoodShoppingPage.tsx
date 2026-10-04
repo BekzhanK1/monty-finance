@@ -15,7 +15,6 @@ import {
   Text,
   TextInput,
   Title,
-  useMantineColorScheme,
 } from '@mantine/core';
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { IconShoppingCart } from '@tabler/icons-react';
@@ -31,7 +30,6 @@ import {
 import { addDays, startOfWeekMonday, toISODate } from '../weekUtils';
 import { useTelegram } from '../../hooks/useTelegram';
 export function FoodShoppingPage() {
-  const { colorScheme } = useMantineColorScheme();
   const { haptic } = useTelegram();
   const isNarrow = useMediaQuery('(max-width: 36em)');
   const [list, setList] = useState<FoodShoppingList | null>(null);
@@ -229,7 +227,7 @@ export function FoodShoppingPage() {
           radius="xl"
           withBorder
           className="stagger-item hover-lift"
-          style={heroVioletShell(colorScheme)}
+          style={heroVioletShell()}
         >
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
             <Group gap="sm">
@@ -266,7 +264,7 @@ export function FoodShoppingPage() {
         )}
 
         {!list && !loading ? (
-          <Card withBorder radius="xl" padding="lg" style={glassSectionShell(colorScheme)}>
+          <Card withBorder radius="xl" padding="lg" style={glassSectionShell()}>
             <Text size="sm" c="dimmed">
               Пока нет сохранённого списка. Нажмите «На эту неделю», чтобы собрать позиции из меню (нужны блюда с
               заполненным составом).
@@ -281,7 +279,7 @@ export function FoodShoppingPage() {
         ) : null}
 
         {list ? (
-          <Card shadow="md" padding="lg" radius="xl" withBorder style={glassSectionShell(colorScheme)} opacity={list.status === 'done' ? 0.85 : 1}>
+          <Card shadow="md" padding="lg" radius="xl" withBorder style={glassSectionShell()} opacity={list.status === 'done' ? 0.85 : 1}>
             <Group justify="space-between" mb="md" wrap="wrap">
               <div>
                 <Text fw={700}>{list.title}</Text>

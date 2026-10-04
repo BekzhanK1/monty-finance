@@ -13,7 +13,6 @@ import {
   Stack,
   Text,
   Title,
-  useMantineColorScheme,
 } from '@mantine/core';
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { IconFridge, IconPlus, IconTrash } from '@tabler/icons-react';
@@ -30,7 +29,6 @@ import {
 import { useTelegram } from '../../hooks/useTelegram';
 
 export function FoodPantryPage() {
-  const { colorScheme } = useMantineColorScheme();
   const { haptic } = useTelegram();
   const isNarrow = useMediaQuery('(max-width: 36em)');
   const [rows, setRows] = useState<FoodPantryItem[]>([]);
@@ -114,7 +112,7 @@ export function FoodPantryPage() {
           radius="xl"
           withBorder
           className="stagger-item hover-lift"
-          style={heroVioletShell(colorScheme)}
+          style={heroVioletShell()}
         >
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
             <Group gap="sm">
@@ -148,7 +146,7 @@ export function FoodPantryPage() {
         )}
 
         {rows.length === 0 && !loading ? (
-          <Card withBorder radius="xl" padding="lg" style={glassSectionShell(colorScheme)}>
+          <Card withBorder radius="xl" padding="lg" style={glassSectionShell()}>
             <Text size="sm" c="dimmed">
               Пока пусто — добавьте продукты из справочника.
             </Text>
@@ -163,7 +161,7 @@ export function FoodPantryPage() {
               padding="md"
               radius="lg"
               className="hover-lift transition-all"
-              style={insetRowShell(colorScheme)}
+              style={insetRowShell()}
             >
               <Group justify="space-between" wrap="nowrap" gap="sm">
                 <div style={{ minWidth: 0 }}>

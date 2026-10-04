@@ -13,7 +13,6 @@ import {
   Stack,
   Table,
   Text,
-  useMantineColorScheme,
 } from '@mantine/core';
 import { IconCalendarEvent, IconChevronLeft, IconChevronRight, IconTrash } from '@tabler/icons-react';
 import { foodApi } from '../../services/food';
@@ -44,7 +43,6 @@ type MenuModalState =
   | { mode: 'edit'; slot: FoodMealSlot };
 
 export function FoodMenuPage() {
-  const { colorScheme } = useMantineColorScheme();
   const { haptic } = useTelegram();
   const isNarrow = useMediaQuery('(max-width: 36em)');
   const [weekOffset, setWeekOffset] = useState(0);
@@ -178,7 +176,7 @@ export function FoodMenuPage() {
           radius="xl"
           withBorder
           className="stagger-item hover-lift"
-          style={heroVioletShell(colorScheme)}
+          style={heroVioletShell()}
         >
           <Group justify="space-between" wrap="wrap" gap="sm">
             <Group gap="xs">

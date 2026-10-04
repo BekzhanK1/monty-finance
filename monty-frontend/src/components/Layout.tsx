@@ -1,283 +1,211 @@
-import { useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useRef } from 'react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { AppShell, Box, Button, Stack, Text, UnstyledButton } from '@mantine/core';
 import {
-  AppShell,
-  Group,
-  ScrollArea,
-  Text,
-  UnstyledButton,
-  Stack,
-  ActionIcon,
-  useMantineTheme,
-  Box,
-} from '@mantine/core';
-import {
+  IconChartPie,
+  IconDots,
   IconHome,
-  IconChartBar,
-  IconSettings,
-  IconPlus,
-  IconList,
-  IconSun,
-  IconMoon,
-  IconApps,
+  IconListDetails,
   IconMicrophone,
+  IconPlus,
+  type Icon,
 } from '@tabler/icons-react';
-import { useTelegram } from '../hooks/useTelegram';
-import { useMantineColorScheme } from '@mantine/core';
+import { haptic } from '../lib/telegram';
 import { useVoiceInput } from '../features/voice/VoiceContext';
 
-const navItems = [
+interface NavItem {
+  icon: Icon;
+  label: string;
+  path: string;
+  /** Other routes that keep this tab highlighted. */
+  match?: string[];
+}
+
+const leftTabs: NavItem[] = [
   { icon: IconHome, label: 'Главная', path: '/' },
-  { icon: IconList, label: 'История', path: '/transactions' },
-  { icon: IconChartBar, label: 'Анализ', path: '/analytics' },
-  { icon: IconApps, label: 'Сервисы', path: '/services' },
-  { icon: IconSettings, label: 'Ещё', path: '/settings' },
+  { icon: IconListDetails, label: 'История', path: '/transactions' },
 ];
+const rightTabs: NavItem[] = [
+  { icon: IconChartPie, label: 'Анализ', path: '/analytics' },
+  { icon: IconDots, label: 'Ещё', path: '/services', match: ['/settings'] },
+];
+const allTabs = [...leftTabs, ...rightTabs];
+
+const LONG_PRESS_MS = 450;
+
+function isActive(item: NavItem, pathname: string) {
+  return pathname === item.path || (item.match ?? []).some(p => pathname.startsWith(p));
+}
 
 export function Layout() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { haptic } = useTelegram();
-  const theme = useMantineTheme();
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const { pathname } = useLocation();
   const openVoice = useVoiceInput();
+  // Food has its own bottom tabs.
+  const showTabBar = !pathname.startsWith('/food');
 
-  useEffect(() => {
-    const index = navItems.findIndex(item => item.path === location.pathname);
-    if (index !== -1) {
-      console.debug('Active nav index:', index);
-    }
-  }, [location.pathname]);
-
-  const handleNavClick = (path: string) => {
-    haptic('light');
+  const go = (path: string) => {
+    if (path !== pathname) haptic('selection');
     navigate(path);
-  };
-
-  const handleAddClick = () => {
-    haptic('medium');
-    navigate('/add');
-  };
-
-  const handleThemeToggle = () => {
-    haptic('light');
-    toggleColorScheme();
   };
 
   return (
     <AppShell
-      header={{ height: { base: 52, sm: 60 } }}
-      navbar={{
-        width: 250,
-        breakpoint: 'sm',
-        collapsed: { mobile: true },
-      }}
-      padding={{ base: 'xs', sm: 'md' }}
-      styles={{
-        main: {
-          background: colorScheme === 'dark' 
-            ? 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)'
-            : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-          minHeight: '100vh',
-        },
-      }}
+      navbar={{ width: 240, breakpoint: 'sm', collapsed: { mobile: true } }}
+      padding={0}
+      styles={{ main: { background: 'var(--monty-bg)', minHeight: '100dvh' } }}
     >
-      <AppShell.Header
-        style={{
-          background: colorScheme === 'dark'
-            ? 'rgba(26, 26, 46, 0.8)'
-            : 'rgba(255, 255, 255, 0.8)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: `1px solid ${colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-        }}
-      >
-        <Group h="100%" px="md" justify="space-between" className="animate-slide-down">
-          <Group>
-            <Text 
-              fw={700} 
-              size="lg"
-              className="gradient-text"
-              style={{
-                background: colorScheme === 'dark'
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}
-            >
-              Monty
-            </Text>
-          </Group>
-          <Group gap="xs">
-            <ActionIcon
-              size="lg"
-              radius="xl"
-              variant="subtle"
-              onClick={() => {
-                haptic('medium');
-                openVoice();
-              }}
-              aria-label="Добавить голосом"
-              className="hover-scale"
-            >
-              <IconMicrophone size={20} />
-            </ActionIcon>
-            <ActionIcon
-              size="lg"
-              radius="xl"
-              variant="subtle"
-              onClick={handleThemeToggle}
-              aria-label={colorScheme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
-              className="hover-scale"
-            >
-              {colorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
-            </ActionIcon>
-            <ActionIcon
-              size="lg"
-              radius="xl"
-              variant="gradient"
-              gradient={{ from: 'blue', to: 'violet', deg: 135 }}
-              onClick={handleAddClick}
-              visibleFrom="sm"
-              className="hover-scale"
-            >
-              <IconPlus size={20} />
-            </ActionIcon>
-          </Group>
-        </Group>
-      </AppShell.Header>
-
-      <AppShell.Navbar 
-        p="md"
-        style={{
-          background: colorScheme === 'dark'
-            ? 'rgba(26, 26, 46, 0.8)'
-            : 'rgba(255, 255, 255, 0.8)',
-          backdropFilter: 'blur(10px)',
-          borderRight: `1px solid ${colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-        }}
-      >
-        <ScrollArea h="100%">
-          <Stack gap="xs">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <UnstyledButton
-                  key={item.path}
-                  onClick={() => handleNavClick(item.path)}
-                  className="transition-all"
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    background: isActive 
-                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                      : 'transparent',
-                    color: isActive 
-                      ? '#ffffff' 
-                      : (colorScheme === 'dark' ? theme.colors.gray[4] : theme.colors.gray[7]),
-                    transform: isActive ? 'scale(1.02)' : 'scale(1)',
-                    boxShadow: isActive ? '0 4px 12px rgba(102, 126, 234, 0.3)' : 'none',
-                  }}
-                >
-                  <Group>
-                    <item.icon size={20} />
-                    <Text size="sm" fw={isActive ? 600 : 400}>
-                      {item.label}
-                    </Text>
-                  </Group>
-                </UnstyledButton>
-              );
-            })}
-          </Stack>
-        </ScrollArea>
+      <AppShell.Navbar p="md" style={{ background: 'var(--monty-surface)', borderRight: '1px solid var(--monty-separator)' }}>
+        <Text fw={800} fz={22} px="sm" mb="lg" style={{ color: 'var(--monty-accent)' }}>Monty</Text>
+        <Stack gap={4}>
+          {allTabs.map(item => {
+            const active = isActive(item, pathname);
+            return (
+              <UnstyledButton
+                key={item.path}
+                onClick={() => go(item.path)}
+                className="monty-pressable"
+                px="sm"
+                py={10}
+                style={{
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  background: active ? 'var(--monty-accent-soft)' : 'transparent',
+                  color: active ? 'var(--monty-accent)' : 'var(--monty-text)',
+                  fontWeight: active ? 600 : 500,
+                }}
+              >
+                <item.icon size={20} />
+                {item.label}
+              </UnstyledButton>
+            );
+          })}
+        </Stack>
+        <Stack gap="xs" mt="xl">
+          <Button leftSection={<IconPlus size={18} />} onClick={() => navigate('/add')}>Добавить</Button>
+          <Button variant="light" leftSection={<IconMicrophone size={18} />} onClick={() => openVoice()}>Голосом</Button>
+        </Stack>
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <div className="animate-fade-in">
-          <Outlet />
-        </div>
+        <Outlet />
       </AppShell.Main>
 
-      {/* Enhanced Mobile Bottom Navigation — скрыт внутри Food (там свои вкладки) */}
-      <Box
-        hiddenFrom="sm"
+      {showTabBar && <TabBar pathname={pathname} onNavigate={go} />}
+    </AppShell>
+  );
+}
+
+function TabBar({ pathname, onNavigate }: { pathname: string; onNavigate: (path: string) => void }) {
+  return (
+    <Box
+      component="nav"
+      hiddenFrom="sm"
+      aria-label="Разделы"
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 150,
+        height: 'calc(var(--monty-tabbar-h) + var(--monty-safe-bottom))',
+        paddingBottom: 'var(--monty-safe-bottom)',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, 1fr)',
+        alignItems: 'center',
+        background: 'color-mix(in srgb, var(--monty-surface) 88%, transparent)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+        borderTop: '0.5px solid var(--monty-separator)',
+      }}
+    >
+      {leftTabs.map(item => (
+        <TabButton key={item.path} item={item} active={isActive(item, pathname)} onClick={() => onNavigate(item.path)} />
+      ))}
+      <AddButton />
+      {rightTabs.map(item => (
+        <TabButton key={item.path} item={item} active={isActive(item, pathname)} onClick={() => onNavigate(item.path)} />
+      ))}
+    </Box>
+  );
+}
+
+function TabButton({ item, active, onClick }: { item: NavItem; active: boolean; onClick: () => void }) {
+  return (
+    <UnstyledButton
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      style={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2,
+        color: active ? 'var(--monty-accent)' : 'var(--monty-hint)',
+      }}
+    >
+      <item.icon size={24} stroke={active ? 2.2 : 1.8} />
+      <Text fz={10} fw={active ? 600 : 500} lh={1.2}>{item.label}</Text>
+    </UnstyledButton>
+  );
+}
+
+/** Tap → add form; hold → voice input (starts recording right away). */
+function AddButton() {
+  const navigate = useNavigate();
+  const openVoice = useVoiceInput();
+  const timer = useRef<number | null>(null);
+  const longPressed = useRef(false);
+
+  const clear = () => {
+    if (timer.current !== null) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
+  };
+
+  return (
+    <Box style={{ display: 'grid', placeItems: 'center', height: '100%' }}>
+      <UnstyledButton
+        aria-label="Добавить операцию (удерживайте для голосового ввода)"
+        className="monty-pressable"
+        onPointerDown={() => {
+          longPressed.current = false;
+          clear();
+          timer.current = window.setTimeout(() => {
+            longPressed.current = true;
+            haptic('heavy');
+            openVoice({ autoStart: true });
+          }, LONG_PRESS_MS);
+        }}
+        onPointerUp={clear}
+        onPointerLeave={clear}
+        onPointerCancel={clear}
+        onContextMenu={e => e.preventDefault()}
+        onClick={() => {
+          clear();
+          if (longPressed.current) return;
+          haptic('medium');
+          navigate('/add');
+        }}
         style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: colorScheme === 'dark' 
-            ? 'rgba(26, 26, 46, 0.95)' 
-            : 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          borderTop: `1px solid ${colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-          padding: '6px 2px',
-          paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
-          display: location.pathname.startsWith('/food') ? 'none' : 'grid',
-          gridTemplateColumns: `repeat(${navItems.length}, 1fr)`,
-          gap: '2px',
-          zIndex: 100,
-          boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.1)',
+          width: 52,
+          height: 40,
+          borderRadius: 14,
+          display: 'grid',
+          placeItems: 'center',
+          background: 'var(--monty-accent)',
+          color: 'var(--monty-accent-text)',
+          touchAction: 'manipulation',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
         }}
       >
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <UnstyledButton
-              key={item.path}
-              onClick={() => handleNavClick(item.path)}
-              className="transition-all"
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '6px 2px',
-                minHeight: 48,
-                borderRadius: '12px',
-                color: isActive 
-                  ? '#667eea' 
-                  : (colorScheme === 'dark' ? theme.colors.gray[5] : theme.colors.gray[6]),
-                minWidth: 0,
-                position: 'relative',
-              }}
-            >
-              {isActive && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '32px',
-                    height: '3px',
-                    borderRadius: '0 0 3px 3px',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  }}
-                  className="animate-scale-in"
-                />
-              )}
-              <item.icon size={22} />
-              <Text 
-                size="xs" 
-                mt={2}
-                fw={isActive ? 600 : 400}
-                style={{
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  maxWidth: '100%',
-                  fontSize: '10px',
-                  lineHeight: 1.2,
-                }}
-              >
-                {item.label}
-              </Text>
-            </UnstyledButton>
-          );
-        })}
-      </Box>
-    </AppShell>
+        <IconPlus size={26} stroke={2.4} />
+      </UnstyledButton>
+    </Box>
   );
 }

@@ -4,8 +4,6 @@ import {
   Text,
   UnstyledButton,
   Tabs,
-  useMantineTheme,
-  useMantineColorScheme,
 } from '@mantine/core';
 import {
   IconBook2,
@@ -37,8 +35,6 @@ export function FoodLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { haptic } = useTelegram();
-  const theme = useMantineTheme();
-  const { colorScheme } = useMantineColorScheme();
   const isSmall = useMediaQuery('(max-width: 47.99em)');
 
   const active = tabFromPath(location.pathname);
@@ -56,19 +52,16 @@ export function FoodLayout() {
         bottom: 0,
         left: 0,
         right: 0,
-        background:
-          colorScheme === 'dark' ? 'rgba(26, 26, 46, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(20px)',
-        borderTop: `1px solid ${
-          colorScheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-        }`,
+        background: 'color-mix(in srgb, var(--monty-surface) 88%, transparent)',
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+        borderTop: '0.5px solid var(--monty-separator)',
         padding: '6px 2px',
         display: 'grid',
         gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
         gap: 2,
         zIndex: 101,
         paddingBottom: 'calc(6px + env(safe-area-inset-bottom, 0px))',
-        boxShadow: '0 -4px 24px rgba(0, 0, 0, 0.1)',
       }}
     >
       {tabs.map((t) => {
@@ -85,11 +78,7 @@ export function FoodLayout() {
               padding: '8px 2px',
               minHeight: 48,
               borderRadius: 10,
-              color: isActive
-                ? '#667eea'
-                : colorScheme === 'dark'
-                  ? theme.colors.gray[5]
-                  : theme.colors.gray[6],
+              color: isActive ? 'var(--monty-accent)' : 'var(--monty-hint)',
               minWidth: 0,
               position: 'relative',
               transform: isActive ? 'translateY(-2px)' : 'translateY(0)',
@@ -105,7 +94,7 @@ export function FoodLayout() {
                   width: '28px',
                   height: '3px',
                   borderRadius: '0 0 3px 3px',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'var(--monty-accent)',
                 }}
               />
             )}

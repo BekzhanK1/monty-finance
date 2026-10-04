@@ -20,6 +20,21 @@ export function useCategories() {
   });
 }
 
+export interface TransactionFilters {
+  category_id?: number;
+  start_date?: string;
+  end_date?: string;
+  search?: string;
+}
+
+export function useTransactions(filters: TransactionFilters = {}, options: { enabled?: boolean } = {}) {
+  return useQuery({
+    queryKey: [...financeKeys.transactions(), filters],
+    queryFn: () => transactionsApi.getAll(filters),
+    enabled: options.enabled ?? true,
+  });
+}
+
 export function useDashboard() {
   return useQuery({ queryKey: financeKeys.dashboard(), queryFn: budgetsApi.current });
 }
@@ -56,5 +71,30 @@ export function useUpdateBudgetLimit() {
     mutationFn: ({ categoryId, limitAmount }: { categoryId: number; limitAmount: number }) =>
       settingsApi.updateBudget(categoryId, limitAmount),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: financeKeys.dashboard() }),
+  });
+}
+
+export function useUpdateTransaction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...payload }: { id: string; category_id?: number; amount?: number; comment?: string }) =>
+      transactionsApi.update(id, payload),
+    onSuccess: () => invalidateMoneyQueries(queryClient),
+  });
+}
+
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => transactionsApi.delete(id),
+    onSuccess: () => invalidateMoneyQueries(queryClient),
+  });
+}
+
+export function useCreateTransaction() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (item: TransactionInput) => transactionsApi.createOne(item),
+    onSuccess: () => invalidateMoneyQueries(queryClient),
   });
 }

@@ -1,0 +1,113 @@
+/*
+ * Monty design tokens.
+ *
+ * Inside Telegram, telegram-web-app.js sets --tg-theme-* on :root for the user's
+ * current theme, so every token prefers those. Outside Telegram the fallbacks
+ * below give an iOS-like light/dark palette keyed off Mantine's color scheme.
+ */
+
+:root {
+  --fb-bg: #f2f2f7;
+  --fb-surface: #ffffff;
+  --fb-surface-2: #f2f2f7;
+  --fb-text: #000000;
+  --fb-hint: #8e8e93;
+  --fb-accent: #5b5bd6;
+  --fb-accent-text: #ffffff;
+  --fb-link: #5b5bd6;
+  --fb-separator: rgba(60, 60, 67, 0.12);
+  --fb-destructive: #e5484d;
+  --fb-header: #f2f2f7;
+  --monty-segment-indicator: var(--monty-surface);
+}
+
+:root[data-mantine-color-scheme='dark'] {
+  --fb-bg: #000000;
+  --fb-surface: #1c1c1e;
+  --fb-surface-2: #2c2c2e;
+  --fb-text: #ffffff;
+  --fb-hint: #8e8e93;
+  --fb-accent: #8e8cf0;
+  --fb-accent-text: #ffffff;
+  --fb-link: #8e8cf0;
+  --fb-separator: rgba(84, 84, 88, 0.45);
+  --fb-destructive: #ff6369;
+  --fb-header: #000000;
+  --monty-segment-indicator: color-mix(in srgb, var(--monty-text) 24%, var(--monty-surface));
+}
+
+:root {
+  --monty-bg: var(--tg-theme-secondary-bg-color, var(--fb-bg));
+  --monty-surface: var(--tg-theme-section-bg-color, var(--tg-theme-bg-color, var(--fb-surface)));
+  --monty-surface-2: color-mix(in srgb, var(--monty-text) 6%, var(--monty-surface));
+  --monty-text: var(--tg-theme-text-color, var(--fb-text));
+  --monty-hint: var(--tg-theme-hint-color, var(--fb-hint));
+  --monty-subtitle: var(--tg-theme-subtitle-text-color, var(--monty-hint));
+  --monty-accent: var(--tg-theme-button-color, var(--fb-accent));
+  --monty-accent-text: var(--tg-theme-button-text-color, var(--fb-accent-text));
+  --monty-accent-soft: color-mix(in srgb, var(--monty-accent) 14%, transparent);
+  --monty-link: var(--tg-theme-link-color, var(--fb-link));
+  --monty-separator: var(--tg-theme-section-separator-color, var(--fb-separator));
+  --monty-destructive: var(--tg-theme-destructive-text-color, var(--fb-destructive));
+  --monty-section-header: var(--tg-theme-section-header-text-color, var(--monty-hint));
+
+  /* Money semantics: fixed hues that read on any Telegram theme. */
+  --monty-income: #12a594;
+  --monty-expense: var(--monty-text);
+  --monty-negative: var(--monty-destructive);
+  --monty-savings: #3e63dd;
+  --monty-warning: #f76b15;
+  --monty-group-base: #3e63dd;
+  --monty-group-comfort: #d6409f;
+  --monty-group-savings: #12a594;
+
+  --monty-segment-track: color-mix(in srgb, var(--monty-text) 8%, transparent);
+  --monty-radius-card: 18px;
+  --monty-radius-row: 14px;
+  --monty-tabbar-h: 64px;
+  --monty-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --monty-page-pb: calc(var(--monty-tabbar-h) + var(--monty-safe-bottom) + 24px);
+
+}
+
+/*
+ * Mantine injects its own variables at runtime with the same selector shape, so
+ * the overrides use a higher-specificity selector to win regardless of order.
+ */
+html:root[data-mantine-color-scheme] {
+  --mantine-primary-color-filled: var(--monty-accent);
+  --mantine-primary-color-filled-hover: color-mix(in srgb, var(--monty-accent) 88%, black);
+  --mantine-primary-color-light: var(--monty-accent-soft);
+  --mantine-primary-color-light-hover: color-mix(in srgb, var(--monty-accent) 22%, transparent);
+  --mantine-primary-color-light-color: var(--monty-accent);
+  --mantine-primary-color-contrast: var(--monty-accent-text);
+  --mantine-color-anchor: var(--monty-link);
+  --mantine-color-body: var(--monty-bg);
+  --mantine-color-text: var(--monty-text);
+  --mantine-color-dimmed: var(--monty-hint);
+  --mantine-color-default: var(--monty-surface);
+  --mantine-color-default-color: var(--monty-text);
+  --mantine-color-default-border: var(--monty-separator);
+  --mantine-color-default-hover: var(--monty-surface-2);
+  --mantine-color-placeholder: var(--monty-hint);
+}
+
+/* Inputs and popovers sit on the card surface. */
+.mantine-Input-input,
+.mantine-Popover-dropdown,
+.mantine-Combobox-dropdown,
+.mantine-Modal-content,
+.mantine-Modal-header,
+.mantine-Drawer-content,
+.mantine-Drawer-header {
+  background-color: var(--monty-surface);
+}
+
+.mantine-Input-input {
+  border-color: var(--monty-separator);
+}
+
+.monty-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}

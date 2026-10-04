@@ -18,7 +18,6 @@ import {
   Text,
   Textarea,
   TextInput,
-  useMantineColorScheme,
 } from '@mantine/core';
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import {
@@ -226,7 +225,6 @@ function IngredientEditor({
 }
 
 export function FoodCatalogPage() {
-  const { colorScheme } = useMantineColorScheme();
   const { haptic } = useTelegram();
   const isNarrow = useMediaQuery('(max-width: 36em)');
   const [categories, setCategories] = useState<FoodMealCategory[]>([]);
@@ -412,7 +410,7 @@ export function FoodCatalogPage() {
           radius="xl"
           withBorder
           className="stagger-item hover-lift"
-          style={heroVioletShell(colorScheme)}
+          style={heroVioletShell()}
         >
           <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
             <Group gap="xs">
@@ -493,7 +491,7 @@ export function FoodCatalogPage() {
               radius="xl"
               withBorder
               className="stagger-item"
-              style={glassSectionShell(colorScheme)}
+              style={glassSectionShell()}
             >
               <Group justify="space-between" mb="md" wrap="nowrap">
                 <Text fw={700} size="md">
@@ -529,7 +527,7 @@ export function FoodCatalogPage() {
                         padding="md"
                         radius="lg"
                         className="hover-lift transition-all"
-                        style={insetRowShell(colorScheme)}
+                        style={insetRowShell()}
                       >
                         <Group justify="space-between" align="flex-start" wrap="nowrap" gap="sm">
                           <div style={{ minWidth: 0 }}>
