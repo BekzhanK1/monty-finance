@@ -4,4 +4,3 @@
  */
 export { default as api } from './http';
 export * from './finance';
-export * from './food';

@@ -42,7 +42,6 @@
 |------|------------|
 | [`src/services/http.ts`](monty-frontend/src/services/http.ts) | Axios-клиент и заголовок `Authorization` |
 | [`src/services/finance.ts`](monty-frontend/src/services/finance.ts) | API finance (auth, транзакции, бюджеты, …) |
-| [`src/services/food.ts`](monty-frontend/src/services/food.ts) | API Food: категории и блюда, единицы и справочник ингредиентов, замена состава блюда (`PUT .../ingredients`), меню недели (`/menu`, слоты) |
 | [`src/services/index.ts`](monty-frontend/src/services/index.ts) | Сводный экспорт |
 | [`src/features/finance/queries.ts`](monty-frontend/src/features/finance/queries.ts) | TanStack Query: ключи, хуки чтения и мутации с инвалидацией |
 | [`src/features/voice/`](monty-frontend/src/features/voice/) | Голосовой ввод: запись (`useVoiceRecorder`), шторка подтверждения (`VoiceSheet`), `useVoiceInput()` |
@@ -50,7 +49,7 @@
 | [`src/ui/`](monty-frontend/src/ui/) | Базовые компоненты: `AmountText`, `Section`, `ListRow`, `PageHeader`, `CategoryIcon`, `EmptyState`, форматтеры денег |
 | [`src/theme/tokens.css`](monty-frontend/src/theme/tokens.css) | Дизайн-токены `--monty-*` поверх `--tg-theme-*` (тема Telegram), фоллбэки для светлой/тёмной |
 | [`src/lib/telegram.ts`](monty-frontend/src/lib/telegram.ts) | Обёртка `Telegram.WebApp`: init, haptics, `BackButton`, синхронизация темы |
-| [`src/food/`](monty-frontend/src/food/) | UI Food: [`FoodLayout.tsx`](monty-frontend/src/food/FoodLayout.tsx) (вкладки: каталог, меню, **гид** — только просмотр меню и рецептов, **список** покупок, **склад**); страницы в [`food/pages/`](monty-frontend/src/food/pages/) |
+| [`src/features/food/`](monty-frontend/src/features/food/) | Food 2.0: Сегодня, Меню, Покупки, Запасы, Рецепты; API-клиент, хуки, разбор быстрого ввода |
 | [`src/api/index.ts`](monty-frontend/src/api/index.ts) | Реэкспорт из `services` для старых импортов `from '../api'` |
 | [`src/theme/dashboardChrome.ts`](monty-frontend/src/theme/dashboardChrome.ts) | Хелперы для старых экранов (Food и др.): поверхности на токенах, пропсы модалок и шторок |
 
@@ -115,16 +114,16 @@ make backend-run
 
 ### Food API (префикс `/food`, тот же JWT)
 
-| Область | Эндпоинты (кратко) |
-|---------|-------------------|
-| Категории приёма пищи | `GET/POST /food/meal-categories`, `PATCH/DELETE /food/meal-categories/{id}` |
-| Блюда | `GET/POST /food/dishes`, `PATCH/DELETE /food/dishes/{id}`; ответы включают вложенный **состав** (`ingredients`) |
-| Единицы измерения | `GET /food/units` (при пустой таблице создаются базовые: g, ml, pcs, …) |
-| Справочник продуктов | `GET /food/ingredients?q=…`, `POST/PATCH/DELETE /food/ingredients/{id}` |
-| Состав блюда | `PUT /food/dishes/{id}/ingredients` — тело `{ "items": [ { "ingredient_id", "quantity", "unit_id", … } ] }` (полная замена списка) |
-| Меню недели | `GET /food/menu?from=…&to=…`, `POST /food/menu/slots`, `PATCH/DELETE /food/menu/slots/{id}` |
-| Список покупок | `GET /food/shopping-lists/latest`, `POST /food/shopping-lists/generate` (тело `{ date_from, date_to }` — агрегация состава блюд из меню), `POST /food/shopping-lists/{id}/items`, `PATCH /food/shopping-items/{id}` |
-| Кладовая | `GET/POST /food/pantry`, `PATCH/DELETE /food/pantry/{id}` (на продукт одна строка на дом; `POST` при уже существующей строке суммирует количество при той же единице) |
+Food 2.0 — экраны, решения и полный список эндпоинтов: [`docs/services/food/v2.md`](docs/services/food/v2.md). Коротко:
+
+| Область | Эндпоинты |
+|---------|-----------|
+| Сегодня | `GET /food/today` |
+| Рецепты | `GET/POST /food/dishes`, `PATCH /food/dishes/{id}`, `PUT /food/dishes/{id}/ingredients`, `GET /food/dishes/{id}/availability`, `POST /food/dishes/{id}/cook`, `POST /food/dishes/{id}/to-shopping` |
+| Меню | `GET /food/menu?from=…&to=…`, `POST/PATCH/DELETE /food/menu/slots[/{id}]`, `POST /food/menu/slots/{id}/cook`, `POST /food/menu/copy-week` |
+| Покупки | `GET /food/shopping-list`, `POST/PATCH/DELETE /food/shopping-list/items[/{id}]`, `POST /food/shopping-list/from-menu`, `/low-stock`, `/complete` |
+| Запасы | `GET/POST /food/pantry`, `PATCH/DELETE /food/pantry/{id}`, `POST /food/pantry/{id}/adjust` |
+| Справочники | `GET /food/units`, `GET/POST/PATCH /food/ingredients`, `GET /food/meal-categories` |
 
 На MVP данные привязаны к одному «дому» (`household_id` в коде). Целевая схема домена и связка с Finance — в [`docs/food-data-model-v2.md`](docs/food-data-model-v2.md).
 

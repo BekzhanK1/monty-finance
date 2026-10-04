@@ -159,8 +159,12 @@ def list_dishes(
     
     if include_pantry_status:
         from app.food.services.dish_pantry_status import calculate_dish_pantry_status
+        from app.food.services.inventory import load_pantry
+
+        pantry = load_pantry(db, household_id=household_id)
         return [
-            dish_to_response(d, pantry_status=calculate_dish_pantry_status(db, household_id=household_id, dish=d))
+            dish_to_response(d, pantry_status=calculate_dish_pantry_status(
+                db, household_id=household_id, dish=d, pantry=pantry))
             for d in rows
         ]
     

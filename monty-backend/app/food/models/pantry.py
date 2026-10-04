@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.core.config import Base
@@ -23,6 +23,11 @@ class FoodPantryItem(Base):
     quantity = Column(Numeric(12, 4), nullable=False)
     unit_id = Column(Integer, ForeignKey("food_units.id"), nullable=False)
     note = Column(String(500), nullable=True)
+    # fridge | freezer | pantry — where it lives at home.
+    location = Column(String(16), nullable=False, default="pantry", server_default="pantry")
+    expires_on = Column(Date, nullable=True)
+    # Below this the item counts as "running low" and can be added to the shopping list.
+    min_quantity = Column(Numeric(12, 4), nullable=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     ingredient = relationship("FoodIngredient")

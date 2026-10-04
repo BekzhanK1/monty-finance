@@ -7,14 +7,15 @@ import { SettingsPage } from './pages/SettingsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { HistoryPage } from './features/history/HistoryPage';
 import { AllServicesPage } from './pages/AllServicesPage';
-import { FoodLayout } from './food/FoodLayout';
-import { FoodCatalogPage } from './food/pages/FoodCatalogPage';
-import { FoodEntryPage } from './food/pages/FoodEntryPage';
-import { FoodGuidePage } from './food/pages/FoodGuidePage';
-import { FoodMenuPage } from './food/pages/FoodMenuPage';
-import { FoodPantryPage } from './food/pages/FoodPantryPage';
-import { FoodShoppingPage } from './food/pages/FoodShoppingPage';
 import { Layout } from './components/Layout';
+import { FoodLayout } from './features/food/components/FoodLayout';
+import { TodayPage } from './features/food/TodayPage';
+import { MenuPage } from './features/food/MenuPage';
+import { ShoppingPage } from './features/food/ShoppingPage';
+import { PantryPage } from './features/food/PantryPage';
+import { RecipesPage } from './features/food/RecipesPage';
+import { RecipePage } from './features/food/RecipePage';
+import { RecipeEditorPage } from './features/food/RecipeEditorPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -48,12 +49,17 @@ function App() {
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="services" element={<AllServicesPage />} />
         <Route path="food" element={<FoodLayout />}>
-          <Route index element={<FoodEntryPage />} />
-          <Route path="catalog" element={<FoodCatalogPage />} />
-          <Route path="menu" element={<FoodMenuPage />} />
-          <Route path="guide" element={<FoodGuidePage />} />
-          <Route path="shopping" element={<FoodShoppingPage />} />
-          <Route path="pantry" element={<FoodPantryPage />} />
+          <Route index element={<TodayPage />} />
+          <Route path="menu" element={<MenuPage />} />
+          <Route path="shopping" element={<ShoppingPage />} />
+          <Route path="pantry" element={<PantryPage />} />
+          <Route path="recipes" element={<RecipesPage />} />
+          <Route path="recipes/new" element={<RecipeEditorPage />} />
+          <Route path="recipes/:id" element={<RecipePage />} />
+          <Route path="recipes/:id/edit" element={<RecipeEditorPage />} />
+          {/* Old Food v1 routes */}
+          <Route path="catalog" element={<Navigate to="/food/recipes" replace />} />
+          <Route path="guide" element={<Navigate to="/food/recipes" replace />} />
         </Route>
       </Route>
       <Route

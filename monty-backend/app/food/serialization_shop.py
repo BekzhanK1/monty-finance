@@ -1,5 +1,6 @@
 from app.food.models.shop import FoodShoppingItem, FoodShoppingList
 from app.food.schemas.shop import FoodShoppingItemResponse, FoodShoppingListResponse
+from app.food.services.aisles import guess_aisle
 
 
 def shopping_item_to_response(it: FoodShoppingItem) -> FoodShoppingItemResponse:
@@ -17,6 +18,8 @@ def shopping_item_to_response(it: FoodShoppingItem) -> FoodShoppingItemResponse:
         note=note,
         unit_mismatch=unit_mismatch,
         actual_price=float(it.actual_price) if it.actual_price is not None else None,
+        category=it.category or guess_aisle(it.label),
+        sources=it.sources,
     )
 
 

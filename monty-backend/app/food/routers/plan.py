@@ -15,6 +15,8 @@ from app.food.schemas import (
 )
 from app.food.serialization import slot_to_response
 from app.food.services.menu_copy import copy_week_slots
+from app.food.routers.kitchen import slot_load_options, slots_with_readiness
+from app.food.services.inventory import load_pantry
 
 router = APIRouter()
 
@@ -36,16 +38,15 @@ def list_menu_slots(
         raise HTTPException(status_code=400, detail="Invalid date range")
     rows = (
         db.query(FoodMealSlot)
-        .options(_slot_load())
+        .options(*slot_load_options())
         .filter(
             FoodMealSlot.household_id == household_id,
             FoodMealSlot.slot_date >= date_from,
             FoodMealSlot.slot_date <= date_to,
         )
-        .order_by(FoodMealSlot.slot_date, FoodMealSlot.slot_key, FoodMealSlot.id)
         .all()
     )
-    return [slot_to_response(s) for s in rows]
+    return slots_with_readiness(rows, load_pantry(db, household_id=household_id))
 
 
 @router.post("/menu/copy-week", response_model=FoodMenuCopyWeekResponse)
@@ -129,6 +130,8 @@ def update_menu_slot(
             )
             if not dish or dish.is_archived:
                 raise HTTPException(status_code=400, detail="Invalid or archived dish_id")
+        if body.dish_id != row.dish_id:
+            row.cooked_at = None
         row.dish_id = body.dish_id
 
     if "custom_title" in body.model_fields_set:

@@ -29,6 +29,13 @@ def migrated_db():
 @pytest.fixture
 def db():
     session = SessionLocal()
+    from app.food.models import (
+        FoodDish, FoodDishIngredient, FoodIngredient, FoodMealCategory, FoodMealSlot,
+        FoodPantryItem, FoodShoppingItem, FoodShoppingList,
+    )
+    for model in (FoodShoppingItem, FoodShoppingList, FoodPantryItem, FoodMealSlot,
+                  FoodDishIngredient, FoodDish, FoodMealCategory, FoodIngredient):
+        session.query(model).delete()
     session.query(Transaction).delete()
     session.query(Category).delete()
     session.query(User).delete()

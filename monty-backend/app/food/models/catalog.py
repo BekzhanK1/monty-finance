@@ -32,6 +32,12 @@ class FoodIngredient(Base):
 
     default_unit = relationship("FoodUnit", foreign_keys=[default_unit_id])
 
+    @property
+    def aisle(self) -> str:
+        from app.food.services.aisles import aisle_for
+
+        return aisle_for(self.category, self.name)
+
 
 class FoodDishIngredient(Base):
     __tablename__ = "food_dish_ingredients"
