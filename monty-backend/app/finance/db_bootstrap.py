@@ -1,4 +1,4 @@
-"""Best-effort additive DDL for existing DBs (project uses create_all, not Alembic)."""
+"""Legacy additive DDL, run once by app.core.migrations before stamping the Alembic baseline."""
 
 from sqlalchemy import inspect, text
 

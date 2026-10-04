@@ -20,9 +20,11 @@ import {
   IconSun,
   IconMoon,
   IconApps,
+  IconMicrophone,
 } from '@tabler/icons-react';
 import { useTelegram } from '../hooks/useTelegram';
 import { useMantineColorScheme } from '@mantine/core';
+import { useVoiceInput } from '../features/voice/VoiceContext';
 
 const navItems = [
   { icon: IconHome, label: 'Главная', path: '/' },
@@ -38,6 +40,7 @@ export function Layout() {
   const { haptic } = useTelegram();
   const theme = useMantineTheme();
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const openVoice = useVoiceInput();
 
   useEffect(() => {
     const index = navItems.findIndex(item => item.path === location.pathname);
@@ -107,6 +110,19 @@ export function Layout() {
             </Text>
           </Group>
           <Group gap="xs">
+            <ActionIcon
+              size="lg"
+              radius="xl"
+              variant="subtle"
+              onClick={() => {
+                haptic('medium');
+                openVoice();
+              }}
+              aria-label="Добавить голосом"
+              className="hover-scale"
+            >
+              <IconMicrophone size={20} />
+            </ActionIcon>
             <ActionIcon
               size="lg"
               radius="xl"

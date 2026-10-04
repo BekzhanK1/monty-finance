@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { authApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import type { User } from '../types';
+import { queryClient } from '../lib/queryClient';
 
 const DEV_BYPASS_AUTH = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
 
@@ -71,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem('access_token');
+    queryClient.clear();
     setUser(null);
     setError(null);
   };

@@ -7,7 +7,9 @@ import type {
   Goal,
   Settings,
   Transaction,
+  TransactionInput,
   User,
+  VoiceParseResponse,
 } from '../types';
 import api from './http';
 
@@ -58,6 +60,10 @@ export const transactionsApi = {
       amount,
       comment,
     });
+    return data;
+  },
+  createBulk: async (items: TransactionInput[]) => {
+    const { data } = await api.post<Transaction[]>('/transactions/bulk', { items });
     return data;
   },
   getAll: async (params?: { category_id?: number; start_date?: string; end_date?: string; search?: string }) => {
@@ -132,6 +138,24 @@ export const analyticsApi = {
 export const digestApi = {
   send: async () => {
     const { data } = await api.post('/digest/send');
+    return data;
+  },
+};
+
+export const voiceApi = {
+  /** Audio recording or typed text → drafts. Nothing is saved server-side. */
+  parse: async (input: { audio: Blob; filename: string } | { text: string }) => {
+    const form = new FormData();
+    if ('audio' in input) {
+      form.append('audio', input.audio, input.filename);
+    } else {
+      form.append('text', input.text);
+    }
+    // The shared client defaults to JSON, which would make axios serialize FormData into JSON.
+    const { data } = await api.post<VoiceParseResponse>('/voice/parse', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60_000,
+    });
     return data;
   },
 };

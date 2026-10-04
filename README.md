@@ -8,7 +8,7 @@
 |---------|----------|
 | [`monty-backend`](monty-backend/) | FastAPI, SQLAlchemy, фоновые задачи (APScheduler) |
 | [`monty-frontend`](monty-frontend/) | Vite, React 19, TypeScript, Mantine, React Router |
-| [`docs`](docs/) | Архитектурные заметки: [`food-service-architecture.md`](docs/food-service-architecture.md), модель данных v2 — [`food-data-model-v2.md`](docs/food-data-model-v2.md) |
+| [`docs`](docs/) | План Monty 2.0: [`redesign/plan.md`](docs/redesign/plan.md). Архитектурные заметки: [`food-service-architecture.md`](docs/food-service-architecture.md), модель данных v2 — [`food-data-model-v2.md`](docs/food-data-model-v2.md) |
 
 ### Backend: разделение по сервисам
 
@@ -44,6 +44,8 @@
 | [`src/services/finance.ts`](monty-frontend/src/services/finance.ts) | API finance (auth, транзакции, бюджеты, …) |
 | [`src/services/food.ts`](monty-frontend/src/services/food.ts) | API Food: категории и блюда, единицы и справочник ингредиентов, замена состава блюда (`PUT .../ingredients`), меню недели (`/menu`, слоты) |
 | [`src/services/index.ts`](monty-frontend/src/services/index.ts) | Сводный экспорт |
+| [`src/features/finance/queries.ts`](monty-frontend/src/features/finance/queries.ts) | TanStack Query: ключи, хуки чтения и мутации с инвалидацией |
+| [`src/features/voice/`](monty-frontend/src/features/voice/) | Голосовой ввод: запись (`useVoiceRecorder`), шторка подтверждения (`VoiceSheet`), `useVoiceInput()` |
 | [`src/food/`](monty-frontend/src/food/) | UI Food: [`FoodLayout.tsx`](monty-frontend/src/food/FoodLayout.tsx) (вкладки: каталог, меню, **гид** — только просмотр меню и рецептов, **список** покупок, **склад**); страницы в [`food/pages/`](monty-frontend/src/food/pages/) |
 | [`src/api/index.ts`](monty-frontend/src/api/index.ts) | Реэкспорт из `services` для старых импортов `from '../api'` |
 | [`src/theme/dashboardChrome.ts`](monty-frontend/src/theme/dashboardChrome.ts) | Общие стили «как на главной» (градиент hero, glass-карточки, кнопки, модалки) |
@@ -86,6 +88,20 @@ pip install -r requirements.txt
 - `JWT_SECRET_KEY` — секрет для JWT (в продакшене обязательно сменить)
 - `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ALLOWED_TELEGRAM_IDS` и др. — по необходимости для Telegram (`TELEGRAM_CHAT_ID` — чат для напоминаний и сводок)
 - **Фоновые задачи** ([`app/finance/services/scheduler.py`](monty-backend/app/finance/services/scheduler.py), часовой пояс **Asia/Almaty**): **20:00** — сообщение в Telegram «кухня на завтра» (список блюд из Food → Меню на завтра или просьба составить расписание); **21:00** — напоминание записать траты; **23:50** — сводка дня по финансам. Нужны `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`.
+
+**Миграции БД** — Alembic ([`monty-backend/migrations`](monty-backend/migrations/)). При старте API выполняется `alembic upgrade head` ([`app/core/migrations.py`](monty-backend/app/core/migrations.py)); база, созданная до Alembic, автоматически доводится до baseline старыми `db_bootstrap`-хелперами и помечается ревизией `0001`. Новая миграция после изменения моделей:
+
+```bash
+cd monty-backend && .venv/bin/alembic revision --autogenerate -m "что изменилось"
+```
+
+**Голосовой ввод** — `POST /voice/parse` (JWT, multipart: `audio` или `text`) → транскрипция `gpt-4o-mini-transcribe` → общий парсер [`expense_parser.py`](monty-backend/app/finance/services/expense_parser.py) (его же использует Siri) → черновики; сохранение подтверждённых — `POST /transactions/bulk`. Нужен `OPENAI_API_KEY`.
+
+Тесты backend:
+
+```bash
+cd monty-backend && .venv/bin/pip install -r requirements-dev.txt && .venv/bin/pytest
+```
 
 Запуск API (порт **8000**):
 
@@ -132,10 +148,11 @@ make frontend-run
 # или: cd monty-frontend && npm run dev
 ```
 
-Сборка:
+Сборка и тесты:
 
 ```bash
 cd monty-frontend && npm run build
+cd monty-frontend && npm test
 ```
 
 ## Разработка

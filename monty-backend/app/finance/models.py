@@ -15,6 +15,12 @@ class TransactionType(str, enum.Enum):
     EXPENSE = "EXPENSE"
     INCOME = "INCOME"
 
+class TransactionSource(str, enum.Enum):
+    MANUAL = "manual"
+    VOICE = "voice"
+    SIRI = "siri"
+    BOT = "bot"
+
 class User(Base):
     __tablename__ = "users"
 
@@ -57,6 +63,9 @@ class Transaction(Base):
     amount = Column(Integer, nullable=False)
     transaction_date = Column(DateTime, default=datetime.utcnow)
     comment = Column(String(255), nullable=True)
+    # Stored as plain strings (TransactionSource values) so new sources need no enum migration.
+    source = Column(String(16), nullable=False, default=TransactionSource.MANUAL.value, server_default=TransactionSource.MANUAL.value)
+    raw_text = Column(String(500), nullable=True)
 
     user = relationship("User", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")

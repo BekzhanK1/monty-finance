@@ -46,6 +46,35 @@ export interface Transaction {
   amount: number;
   transaction_date: string;
   comment: string | null;
+  source?: TransactionSource;
+  raw_text?: string | null;
+}
+
+export type TransactionSource = 'manual' | 'voice' | 'siri' | 'bot';
+
+export interface TransactionInput {
+  category_id: number;
+  amount: number;
+  comment?: string;
+  /** Local date `YYYY-MM-DD`; omitted means now. */
+  transaction_date?: string | null;
+  source?: 'manual' | 'voice';
+  raw_text?: string;
+}
+
+export interface VoiceDraft {
+  amount: number;
+  category_id: number;
+  category_name: string;
+  category_icon: string;
+  type: 'EXPENSE' | 'INCOME';
+  comment: string;
+  transaction_date: string | null;
+}
+
+export interface VoiceParseResponse {
+  text: string;
+  drafts: VoiceDraft[];
 }
 
 export interface Settings {
