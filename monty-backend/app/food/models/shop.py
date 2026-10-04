@@ -44,6 +44,10 @@ class FoodShoppingItem(Base):
     note = Column(Text, nullable=True)
     actual_price = Column(Numeric(12, 2), nullable=True)
     pantry_applied_at = Column(DateTime, nullable=True)
+    # Store aisle key (see services/aisles.py) for grouping in the list.
+    category = Column(String(32), nullable=True)
+    # Dishes this item is for, e.g. "Плов, Омлет".
+    sources = Column(String(300), nullable=True)
 
     shopping_list = relationship("FoodShoppingList", back_populates="items")
     ingredient = relationship("FoodIngredient")

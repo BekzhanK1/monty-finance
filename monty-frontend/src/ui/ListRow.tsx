@@ -12,9 +12,11 @@ interface ListRowProps {
   chevron?: boolean;
   /** Draw the hairline separator above this row (all rows but the first in a section). */
   divider?: boolean;
+  /** Interactive control at the end (rendered beside the row's button, never inside it). */
+  action?: ReactNode;
 }
 
-export function ListRow({ leading, title, subtitle, trailing, trailingSub, onClick, chevron = false, divider = false }: ListRowProps) {
+export function ListRow({ leading, title, subtitle, trailing, trailingSub, onClick, chevron = false, divider = false, action }: ListRowProps) {
   const content = (
     <Group wrap="nowrap" gap={12} px={16} py={10} mih={52} style={{ position: 'relative' }}>
       {divider && (
@@ -46,10 +48,16 @@ export function ListRow({ leading, title, subtitle, trailing, trailingSub, onCli
     </Group>
   );
 
-  if (!onClick) return content;
-  return (
-    <UnstyledButton onClick={onClick} className="monty-pressable" style={{ display: 'block', width: '100%' }}>
+  const body = onClick ? (
+    <UnstyledButton onClick={onClick} className="monty-pressable" style={{ display: 'block', width: '100%', flex: 1, minWidth: 0 }}>
       {content}
     </UnstyledButton>
+  ) : content;
+  if (!action) return body;
+  return (
+    <Group wrap="nowrap" gap={0} pr={12}>
+      <Box style={{ flex: 1, minWidth: 0 }}>{body}</Box>
+      {action}
+    </Group>
   );
 }

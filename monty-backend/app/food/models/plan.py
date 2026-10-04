@@ -1,6 +1,6 @@
 """Menu slots: calendar view is derived from date range queries."""
 
-from sqlalchemy import Column, Date, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.core.config import Base
@@ -19,5 +19,6 @@ class FoodMealSlot(Base):
     custom_title = Column(String(200), nullable=True)
     servings = Column(Integer, nullable=False, default=2)
     notes = Column(Text, nullable=True)
+    cooked_at = Column(DateTime, nullable=True)
 
     dish = relationship("FoodDish")

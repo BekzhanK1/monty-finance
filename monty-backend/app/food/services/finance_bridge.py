@@ -76,3 +76,27 @@ def finalize_shopping_list_to_finance(
     db.refresh(tx)
     db.refresh(lst)
     return tx, total
+
+
+def record_grocery_expense(
+    db: Session,
+    *,
+    lst: FoodShoppingList,
+    user_id: int,
+    amount: int,
+    items: list[str],
+) -> tuple[Transaction, Category]:
+    """Expense for a shopping trip with a receipt total. Flushes; the caller commits."""
+    category = db.query(Category).filter(Category.id == resolve_grocery_category_id(db)).one()
+    listed = ", ".join(items)
+    tx = Transaction(
+        user_id=user_id,
+        category_id=category.id,
+        amount=amount,
+        comment=f"Покупки: {listed}"[:255],
+        transaction_date=datetime.utcnow(),
+    )
+    db.add(tx)
+    db.flush()
+    lst.linked_transaction_id = tx.id
+    return tx, category

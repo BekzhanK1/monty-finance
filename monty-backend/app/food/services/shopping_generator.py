@@ -13,7 +13,7 @@ from app.food.models.catalog import FoodDishIngredient
 from app.food.models.meal import FoodDish
 from app.food.models.plan import FoodMealSlot
 from app.food.models.shop import FoodShoppingItem, FoodShoppingList
-from app.food.services.pantry_adjust import apply_pantry_to_totals, load_pantry_by_ingredient_unit
+from app.food.services.pantry_adjust import apply_pantry_to_totals, load_pantry_by_ingredient_unit, unit_code_map
 
 GenerateMode = Literal["new", "merge_draft"]
 
@@ -86,7 +86,7 @@ def _totals_after_pantry(
     totals: dict[tuple[int, int], Decimal],
 ) -> tuple[dict[tuple[int, int], Decimal], set[tuple[int, int]]]:
     pantry = load_pantry_by_ingredient_unit(db, household_id=household_id)
-    return apply_pantry_to_totals(totals, pantry)
+    return apply_pantry_to_totals(totals, pantry, unit_code_map(db))
 
 
 def _append_menu_items(

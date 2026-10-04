@@ -49,7 +49,11 @@ def dish_to_response(
     )
 
 
-def slot_to_response(s: FoodMealSlot) -> FoodMealSlotResponse:
+def slot_to_response(
+    s: FoodMealSlot,
+    readiness: Literal["ready", "partial", "missing"] | None = None,
+    missing_count: int = 0,
+) -> FoodMealSlotResponse:
     dish_title = s.dish.title if getattr(s, "dish", None) is not None else None
     return FoodMealSlotResponse(
         id=s.id,
@@ -61,4 +65,7 @@ def slot_to_response(s: FoodMealSlot) -> FoodMealSlotResponse:
         servings=s.servings,
         notes=s.notes,
         dish_title=dish_title,
+        cooked_at=s.cooked_at,
+        readiness=readiness,
+        missing_count=missing_count,
     )

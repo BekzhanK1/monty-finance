@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { DrawerProps, ModalProps } from '@mantine/core';
+import type { ModalProps } from '@mantine/core';
 
 /** Shared page chrome on top of the design tokens in `tokens.css` (Telegram theme aware). */
 /** Bottom tab bar + iPhone home indicator. Use as Container `pb`. */
@@ -55,28 +55,6 @@ const modalSafeAreaStyles: ModalProps['styles'] = {
   },
 };
 
-/** Bottom sheet on the phone; side drawer on desktop. */
-export function sheetDrawerProps(isNarrow: boolean): Partial<DrawerProps> {
-  if (!isNarrow) {
-    return { position: 'right', size: 'md', radius: 'lg' };
-  }
-  return {
-    position: 'bottom',
-    size: 'auto',
-    radius: 'lg',
-    styles: {
-      content: {
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        maxHeight: '90dvh',
-      },
-      body: {
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--mantine-spacing-md))',
-      },
-    },
-  };
-}
-
 /** Default modals: fullscreen on narrow viewports so content is not clipped. */
 export function modalShellResponsive(isNarrow: boolean): Partial<ModalProps> {
   if (!isNarrow) return modalShell;
@@ -87,35 +65,5 @@ export function modalShellResponsive(isNarrow: boolean): Partial<ModalProps> {
     radius: 0,
     padding: 'md',
     styles: modalSafeAreaStyles,
-  };
-}
-
-/** Food dish create/edit: large desktop + scroll; fullscreen + scroll on phone. */
-export function dishFormModalProps(isNarrow: boolean): Partial<ModalProps> {
-  if (!isNarrow) {
-    return {
-      ...modalShell,
-      size: 'lg',
-      styles: {
-        body: { maxHeight: 'min(75dvh, 560px)' },
-      },
-    };
-  }
-  return {
-    centered: false,
-    fullScreen: true,
-    size: '100%',
-    radius: 0,
-    padding: 'md',
-    styles: {
-      header: modalSafeAreaStyles?.header,
-      content: { maxHeight: '100dvh', display: 'flex', flexDirection: 'column' },
-      body: {
-        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + var(--mantine-spacing-md))',
-        flex: 1,
-        minHeight: 0,
-        overflowY: 'auto',
-      },
-    },
   };
 }

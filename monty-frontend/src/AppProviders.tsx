@@ -7,6 +7,7 @@ import { queryClient } from './lib/queryClient';
 import { useTelegramColorScheme } from './lib/useTelegramUi';
 import { VoiceProvider } from './features/voice/VoiceContext';
 import { mantineTheme } from './theme/mantineTheme';
+import { SnackbarProvider } from './ui/Snackbar';
 
 // No in-app theme toggle any more: Telegram's scheme inside Telegram, the OS scheme elsewhere.
 const colorSchemeManager = localStorageColorSchemeManager({ key: 'monty-color-scheme' });
@@ -23,9 +24,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthProvider>
-            <VoiceProvider>
-              {children}
-            </VoiceProvider>
+            <SnackbarProvider>
+              <VoiceProvider>
+                {children}
+              </VoiceProvider>
+            </SnackbarProvider>
           </AuthProvider>
         </BrowserRouter>
       </QueryClientProvider>

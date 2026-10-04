@@ -22,6 +22,8 @@ class FoodShoppingItemResponse(BaseModel):
     note: str | None = None
     unit_mismatch: bool = False
     actual_price: float | None = None
+    category: str = "other"
+    sources: str | None = None
 
 
 class FoodShoppingListResponse(BaseModel):
@@ -40,8 +42,11 @@ class FoodShoppingListResponse(BaseModel):
 class FoodShoppingItemPatch(BaseModel):
     checked: bool | None = None
     actual_price: float | None = Field(None, ge=0)
+    label: str | None = Field(None, min_length=1, max_length=200)
+    # Send null to clear quantity/unit ("just buy some").
     quantity: float | None = Field(None, gt=0)
     unit_id: int | None = None
+    category: str | None = Field(None, max_length=32)
 
 
 class FoodShoppingListPatch(BaseModel):
@@ -59,3 +64,26 @@ class FoodShoppingItemCreate(BaseModel):
     quantity: float | None = Field(None, gt=0)
     unit_id: int | None = None
     ingredient_id: int | None = None
+
+
+class FoodShoppingDateRange(BaseModel):
+    date_from: date
+    date_to: date
+
+
+class FoodShoppingAddResult(BaseModel):
+    list: FoodShoppingListResponse
+    added: int
+
+
+class FoodShoppingComplete(BaseModel):
+    to_pantry: bool = True
+    # Receipt total in tenge; when set, an expense is recorded in Finance.
+    total_amount: int | None = Field(None, gt=0)
+
+
+class FoodShoppingCompleteResponse(BaseModel):
+    list: FoodShoppingListResponse
+    moved_to_pantry: int
+    skipped: list[str] = []
+    transaction_id: str | None = None

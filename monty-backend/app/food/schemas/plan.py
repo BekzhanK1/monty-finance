@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -43,3 +43,42 @@ class FoodMealSlotResponse(BaseModel):
     servings: int
     notes: str | None
     dish_title: str | None = None
+    cooked_at: datetime | None = None
+    readiness: Literal["ready", "partial", "missing"] | None = None
+    missing_count: int = 0
+
+
+class FoodCookBody(BaseModel):
+    servings: int | None = Field(None, ge=1, le=50)
+    consume: bool = True
+
+
+class FoodConsumedLine(BaseModel):
+    ingredient_id: int
+    name: str
+    quantity: float
+    unit_code: str
+    shortfall: bool
+
+
+class FoodCookResponse(BaseModel):
+    consumed: list[FoodConsumedLine]
+    slot: FoodMealSlotResponse | None = None
+
+
+class FoodAvailabilityLine(BaseModel):
+    ingredient_id: int
+    name: str
+    need: float
+    unit_id: int
+    unit_code: str
+    have: float | None
+    missing: float
+    status: Literal["ok", "short", "none", "unit_mismatch", "always_home"]
+
+
+class FoodDishAvailability(BaseModel):
+    dish_id: int
+    servings: int
+    readiness: Literal["ready", "partial", "missing"]
+    lines: list[FoodAvailabilityLine]

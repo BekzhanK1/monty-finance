@@ -35,6 +35,7 @@ class FoodIngredientResponse(BaseModel):
     category: str | None
     notes: str | None
     is_pantry_default: bool
+    aisle: str = "other"
 
     class Config:
         from_attributes = True
