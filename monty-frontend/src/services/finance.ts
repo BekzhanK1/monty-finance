@@ -94,6 +94,25 @@ export const transactionsApi = {
   },
 };
 
+/** Hidden expenses ("Отложенные"): invisible everywhere until revealed. Only the author sees their own. */
+export const deferredApi = {
+  list: async () => {
+    const { data } = await api.get<Transaction[]>('/transactions/hidden');
+    return data;
+  },
+  create: async (item: TransactionInput) => {
+    const { data } = await api.post<Transaction>('/transactions/hidden', item);
+    return data;
+  },
+  reveal: async (id: string) => {
+    const { data } = await api.post<Transaction>(`/transactions/hidden/${id}/reveal`);
+    return data;
+  },
+  delete: async (id: string) => {
+    await api.delete(`/transactions/hidden/${id}`);
+  },
+};
+
 export const budgetsApi = {
   current: async () => {
     const { data } = await api.get<DashboardResponse>('/budgets/current');

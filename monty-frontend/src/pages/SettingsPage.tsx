@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import {
   Container,
@@ -20,6 +20,7 @@ import { settingsApi, categoriesApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader } from '../ui';
+import { useSecretTap } from '../features/deferred/secretTap';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Settings, BudgetConfig } from '../types';
 import { modalShellResponsive, pageStackPb } from '../theme/dashboardChrome';
@@ -41,6 +42,11 @@ const GROUP_ICONS: Record<string, string> = {
 export function SettingsPage() {
   const navigate = useNavigate();
   const { haptic } = useTelegram();
+  // Five quick taps on the title open the hidden «Отложенные» screen.
+  const openDeferred = useSecretTap(useCallback(() => {
+    haptic('heavy');
+    navigate('/deferred');
+  }, [haptic, navigate]));
   const colorScheme = useComputedColorScheme('light');
   const isNarrow = useMediaQuery('(max-width: 36em)');
   const [settings, setSettings] = useState<Settings | null>(null);
@@ -195,7 +201,7 @@ export function SettingsPage() {
   return (
     <Container size="sm" pb={pageStackPb}>
       <Stack gap="lg">
-        <PageHeader title="Настройки" subtitle="Бюджет, цель и категории" onBack={() => navigate('/services')} />
+        <PageHeader title={<span onClick={openDeferred}>Настройки</span>} subtitle="Бюджет, цель и категории" onBack={() => navigate('/services')} />
 
         {deleteError && (
           <Card 

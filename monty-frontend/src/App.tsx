@@ -6,6 +6,7 @@ import { AddTransactionPage } from './features/add/AddTransactionPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { AnalyticsPage } from './features/analytics/AnalyticsPage';
 import { HistoryPage } from './features/history/HistoryPage';
+import { DeferredPage } from './features/deferred/DeferredPage';
 import { AllServicesPage } from './pages/AllServicesPage';
 import { Layout } from './components/Layout';
 import { FoodLayout } from './features/food/components/FoodLayout';
@@ -48,6 +49,7 @@ function App() {
         <Route index element={<HomePage />} />
         <Route path="transactions" element={<HistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="deferred" element={<DeferredPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="services" element={<AllServicesPage />} />
         <Route path="food" element={<FoodLayout />}>

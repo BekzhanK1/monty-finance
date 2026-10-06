@@ -7,6 +7,7 @@ from app.finance.routers import (
     categories,
     digest,
     goals,
+    hidden_transactions,
     integrations,
     settings,
     transactions,
@@ -49,6 +50,7 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(categories.router)
 app.include_router(transactions.router)
+app.include_router(hidden_transactions.router)
 app.include_router(budgets.router)
 app.include_router(goals.router)
 app.include_router(digest.router)

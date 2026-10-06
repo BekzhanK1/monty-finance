@@ -1,7 +1,7 @@
 from typing import List
 
 from app.core.config import get_db
-from app.finance.models import Category, MonthlyBudget, Transaction
+from app.finance.models import INCLUDE_HIDDEN, Category, MonthlyBudget, Transaction
 from app.finance.schemas import CategoryCreate, CategoryResponse, CategoryUpdate
 from app.finance.services.database import get_financial_period
 from app.finance.services.settings_service import SettingsService
@@ -72,7 +72,9 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
         )
     # Remove related records first (foreign key constraints)
     db.query(MonthlyBudget).filter(MonthlyBudget.category_id == category_id).delete()
-    db.query(Transaction).filter(Transaction.category_id == category_id).delete()
+    db.query(Transaction).execution_options(**{INCLUDE_HIDDEN: True}).filter(
+        Transaction.category_id == category_id
+    ).delete()
     db.delete(category)
     db.commit()
     return None

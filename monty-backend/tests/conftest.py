@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from app.core.config import SessionLocal, engine
 from app.core.migrations import run_migrations
-from app.finance.models import Category, CategoryGroup, MonthlyBudget, Settings, Transaction, TransactionType, User
+from app.finance.models import INCLUDE_HIDDEN, Category, CategoryGroup, MonthlyBudget, Settings, Transaction, TransactionType, User
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -38,12 +38,13 @@ def db():
                   FoodPantryItem, FoodWarehouse, FoodMealSlot, FoodDishIngredient, FoodDish, FoodMealCategory,
                   FoodIngredient):
         session.query(model).delete()
-    session.query(Transaction).delete()
+    session.query(Transaction).execution_options(**{INCLUDE_HIDDEN: True}).delete()
     session.query(MonthlyBudget).delete()
     session.query(Settings).delete()
     session.query(Category).delete()
     session.query(User).delete()
     session.add(User(id=1, telegram_id=111, first_name="Аня", is_active=True, household_id=1))
+    session.add(User(id=2, telegram_id=222, first_name="Боря", is_active=True, household_id=1))
     session.add_all([
         Category(id=1, name="Продукты", group=CategoryGroup.BASE, type=TransactionType.EXPENSE, icon="🛒"),
         Category(id=2, name="Транспорт", group=CategoryGroup.BASE, type=TransactionType.EXPENSE, icon="🚕"),
