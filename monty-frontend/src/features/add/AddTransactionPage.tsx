@@ -19,7 +19,7 @@ import { IconBackspace, IconCalendar, IconCheck, IconMicrophone } from '@tabler/
 import dayjs from 'dayjs';
 import { haptic } from '../../lib/telegram';
 import { useVoiceInput } from '../voice/VoiceContext';
-import { useCategories, useCreateTransaction, useTransactions } from '../finance/queries';
+import { useCategories, useCreateDeferred, useCreateTransaction, useTransactions } from '../finance/queries';
 import type { Category } from '../../types';
 import { CategoryIcon, PageHeader, formatMoney, groupTint } from '../../ui';
 import { applyKey, evaluateAmount, formatExpression, hasOperator, type NumpadKey } from './amountExpression';
@@ -43,9 +43,13 @@ export function AddTransactionPage() {
   const openVoice = useVoiceInput();
   const categoriesQuery = useCategories();
   const recentQuery = useTransactions({ start_date: RECENT_SINCE });
+  // `?deferred=1` (from the hidden «Отложенные» screen): save as a hidden expense, no voice, no income.
+  const deferred = params.get('deferred') === '1';
   const createTransaction = useCreateTransaction();
+  const createDeferred = useCreateDeferred();
+  const create = deferred ? createDeferred : createTransaction;
 
-  const [type, setType] = useState<TxType>(params.get('type') === 'INCOME' ? 'INCOME' : 'EXPENSE');
+  const [type, setType] = useState<TxType>(!deferred && params.get('type') === 'INCOME' ? 'INCOME' : 'EXPENSE');
   const [expr, setExpr] = useState('');
   const [categoryId, setCategoryId] = useState<number | null>(null);
   const [comment, setComment] = useState('');
@@ -82,14 +86,14 @@ export function AddTransactionPage() {
     if (!canSave || amount === null || !selected) return;
     setError(null);
     try {
-      await createTransaction.mutateAsync({
+      await create.mutateAsync({
         category_id: selected.id,
         amount,
         comment: comment.trim() || undefined,
         transaction_date: date,
       });
       haptic('success');
-      navigate('/', { replace: true });
+      navigate(deferred ? '/deferred' : '/', { replace: true });
     } catch {
       haptic('error');
       setError('Не удалось сохранить. Проверьте соединение и попробуйте ещё раз.');
@@ -102,9 +106,9 @@ export function AddTransactionPage() {
     <Box style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--monty-bg)' }}>
       <Container size="xs" w="100%" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <PageHeader
-          title="Новая операция"
+          title={deferred ? 'Отложенный расход' : 'Новая операция'}
           onBack={goBack}
-          right={
+          right={!deferred && (
             <ActionIcon
               variant="light"
               size="lg"
@@ -117,10 +121,10 @@ export function AddTransactionPage() {
             >
               <IconMicrophone size={20} />
             </ActionIcon>
-          }
+          )}
         />
 
-        <SegmentedControl
+        {!deferred && <SegmentedControl
           mt="sm"
           fullWidth
           value={type}
@@ -134,7 +138,7 @@ export function AddTransactionPage() {
             { value: 'EXPENSE', label: 'Расход' },
             { value: 'INCOME', label: 'Доход' },
           ]}
-        />
+        />}
 
         {/* Amount */}
         <Stack gap={0} align="center" py="md" mih={92} justify="center" aria-live="polite">
@@ -239,7 +243,7 @@ export function AddTransactionPage() {
               h={52}
               radius={12}
               disabled={!canSave}
-              loading={createTransaction.isPending}
+              loading={create.isPending}
               onClick={save}
               aria-label="Сохранить"
             >

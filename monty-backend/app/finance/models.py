@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, date
-from sqlalchemy import Column, Integer, String, BigInteger, Boolean, ForeignKey, DateTime, Date, Enum as SQLEnum
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, BigInteger, Boolean, ForeignKey, DateTime, Date, Enum as SQLEnum, event, false
+from sqlalchemy.orm import Session, relationship, with_loader_criteria
 from app.core.config import Base
 import enum
 
@@ -66,9 +66,31 @@ class Transaction(Base):
     # Stored as plain strings (TransactionSource values) so new sources need no enum migration.
     source = Column(String(16), nullable=False, default=TransactionSource.MANUAL.value, server_default=TransactionSource.MANUAL.value)
     raw_text = Column(String(500), nullable=True)
+    # Hidden expenses are invisible to everyone (lists, budgets, analytics, digests) until
+    # their author reveals them; only the /transactions/hidden endpoints can see them.
+    is_hidden = Column(Boolean, nullable=False, default=False, server_default=false())
 
     user = relationship("User", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
+
+
+# Execution option that lets a statement see hidden transactions.
+INCLUDE_HIDDEN = "include_hidden"
+
+
+@event.listens_for(Session, "do_orm_execute")
+def _exclude_hidden_transactions(state):
+    """Filter hidden transactions out of every ORM statement unless it opts in with INCLUDE_HIDDEN.
+
+    Global on purpose: a new query (sum, join, export) can't leak a hidden expense by forgetting a filter.
+    Column loads (refresh of an object already in hand) are left alone.
+    """
+    if state.is_column_load or state.execution_options.get(INCLUDE_HIDDEN, False):
+        return
+    if state.is_select or state.is_update or state.is_delete:
+        state.statement = state.statement.options(
+            with_loader_criteria(Transaction, Transaction.is_hidden.is_(False), include_aliases=True)
+        )
 
 class Settings(Base):
     __tablename__ = "settings"

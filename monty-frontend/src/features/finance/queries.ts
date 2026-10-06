@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { budgetsApi, categoriesApi, goalsApi, settingsApi, transactionsApi } from '../../services/finance';
+import { budgetsApi, categoriesApi, deferredApi, goalsApi, settingsApi, transactionsApi } from '../../services/finance';
 import type { TransactionInput } from '../../types';
 
 export const financeKeys = {
@@ -10,6 +10,7 @@ export const financeKeys = {
   settings: () => [...financeKeys.all, 'settings'] as const,
   transactions: () => [...financeKeys.all, 'transactions'] as const,
   analytics: () => [...financeKeys.all, 'analytics'] as const,
+  deferred: () => [...financeKeys.all, 'deferred'] as const,
 };
 
 export function useCategories() {
@@ -96,5 +97,37 @@ export function useCreateTransaction() {
   return useMutation({
     mutationFn: (item: TransactionInput) => transactionsApi.createOne(item),
     onSuccess: () => invalidateMoneyQueries(queryClient),
+  });
+}
+
+export function useDeferred() {
+  return useQuery({ queryKey: financeKeys.deferred(), queryFn: deferredApi.list });
+}
+
+export function useCreateDeferred() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (item: TransactionInput) => deferredApi.create(item),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: financeKeys.deferred() }),
+  });
+}
+
+export function useDeleteDeferred() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deferredApi.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: financeKeys.deferred() }),
+  });
+}
+
+/** Revealing turns it into an ordinary expense, so every money view changes too. */
+export function useRevealDeferred() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => deferredApi.reveal(id),
+    onSuccess: () => Promise.all([
+      queryClient.invalidateQueries({ queryKey: financeKeys.deferred() }),
+      invalidateMoneyQueries(queryClient),
+    ]),
   });
 }

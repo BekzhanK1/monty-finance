@@ -95,6 +95,8 @@ pip install -r requirements.txt
 cd monty-backend && .venv/bin/alembic revision --autogenerate -m "что изменилось"
 ```
 
+**Отложенные (скрытые) расходы** — `GET/POST /transactions/hidden`, `PATCH/DELETE /transactions/hidden/{id}`, `POST /transactions/hidden/{id}/reveal`. Скрытый расход не виден никому (история, бюджеты, аналитика, дайджест, Telegram), пока автор его не раскроет; после раскрытия становится обычным на дату покупки. Исключение делает глобальный фильтр сессии в [`models.py`](monty-backend/app/finance/models.py) — новые запросы к `Transaction` защищены автоматически; увидеть скрытые можно только с `execution_options(include_hidden=True)`. В приложении экран открывается пятью быстрыми нажатиями на заголовок «Настройки».
+
 **Голосовой ввод** — `POST /voice/parse` (JWT, multipart: `audio` или `text`) → транскрипция `gpt-4o-mini-transcribe` → общий парсер [`expense_parser.py`](monty-backend/app/finance/services/expense_parser.py) (его же использует Siri) → черновики; сохранение подтверждённых — `POST /transactions/bulk`. Нужен `OPENAI_API_KEY`.
 
 Тесты backend:
