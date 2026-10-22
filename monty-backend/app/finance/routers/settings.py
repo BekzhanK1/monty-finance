@@ -3,7 +3,10 @@ from app.middleware.auth import get_current_user
 from app.finance.models import Category, MonthlyBudget, User
 from app.finance.services.database import get_financial_period
 from app.finance.services.settings_service import SettingsService
-from fastapi import APIRouter, Depends
+from app.finance.services import notification_settings
+from app.finance.services.notification_settings import NOTIFICATIONS, is_valid_time
+from app.finance.services.scheduler import SENDERS, apply_notification_schedule, send_food_tomorrow_reminder
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -58,6 +61,59 @@ def update_setting(setting: SettingUpdate, db: Session = Depends(get_db)):
     SettingsService.set_setting(db, setting.key, setting.value)
 
     return {"success": True, "key": setting.key, "value": setting.value}
+
+
+class NotificationItem(BaseModel):
+    id: str
+    enabled: bool
+    time: str
+
+
+class NotificationSettings(BaseModel):
+    items: list[NotificationItem]
+    evening_ai: bool
+
+
+@router.get("/notifications", response_model=NotificationSettings)
+def get_notifications(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    return notification_settings.get_notification_settings(db)
+
+
+@router.put("/notifications", response_model=NotificationSettings)
+def update_notifications(
+    body: NotificationSettings,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    for item in body.items:
+        if item.id not in NOTIFICATIONS:
+            raise HTTPException(status_code=422, detail=f"Unknown notification: {item.id}")
+        if not is_valid_time(item.time):
+            raise HTTPException(status_code=422, detail=f"Time must be HH:MM, got {item.time!r}")
+    for item in body.items:
+        notification_settings.set_notification(db, item.id, enabled=item.enabled, time=item.time)
+    notification_settings.set_evening_ai(db, body.evening_ai)
+    apply_notification_schedule(db)
+    return notification_settings.get_notification_settings(db)
+
+
+@router.post("/notifications/{notification_id}/test")
+def send_test_notification(
+    notification_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    if notification_id not in NOTIFICATIONS:
+        raise HTTPException(status_code=404, detail="Unknown notification")
+    if notification_id == "food":
+        sent = send_food_tomorrow_reminder(force=True)
+    else:
+        sent = SENDERS[notification_id][0]()
+    if not sent:
+        raise HTTPException(status_code=502, detail="Не удалось отправить сообщение в Telegram")
+    return {"success": True}
 
 
 @router.get("/budgets", response_model=list[BudgetConfigResponse])

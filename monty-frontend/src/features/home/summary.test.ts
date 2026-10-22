@@ -56,4 +56,31 @@ describe('computeHomeSummary', () => {
     expect(s.daysLeft).toBe(1);
     expect(s.pace).toBe('on');
   });
+
+  it('takes today\'s spending off today\'s amount in full', () => {
+    // 6 days left (Oct 4..9), 120 000 left before today → 20 000 a day.
+    const morning = computeHomeSummary(dashboard([budget('BASE', 300_000, 180_000)]), new Date(2026, 9, 4));
+    expect(morning.dailyLimit).toBe(20_000);
+    expect(morning.safePerDay).toBe(20_000);
+
+    // Spending 2 000 today leaves 18 000 for today, not (118 000 / 6) ≈ 19 666.
+    const evening = computeHomeSummary(
+      { ...dashboard([budget('BASE', 300_000, 182_000)]), spent_today: 2_000 },
+      new Date(2026, 9, 4),
+    );
+    expect(evening.dailyLimit).toBe(20_000);
+    expect(evening.spentToday).toBe(2_000);
+    expect(evening.safePerDay).toBe(18_000);
+    expect(evening.overToday).toBe(0);
+  });
+
+  it('reports how much today\'s limit is exceeded by', () => {
+    const s = computeHomeSummary(
+      { ...dashboard([budget('BASE', 300_000, 205_000)]), spent_today: 25_000 },
+      new Date(2026, 9, 4),
+    );
+    expect(s.dailyLimit).toBe(20_000);
+    expect(s.safePerDay).toBe(0);
+    expect(s.overToday).toBe(5_000);
+  });
 });

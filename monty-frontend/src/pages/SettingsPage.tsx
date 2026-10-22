@@ -15,11 +15,11 @@ import {
   useComputedColorScheme,
   Divider,
 } from '@mantine/core';
-import { IconPlus, IconTrash, IconPencil, IconTarget, IconWallet, IconCategory } from '@tabler/icons-react';
+import { IconPlus, IconTrash, IconPencil, IconTarget, IconWallet, IconCategory, IconBell } from '@tabler/icons-react';
 import { settingsApi, categoriesApi } from '../api';
 import { useTelegram } from '../hooks/useTelegram';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '../ui';
+import { ListRow, PageHeader, Section } from '../ui';
 import { useSecretTap } from '../features/deferred/secretTap';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import type { Settings, BudgetConfig } from '../types';
@@ -201,7 +201,7 @@ export function SettingsPage() {
   return (
     <Container size="sm" pb={pageStackPb}>
       <Stack gap="lg">
-        <PageHeader title={<span onClick={openDeferred}>Настройки</span>} subtitle="Бюджет, цель и категории" onBack={() => navigate('/services')} />
+        <PageHeader title={<span onClick={openDeferred}>Настройки</span>} subtitle="Бюджет, цель, категории и уведомления" onBack={() => navigate('/services')} />
 
         {deleteError && (
           <Card 
@@ -217,6 +217,19 @@ export function SettingsPage() {
             <Text c="red" size="sm">{deleteError}</Text>
           </Card>
         )}
+
+        <Section>
+          <ListRow
+            leading={<IconBell size={24} style={{ color: 'var(--monty-accent)' }} />}
+            title="Уведомления"
+            subtitle="Утренняя сводка, итоги дня, меню на завтра"
+            onClick={() => {
+              haptic('light');
+              navigate('/settings/notifications');
+            }}
+            chevron
+          />
+        </Section>
 
         {/* Goal Settings */}
         <Card 

@@ -6,7 +6,10 @@ from sqlalchemy import func
 
 from app.core.config import settings, SessionLocal
 from app.finance.models import Transaction, Category, User
-from app.finance.services.database import get_financial_period
+from app.finance.services.daily_budget import compute_day_budget, local_day_window
+from app.finance.services.expense_parser import local_today
+from app.finance.services.notification_settings import evening_ai_enabled
+from app.finance.services.summary_messages import build_evening_message, build_morning_message
 
 _openai_client: OpenAI | None = None
 
@@ -17,9 +20,7 @@ def _get_openai_client() -> OpenAI:
     return _openai_client
 
 def get_today_transactions_summary(db: Session) -> str:
-    today = datetime.utcnow().date()
-    start_of_day = datetime.combine(today, datetime.min.time())
-    end_of_day = datetime.combine(today, datetime.max.time())
+    start_of_day, end_of_day = local_day_window(local_today())
     
     transactions = (
         db.query(
@@ -90,9 +91,7 @@ def send_digest_to_telegram(digest: str, chat_id: int) -> bool:
         return False
 
 def get_today_total(db: Session) -> int:
-    today = datetime.utcnow().date()
-    start_of_day = datetime.combine(today, datetime.min.time())
-    end_of_day = datetime.combine(today, datetime.max.time())
+    start_of_day, end_of_day = local_day_window(local_today())
     
     total = (
         db.query(func.sum(Transaction.amount))
@@ -109,9 +108,7 @@ def get_today_total(db: Session) -> int:
     return total or 0
 
 def get_today_transactions_detail(db: Session) -> list:
-    today = datetime.utcnow().date()
-    start_of_day = datetime.combine(today, datetime.min.time())
-    end_of_day = datetime.combine(today, datetime.max.time())
+    start_of_day, end_of_day = local_day_window(local_today())
     
     transactions = (
         db.query(Transaction)
@@ -136,98 +133,55 @@ def get_today_transactions_detail(db: Session) -> list:
         for t in transactions
     ]
 
-def send_reminder_notification() -> bool:
+def send_telegram_message(text: str) -> bool:
+    """Send an HTML message to the shared chat (TELEGRAM_CHAT_ID)."""
     import asyncio
     from telegram import Bot
-    
+
     if not settings.TELEGRAM_CHAT_ID or not settings.TELEGRAM_BOT_TOKEN:
         print("[Telegram] SKIPPED - missing chat_id or bot_token")
-        return False
-    
-    async def _send():
-        bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
-        text = "🔔 <b>Напоминание</b>\n\n"
-        text += "Не забудь записать все сегодняшние расходы и доходы! 📝"
-        
-        await bot.send_message(
-            chat_id=settings.TELEGRAM_CHAT_ID,
-            text=text,
-            parse_mode="HTML"
-        )
-        print(f"[Telegram] Reminder sent successfully")
-    
-    try:
-        asyncio.run(_send())
-        return True
-    except Exception as e:
-        print(f"[Telegram] ERROR sending reminder: {e}")
         return False
 
-def send_daily_summary() -> bool:
-    import asyncio
-    from telegram import Bot
-    
-    if not settings.TELEGRAM_CHAT_ID or not settings.TELEGRAM_BOT_TOKEN:
-        print("[Telegram] SKIPPED - missing chat_id or bot_token")
-        return False
-    
-    db = None
+    async def _send():
+        bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
+        await bot.send_message(chat_id=settings.TELEGRAM_CHAT_ID, text=text, parse_mode="HTML")
+
     try:
-        db = SessionLocal()
-        
-        today_total = get_today_total(db)
-        transactions = get_today_transactions_detail(db)
-        
-        expenses = [
-            t for t in transactions
-            if t["type"] == "EXPENSE" and t.get("group") != "SAVINGS"
-        ]
-        incomes = [t for t in transactions if t["type"] == "INCOME"]
-        total_expenses = sum(t["amount"] for t in expenses)
-        total_income = sum(t["amount"] for t in incomes)
-        
-        ai_summary = generate_ai_summary(db, transactions, total_expenses, total_income)
-        
-        async def _send():
-            bot = Bot(token=settings.TELEGRAM_BOT_TOKEN)
-            
-            text = f"📊 <b>Сводка за день</b>\n\n"
-            text += f"💰 Доходы: {total_income:,} ₸\n"
-            text += f"💸 Расходы: {total_expenses:,} ₸\n"
-            text += f"📈 Баланс: {total_income - total_expenses:,} ₸\n\n"
-            
-            if expenses:
-                text += "<b>Расходы:</b>\n"
-                for t in expenses[:10]:
-                    text += f"{t['icon']} {t['name']}: {t['amount']:,} ₸"
-                    if t['comment']:
-                        text += f" ({t['comment']})"
-                    text += "\n"
-                text += "\n"
-            
-            if incomes:
-                text += "<b>Доходы:</b>\n"
-                for t in incomes[:5]:
-                    text += f"{t['icon']} {t['name']}: {t['amount']:,} ₸\n"
-                text += "\n"
-            
-            text += f"<i>{ai_summary}</i>"
-            
-            await bot.send_message(
-                chat_id=settings.TELEGRAM_CHAT_ID,
-                text=text,
-                parse_mode="HTML"
-            )
-            print(f"[Telegram] Daily summary sent successfully")
-        
         asyncio.run(_send())
         return True
     except Exception as e:
-        print(f"[Telegram] ERROR sending daily summary: {e}")
+        print(f"[Telegram] ERROR sending message: {e}")
         return False
+
+def build_morning_summary(db: Session) -> str:
+    return build_morning_message(compute_day_budget(db))
+
+def build_evening_summary(db: Session) -> str:
+    transactions = get_today_transactions_detail(db)
+    ai_comment = None
+    if evening_ai_enabled(db) and transactions:
+        expenses = [t for t in transactions if t["type"] == "EXPENSE" and t["group"] != "SAVINGS"]
+        incomes = [t for t in transactions if t["type"] == "INCOME"]
+        ai_comment = generate_ai_summary(
+            db, transactions, sum(t["amount"] for t in expenses), sum(t["amount"] for t in incomes)
+        )
+    return build_evening_message(compute_day_budget(db), transactions, ai_comment)
+
+def send_morning_summary() -> bool:
+    db = SessionLocal()
+    try:
+        text = build_morning_summary(db)
     finally:
-        if db:
-            db.close()
+        db.close()
+    return send_telegram_message(text)
+
+def send_evening_summary() -> bool:
+    db = SessionLocal()
+    try:
+        text = build_evening_summary(db)
+    finally:
+        db.close()
+    return send_telegram_message(text)
 
 def generate_ai_summary(db: Session, transactions: list, total_expenses: int, total_income: int) -> str:
     if not transactions:
