@@ -152,6 +152,7 @@ function Hero({ summary }: { summary: HomeSummary }) {
   }
 
   const over = summary.remaining < 0;
+  const overToday = summary.overToday > 0;
   const paceText = {
     under: 'Тратите медленнее плана 👍',
     on: 'Идёте по плану',
@@ -169,15 +170,20 @@ function Hero({ summary }: { summary: HomeSummary }) {
       }}
     >
       <Text size="sm" fw={500} style={{ color: 'var(--monty-subtitle)' }}>
-        {over ? 'Бюджет превышен на' : 'Можно потратить сегодня'}
+        {over ? 'Бюджет превышен на' : overToday ? 'Дневной лимит превышен на' : 'Можно потратить сегодня'}
       </Text>
       <AmountText
-        value={over ? -summary.remaining : summary.safePerDay}
+        value={over ? -summary.remaining : overToday ? summary.overToday : summary.safePerDay}
         fz={40}
         fw={800}
         lh={1.15}
-        style={{ color: over ? 'var(--monty-negative)' : 'var(--monty-text)', letterSpacing: -0.5 }}
+        style={{ color: over || overToday ? 'var(--monty-negative)' : 'var(--monty-text)', letterSpacing: -0.5 }}
       />
+      {!over && summary.spentToday > 0 && (
+        <Text size="sm" mt={4} style={{ color: 'var(--monty-subtitle)' }}>
+          {`Сегодня потрачено ${formatMoney(summary.spentToday)} из ${formatMoney(summary.dailyLimit)}`}
+        </Text>
+      )}
       <Text size="sm" mt={4} style={{ color: 'var(--monty-subtitle)' }}>
         {over
           ? `Потрачено ${formatMoney(summary.spent)} из ${formatMoney(summary.limit)}`

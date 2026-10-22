@@ -30,6 +30,8 @@ export interface DashboardResponse {
   /** Inclusive salary-to-salary period, `YYYY-MM-DD`. */
   period_start?: string;
   period_end?: string;
+  /** Spent today (local day) in budgeted BASE/COMFORT categories. */
+  spent_today?: number;
 }
 
 export interface Goal {
@@ -101,4 +103,19 @@ export interface CategoryInput {
   group: 'BASE' | 'COMFORT' | 'SAVINGS' | 'INCOME';
   type: 'EXPENSE' | 'INCOME';
   icon: string;
+}
+
+export type NotificationId = 'morning' | 'evening' | 'food';
+
+export interface NotificationItem {
+  id: NotificationId;
+  enabled: boolean;
+  /** Local (Almaty) time, `HH:MM`. */
+  time: string;
+}
+
+export interface NotificationSettings {
+  items: NotificationItem[];
+  /** Append an AI comment to the evening summary. */
+  evening_ai: boolean;
 }

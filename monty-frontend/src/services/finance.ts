@@ -4,6 +4,8 @@ import type {
   CategoryInput,
   DashboardResponse,
   Goal,
+  NotificationId,
+  NotificationSettings,
   Settings,
   Transaction,
   TransactionInput,
@@ -142,6 +144,18 @@ export const settingsApi = {
   },
   updateBudget: async (categoryId: number, limitAmount: number) => {
     const { data } = await api.post('/settings/budgets', { category_id: categoryId, limit_amount: limitAmount });
+    return data;
+  },
+  getNotifications: async () => {
+    const { data } = await api.get<NotificationSettings>('/settings/notifications');
+    return data;
+  },
+  updateNotifications: async (payload: NotificationSettings) => {
+    const { data } = await api.put<NotificationSettings>('/settings/notifications', payload);
+    return data;
+  },
+  testNotification: async (id: NotificationId) => {
+    const { data } = await api.post(`/settings/notifications/${id}/test`);
     return data;
   },
 };

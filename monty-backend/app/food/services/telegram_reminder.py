@@ -119,7 +119,8 @@ def build_tomorrow_menu_message(db: Session, *, household_id: int) -> str:
     )
 
 
-def send_tomorrow_food_telegram_reminder(*, household_id: int = MVP_HOUSEHOLD_ID) -> bool:
+def send_tomorrow_food_telegram_reminder(*, household_id: int = MVP_HOUSEHOLD_ID, force: bool = False) -> bool:
+    """`force` (test send from Settings) bypasses the once-a-day guard and does not reserve the day."""
     from telegram import Bot
 
     if not settings.TELEGRAM_CHAT_ID or not settings.TELEGRAM_BOT_TOKEN:
@@ -129,7 +130,7 @@ def send_tomorrow_food_telegram_reminder(*, household_id: int = MVP_HOUSEHOLD_ID
     today = _today_almaty()
     db = SessionLocal()
     try:
-        if not _try_reserve_reminder_slot(db, household_id=household_id, on_date=today):
+        if not force and not _try_reserve_reminder_slot(db, household_id=household_id, on_date=today):
             print(
                 f"[Telegram] Food tomorrow reminder skipped "
                 f"(already reserved for household {household_id} on {today})"

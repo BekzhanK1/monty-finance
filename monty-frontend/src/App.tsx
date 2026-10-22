@@ -4,6 +4,7 @@ import { LoginPage } from './pages/LoginPage';
 import { HomePage } from './features/home/HomePage';
 import { AddTransactionPage } from './features/add/AddTransactionPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { NotificationsSettingsPage } from './pages/NotificationsSettingsPage';
 import { AnalyticsPage } from './features/analytics/AnalyticsPage';
 import { HistoryPage } from './features/history/HistoryPage';
 import { DeferredPage } from './features/deferred/DeferredPage';
@@ -49,6 +50,7 @@ function App() {
         <Route index element={<HomePage />} />
         <Route path="transactions" element={<HistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="settings/notifications" element={<NotificationsSettingsPage />} />
         <Route path="deferred" element={<DeferredPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="services" element={<AllServicesPage />} />

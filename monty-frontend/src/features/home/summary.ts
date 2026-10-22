@@ -12,8 +12,14 @@ export interface HomeSummary {
   limit: number;
   spent: number;
   remaining: number;
-  /** What can be spent per day for the rest of the period (never negative). */
+  /** Today's limit, fixed at the start of the day: budget left before today split over the days left. */
+  dailyLimit: number;
+  /** Spent today in budgeted BASE/COMFORT categories. */
+  spentToday: number;
+  /** What is still left for today: dailyLimit − spentToday, never negative. */
   safePerDay: number;
+  /** How much today's limit is exceeded by, 0 when within it. */
+  overToday: number;
   daysLeft: number;
   totalDays: number;
   /** Share of the period already elapsed, 0–100. */
@@ -62,6 +68,12 @@ export function computeHomeSummary(dashboard: DashboardResponse, now: Date = new
   const daysLeft = end ? Math.max(1, Math.round((end.getTime() - today.getTime()) / DAY_MS) + 1) : 1;
   const elapsedDays = Math.min(totalDays, Math.max(1, totalDays - daysLeft + 1));
 
+  const spentToday = dashboard.spent_today ?? 0;
+  // Fixing the limit at the start of the day makes every tenge spent today come straight off
+  // "left today" instead of being spread over the rest of the period.
+  const dailyLimit = Math.max(0, Math.floor((remaining + spentToday) / daysLeft));
+  const leftToday = dailyLimit - spentToday;
+
   const timePercent = (elapsedDays / totalDays) * 100;
   const spentPercent = limit > 0 ? (spent / limit) * 100 : 0;
   const forecast = Math.round((spent / elapsedDays) * totalDays);
@@ -76,7 +88,10 @@ export function computeHomeSummary(dashboard: DashboardResponse, now: Date = new
     limit,
     spent,
     remaining,
-    safePerDay: Math.max(0, Math.floor(remaining / daysLeft)),
+    dailyLimit,
+    spentToday,
+    safePerDay: Math.max(0, leftToday),
+    overToday: Math.max(0, -leftToday),
     daysLeft,
     totalDays,
     timePercent,

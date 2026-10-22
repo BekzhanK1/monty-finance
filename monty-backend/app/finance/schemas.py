@@ -86,6 +86,8 @@ class DashboardResponse(BaseModel):
     budgets: list[BudgetWithSpent]
     period_start: Optional[date] = None
     period_end: Optional[date] = None
+    # Today's (local day) spending in budgeted BASE/COMFORT categories — fixes the daily limit.
+    spent_today: int = 0
 
 
 class CategoryCreate(BaseModel):
