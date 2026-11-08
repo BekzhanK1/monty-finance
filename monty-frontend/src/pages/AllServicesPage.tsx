@@ -19,6 +19,7 @@ import {
   IconHome,
   IconToolsKitchen2,
   IconHeart,
+  IconNotebook,
   IconPlane,
   IconSparkles,
 } from '@tabler/icons-react';
@@ -45,6 +46,7 @@ type ServiceDef = {
 const services: ServiceDef[] = [
   { title: 'Finance', to: '/', icon: IconHome },
   { title: 'Food', to: '/food', icon: IconToolsKitchen2 },
+  { title: 'Journal', to: '/journal', icon: IconNotebook },
   {
     title: 'Health',
     icon: IconHeart,

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_CHAT_ID: str = ""
     OPENAI_API_KEY: str = ""
+
+    # Fernet key for journal text at rest (required in PROD, see app/journal/crypto.py)
+    JOURNAL_ENCRYPTION_KEY: str = ""
     
     ALLOWED_TELEGRAM_IDS: str = "[]"
 

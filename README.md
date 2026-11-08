@@ -21,6 +21,7 @@
 | [`app/finance/schemas.py`](monty-backend/app/finance/schemas.py) | Pydantic-схемы finance |
 | [`app/finance/routers/`](monty-backend/app/finance/routers/) | HTTP-роутеры (`auth`, `transactions`, …) |
 | [`app/finance/services/`](monty-backend/app/finance/services/) | Бизнес-логика, планировщик, digest, auth_service |
+| [`app/journal/`](monty-backend/app/journal/) | Journal: дневник с настроением 1–5, серии, партнёр, напоминания, аналитика. Документация: [`docs/journal/`](docs/journal/) |
 | [`app/food/`](monty-backend/app/food/) | Food: [`router.py`](monty-backend/app/food/router.py) собирает префикс `/food`; подроутеры в [`app/food/routers/`](monty-backend/app/food/routers/) (`meal`, `catalog`, `plan`) |
 | [`app/food/models/`](monty-backend/app/food/models/) | ORM: `meal` (категории приёма пищи, блюда), `catalog` (единицы, ингредиенты, строки состава блюда), `plan` (слоты недельного меню) |
 | [`app/food/schemas/`](monty-backend/app/food/schemas/) | Pydantic-схемы Food (те же слои) |

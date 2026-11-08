@@ -16,6 +16,7 @@ from app.finance.routers import (
 from app.core.migrations import run_migrations
 from app.finance.services.scheduler import scheduler, setup_scheduler
 from app.food.router import router as food_router
+from app.journal.router import router as journal_router
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -59,6 +60,7 @@ app.include_router(analytics.router)
 app.include_router(integrations.router)
 app.include_router(voice.router)
 app.include_router(food_router)
+app.include_router(journal_router)
 
 
 @app.get("/")
