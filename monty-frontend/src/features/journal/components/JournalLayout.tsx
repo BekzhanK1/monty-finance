@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Box, Text, UnstyledButton } from '@mantine/core';
 import { IconChartLine, IconList, IconPencil, IconSettings, type Icon } from '@tabler/icons-react';
@@ -22,7 +23,7 @@ export function JournalLayout() {
 
   return (
     <>
-      <Outlet />
+      <Suspense fallback={null}><Outlet /></Suspense>
       {!hideTabs && (
         <Box
           component="nav"

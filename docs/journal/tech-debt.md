@@ -9,7 +9,7 @@
 | 🔴 | `docker-compose.yml`: пароль Postgres (`POSTGRES_PASSWORD`, `DATABASE_URL`) в **публичном** репозитории и порт `5432:5432` открыт наружу | Любой может подключиться к БД на сервере. Теперь там ещё и дневник (текст зашифрован, но настроение и даты — нет) | Сменить пароль, вынести в `.env` на сервере, убрать `ports` у `db` (бэкенду хватает внутренней сети compose). Пароль остаётся в истории git — считать его скомпрометированным |
 | 🟠 | `JWT_SECRET_KEY` имеет дефолт `your-secret-key-change-in-production`, нет fail-fast | Если на сервере ключ не задан — токены подделываются | При `STAGE=PROD` и дефолтном значении — падать на старте |
 | 🟠 | CORS `allow_origins=["*"]` + `allow_credentials=True` | Любой сайт может дёргать API из браузера с токеном пользователя, если он доступен | Указать origin Mini App |
-| 🟠 | Деплой: push в `main` → сразу прод, без pytest/vitest/tsc | 148 бэкенд- и 64 фронтенд-теста есть, но не защищают прод | Добавить job `test` перед `deploy` (`needs: test`) |
+| ✅ | ~~Деплой без тестов, сборка на VPS упиралась в SSH-таймаут~~ | Исправлено: CI гоняет pytest + tsc + vitest, собирает образы на GitHub и пушит в GHCR; VPS только делает `pull` и перезапуск | — |
 | 🟠 | `digest_service.send_digest_to_telegram` вызывает async `Bot.send_message` без `await` (python-telegram-bot 21) | `/digest` ничего не отправляет, но возвращает успех | Сделать как в `send_telegram_message` (`asyncio.run`) |
 | 🟡 | 7 ошибок ESLint на `main` (`useAuth.tsx`, `SettingsPage.tsx`) | `npm run lint` красный, новые ошибки не видно | Починить и добавить lint в CI |
 | 🟡 | `Asia/Almaty` захардкожена в 5 модулях | Переезд/путешествие ломает дни, серии, дайджесты | Один `APP_TIMEZONE` в `app/core`, позже — таймзона пользователя |

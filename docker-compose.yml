@@ -19,7 +19,10 @@ services:
       retries: 5
 
   backend:
+    # Built and pushed by CI (.github/workflows/deploy.yml); `build` stays for local builds.
+    image: ghcr.io/bekzhank1/monty-backend:${IMAGE_TAG:-latest}
     build: ./monty-backend
+    env_file: ./monty-backend/.env
     ports:
       - "8000:8000"
     environment:
@@ -29,10 +32,12 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./monty-backend:/app
+      # Code lives in the image now; only Siri logs persist on the host.
+      - ./monty-backend/log:/app/log
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   frontend:
+    image: ghcr.io/bekzhank1/monty-frontend:${IMAGE_TAG:-latest}
     build:
       context: ./monty-frontend
       args:

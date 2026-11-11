@@ -1,31 +1,36 @@
+import { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { lazyPage } from './lib/lazyPage';
 import { useAuth } from './hooks/useAuth';
 import { LoginPage } from './pages/LoginPage';
 import { HomePage } from './features/home/HomePage';
 import { AddTransactionPage } from './features/add/AddTransactionPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { NotificationsSettingsPage } from './pages/NotificationsSettingsPage';
-import { AnalyticsPage } from './features/analytics/AnalyticsPage';
-import { HistoryPage } from './features/history/HistoryPage';
-import { DeferredPage } from './features/deferred/DeferredPage';
-import { AllServicesPage } from './pages/AllServicesPage';
 import { Layout } from './components/Layout';
-import { FoodLayout } from './features/food/components/FoodLayout';
-import { TodayPage } from './features/food/TodayPage';
-import { MenuPage } from './features/food/MenuPage';
-import { ShoppingPage } from './features/food/ShoppingPage';
-import { PantryPage } from './features/food/PantryPage';
-import { RecipesPage } from './features/food/RecipesPage';
-import { RecipePage } from './features/food/RecipePage';
-import { RecipeEditorPage } from './features/food/RecipeEditorPage';
-import { TransferNewPage } from './features/food/TransferNewPage';
-import { TransfersPage } from './features/food/TransfersPage';
-import { JournalLayout } from './features/journal/components/JournalLayout';
-import { JournalTodayPage } from './features/journal/TodayPage';
-import { JournalHistoryPage } from './features/journal/HistoryPage';
-import { JournalEntryPage } from './features/journal/EntryPage';
-import { JournalAnalyticsPage } from './features/journal/AnalyticsPage';
-import { JournalSettingsPage } from './features/journal/SettingsPage';
+
+// Finance home + add stay in the main bundle (the first screen); the rest load on demand,
+// so recharts, Food and Journal don't slow down opening the Mini App.
+const SettingsPage = lazyPage(() => import('./pages/SettingsPage'), 'SettingsPage');
+const NotificationsSettingsPage = lazyPage(() => import('./pages/NotificationsSettingsPage'), 'NotificationsSettingsPage');
+const AnalyticsPage = lazyPage(() => import('./features/analytics/AnalyticsPage'), 'AnalyticsPage');
+const HistoryPage = lazyPage(() => import('./features/history/HistoryPage'), 'HistoryPage');
+const DeferredPage = lazyPage(() => import('./features/deferred/DeferredPage'), 'DeferredPage');
+const AllServicesPage = lazyPage(() => import('./pages/AllServicesPage'), 'AllServicesPage');
+const FoodLayout = lazyPage(() => import('./features/food/components/FoodLayout'), 'FoodLayout');
+const TodayPage = lazyPage(() => import('./features/food/TodayPage'), 'TodayPage');
+const MenuPage = lazyPage(() => import('./features/food/MenuPage'), 'MenuPage');
+const ShoppingPage = lazyPage(() => import('./features/food/ShoppingPage'), 'ShoppingPage');
+const PantryPage = lazyPage(() => import('./features/food/PantryPage'), 'PantryPage');
+const RecipesPage = lazyPage(() => import('./features/food/RecipesPage'), 'RecipesPage');
+const RecipePage = lazyPage(() => import('./features/food/RecipePage'), 'RecipePage');
+const RecipeEditorPage = lazyPage(() => import('./features/food/RecipeEditorPage'), 'RecipeEditorPage');
+const TransferNewPage = lazyPage(() => import('./features/food/TransferNewPage'), 'TransferNewPage');
+const TransfersPage = lazyPage(() => import('./features/food/TransfersPage'), 'TransfersPage');
+const JournalLayout = lazyPage(() => import('./features/journal/components/JournalLayout'), 'JournalLayout');
+const JournalTodayPage = lazyPage(() => import('./features/journal/TodayPage'), 'JournalTodayPage');
+const JournalHistoryPage = lazyPage(() => import('./features/journal/HistoryPage'), 'JournalHistoryPage');
+const JournalEntryPage = lazyPage(() => import('./features/journal/EntryPage'), 'JournalEntryPage');
+const JournalAnalyticsPage = lazyPage(() => import('./features/journal/AnalyticsPage'), 'JournalAnalyticsPage');
+const JournalSettingsPage = lazyPage(() => import('./features/journal/SettingsPage'), 'JournalSettingsPage');
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -43,6 +48,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
+    <Suspense fallback={null}>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
@@ -92,6 +98,7 @@ function App() {
         }
       />
     </Routes>
+    </Suspense>
   );
 }
 

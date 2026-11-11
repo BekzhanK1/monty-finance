@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AppShell, Box, Button, Stack, Text, UnstyledButton } from '@mantine/core';
@@ -91,7 +92,7 @@ export function Layout() {
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <Outlet />
+        <Suspense fallback={null}><Outlet /></Suspense>
       </AppShell.Main>
 
       {showTabBar && <TabBar pathname={pathname} onNavigate={go} />}

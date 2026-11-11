@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Box, Text, UnstyledButton } from '@mantine/core';
 import { IconBasket, IconBook2, IconCalendarWeek, IconFridge, IconSun, type Icon } from '@tabler/icons-react';
@@ -27,7 +28,7 @@ export function FoodLayout() {
 
   return (
     <WarehouseProvider>
-      <Outlet />
+      <Suspense fallback={null}><Outlet /></Suspense>
       {!hideTabs && (
         <Box
           component="nav"
