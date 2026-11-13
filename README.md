@@ -1,6 +1,8 @@
-# Monty Finance
+# Monty Superapp
 
-Монорепозиторий приложения **Monty**: веб-клиент на React и API на FastAPI для учёта финансов (в т.ч. интеграция с Telegram) и вертикали **Food** (каталог блюд с составом, недельное меню).
+Монорепозиторий приложения **Monty**: суперапп в Telegram, где в центре — деньги (бюджеты, траты, аналитика), а вокруг — другие сервисы: **Food** (меню, рецепты, запасы, покупки), а дальше дневник, здоровье и путешествия. Веб-клиент на React, API на FastAPI.
+
+Главный герой — котик **Monty**: он реагирует на состояние бюджета на главной, встречает на входе и в пустых экранах. Персонаж описан кодом в [`monty-frontend/src/brand/monty/art.ts`](monty-frontend/src/brand/monty/art.ts); GIF, PNG, анимированные SVG и аватар для бота лежат в [`brand/monty`](brand/monty/) и пересобираются командой `npm run brand:monty` в `monty-frontend`.
 
 ## Структура
 
@@ -8,6 +10,7 @@
 |---------|----------|
 | [`monty-backend`](monty-backend/) | FastAPI, SQLAlchemy, фоновые задачи (APScheduler) |
 | [`monty-frontend`](monty-frontend/) | Vite, React 19, TypeScript, Mantine, React Router |
+| [`brand`](brand/) | Ассеты персонажа Monty (GIF, PNG, SVG, аватар) |
 | [`docs`](docs/) | План Monty 2.0: [`redesign/plan.md`](docs/redesign/plan.md). Архитектурные заметки: [`food-service-architecture.md`](docs/food-service-architecture.md), модель данных v2 — [`food-data-model-v2.md`](docs/food-data-model-v2.md) |
 
 ### Backend: разделение по сервисам

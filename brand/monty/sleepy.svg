@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="monty" data-mood="sleepy"><style>.monty .m-all{transform-box:view-box;transform-origin:104px 176px}
+.monty .m-shadow{transform-box:view-box;transform-origin:104px 177px}
+.monty .m-tail{transform-box:view-box;transform-origin:80px 164px}
+.monty .m-body{transform-box:view-box;transform-origin:104px 172px}
+.monty .m-head{transform-box:view-box;transform-origin:106px 130px}
+.monty .m-ear-l{transform-box:view-box;transform-origin:80px 62px}
+.monty .m-ear-r{transform-box:view-box;transform-origin:138px 58px}
+.monty .m-eyes{transform-box:view-box;transform-origin:108px 94px}
+.monty .m-fx{transform-box:view-box;transform-origin:168px 44px}
+@keyframes monty-idle-body{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(0deg) scale(0.99, 1.025);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="idle"] .m-body{animation:monty-idle-body 3s ease-in-out infinite}
+@keyframes monty-idle-head{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}50%{transform:translate(0px, -1.5px) rotate(1.5deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="idle"] .m-head{animation:monty-idle-head 3s ease-in-out infinite}
+@keyframes monty-idle-tail{0%{transform:translate(0px, 0px) rotate(-5deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(8deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(-5deg) scale(1, 1);opacity:1}}
+.monty[data-mood="idle"] .m-tail{animation:monty-idle-tail 1.5s ease-in-out infinite}
+@keyframes monty-idle-earR{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}40%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}45%{transform:translate(0px, 0px) rotate(-9deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(2deg) scale(1, 1);opacity:1}55%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="idle"] .m-ear-r{animation:monty-idle-earR 3s ease-in-out infinite}
+@keyframes monty-idle-eyes{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}86%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}90%{transform:translate(0px, 0px) rotate(0deg) scale(1, 0.1);opacity:1}94%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="idle"] .m-eyes{animation:monty-idle-eyes 3s ease-in-out infinite}
+@keyframes monty-happy-body{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(0deg) scale(0.99, 1.025);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="happy"] .m-body{animation:monty-happy-body 3s ease-in-out infinite}
+@keyframes monty-happy-head{0%{transform:translate(0px, 0px) rotate(-2.5deg) scale(1, 1);opacity:1}50%{transform:translate(0px, -1.5px) rotate(3deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(-2.5deg) scale(1, 1);opacity:1}}
+.monty[data-mood="happy"] .m-head{animation:monty-happy-head 1.5s ease-in-out infinite}
+@keyframes monty-happy-tail{0%{transform:translate(0px, 0px) rotate(-8deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(12deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(-8deg) scale(1, 1);opacity:1}}
+.monty[data-mood="happy"] .m-tail{animation:monty-happy-tail 1s ease-in-out infinite}
+@keyframes monty-happy-earR{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}40%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}45%{transform:translate(0px, 0px) rotate(-9deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(2deg) scale(1, 1);opacity:1}55%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="happy"] .m-ear-r{animation:monty-happy-earR 3s ease-in-out infinite}
+@keyframes monty-happy-fx{0%{transform:translate(0px, 0px) rotate(0deg) scale(0.85, 0.85);opacity:0.7}18%{transform:translate(0px, 0px) rotate(0deg) scale(1.15, 1.15);opacity:1}36%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(0.85, 0.85);opacity:0.7}}
+.monty[data-mood="happy"] .m-fx{animation:monty-happy-fx 1.5s ease-in-out infinite}
+@keyframes monty-celebrate-all{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}12%{transform:translate(0px, 0px) rotate(0deg) scale(1.06, 0.9);opacity:1}40%{transform:translate(0px, -20px) rotate(0deg) scale(0.97, 1.06);opacity:1}68%{transform:translate(0px, 0px) rotate(0deg) scale(1.04, 0.93);opacity:1}82%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="celebrate"] .m-all{animation:monty-celebrate-all 1s ease-in-out infinite}
+@keyframes monty-celebrate-shadow{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}12%{transform:translate(0px, 0px) rotate(0deg) scale(1.05, 1);opacity:1}40%{transform:translate(0px, 0px) rotate(0deg) scale(0.7, 1);opacity:0.5}68%{transform:translate(0px, 0px) rotate(0deg) scale(1.05, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="celebrate"] .m-shadow{animation:monty-celebrate-shadow 1s ease-in-out infinite}
+@keyframes monty-celebrate-tail{0%{transform:translate(0px, 0px) rotate(-10deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(14deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(-10deg) scale(1, 1);opacity:1}}
+.monty[data-mood="celebrate"] .m-tail{animation:monty-celebrate-tail 0.5s ease-in-out infinite}
+@keyframes monty-celebrate-earL{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}40%{transform:translate(0px, 0px) rotate(8deg) scale(1, 1);opacity:1}70%{transform:translate(0px, 0px) rotate(-3deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="celebrate"] .m-ear-l{animation:monty-celebrate-earL 1s ease-in-out infinite}
+@keyframes monty-celebrate-earR{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}40%{transform:translate(0px, 0px) rotate(-8deg) scale(1, 1);opacity:1}70%{transform:translate(0px, 0px) rotate(3deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="celebrate"] .m-ear-r{animation:monty-celebrate-earR 1s ease-in-out infinite}
+@keyframes monty-celebrate-fx{0%{transform:translate(0px, 0px) rotate(-4deg) scale(0.95, 0.95);opacity:1}50%{transform:translate(0px, 0px) rotate(4deg) scale(1.08, 1.08);opacity:1}100%{transform:translate(0px, 0px) rotate(-4deg) scale(0.95, 0.95);opacity:1}}
+.monty[data-mood="celebrate"] .m-fx{animation:monty-celebrate-fx 1s ease-in-out infinite}
+@keyframes monty-worried-all{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}4%{transform:translate(-1.2px, 0px) rotate(0deg) scale(1, 1);opacity:1}8%{transform:translate(1.2px, 0px) rotate(0deg) scale(1, 1);opacity:1}12%{transform:translate(-1px, 0px) rotate(0deg) scale(1, 1);opacity:1}16%{transform:translate(0.8px, 0px) rotate(0deg) scale(1, 1);opacity:1}20%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="worried"] .m-all{animation:monty-worried-all 3s ease-in-out infinite}
+@keyframes monty-worried-body{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(0deg) scale(0.99, 1.025);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="worried"] .m-body{animation:monty-worried-body 3s ease-in-out infinite}
+@keyframes monty-worried-head{0%{transform:translate(0px, 1px) rotate(-2deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 1.5px) rotate(-2.5deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 1px) rotate(-2deg) scale(1, 1);opacity:1}}
+.monty[data-mood="worried"] .m-head{animation:monty-worried-head 3s ease-in-out infinite}
+@keyframes monty-worried-tail{0%{transform:translate(0px, 0px) rotate(-3deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(3deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(-3deg) scale(1, 1);opacity:1}}
+.monty[data-mood="worried"] .m-tail{animation:monty-worried-tail 3s ease-in-out infinite}
+@keyframes monty-worried-earL{0%{transform:translate(0px, 0px) rotate(-14deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(-14deg) scale(1, 1);opacity:1}}
+.monty[data-mood="worried"] .m-ear-l{animation:monty-worried-earL 3s ease-in-out infinite}
+@keyframes monty-worried-earR{0%{transform:translate(0px, 0px) rotate(14deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(14deg) scale(1, 1);opacity:1}}
+.monty[data-mood="worried"] .m-ear-r{animation:monty-worried-earR 3s ease-in-out infinite}
+@keyframes monty-worried-eyes{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}86%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}90%{transform:translate(0px, 0px) rotate(0deg) scale(1, 0.1);opacity:1}94%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="worried"] .m-eyes{animation:monty-worried-eyes 3s ease-in-out infinite}
+@keyframes monty-worried-fx{0%{transform:translate(0px, -2px) rotate(0deg) scale(1, 1);opacity:0}20%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}80%{transform:translate(0px, 7px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 9px) rotate(0deg) scale(1, 1);opacity:0}}
+.monty[data-mood="worried"] .m-fx{animation:monty-worried-fx 1.5s ease-in-out infinite}
+@keyframes monty-sleepy-body{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(0deg) scale(0.985, 1.045);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="sleepy"] .m-body{animation:monty-sleepy-body 3s ease-in-out infinite}
+@keyframes monty-sleepy-head{0%{transform:translate(0px, 2px) rotate(-4deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0.5px) rotate(-3deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 2px) rotate(-4deg) scale(1, 1);opacity:1}}
+.monty[data-mood="sleepy"] .m-head{animation:monty-sleepy-head 3s ease-in-out infinite}
+@keyframes monty-sleepy-tail{0%{transform:translate(0px, 0px) rotate(-2deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(3deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(-2deg) scale(1, 1);opacity:1}}
+.monty[data-mood="sleepy"] .m-tail{animation:monty-sleepy-tail 3s ease-in-out infinite}
+@keyframes monty-sleepy-earL{0%{transform:translate(0px, 0px) rotate(-6deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(-6deg) scale(1, 1);opacity:1}}
+.monty[data-mood="sleepy"] .m-ear-l{animation:monty-sleepy-earL 3s ease-in-out infinite}
+@keyframes monty-sleepy-earR{0%{transform:translate(0px, 0px) rotate(6deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(6deg) scale(1, 1);opacity:1}}
+.monty[data-mood="sleepy"] .m-ear-r{animation:monty-sleepy-earR 3s ease-in-out infinite}
+@keyframes monty-sleepy-fx{0%{transform:translate(-3px, 6px) rotate(0deg) scale(1, 1);opacity:0}25%{transform:translate(-1px, 2px) rotate(0deg) scale(1, 1);opacity:1}80%{transform:translate(2px, -6px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(3px, -9px) rotate(0deg) scale(1, 1);opacity:0}}
+.monty[data-mood="sleepy"] .m-fx{animation:monty-sleepy-fx 3s ease-in-out infinite}
+@keyframes monty-thinking-body{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(0deg) scale(0.99, 1.025);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="thinking"] .m-body{animation:monty-thinking-body 3s ease-in-out infinite}
+@keyframes monty-thinking-head{0%{transform:translate(0px, 0px) rotate(4deg) scale(1, 1);opacity:1}50%{transform:translate(0px, -1px) rotate(5.5deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(4deg) scale(1, 1);opacity:1}}
+.monty[data-mood="thinking"] .m-head{animation:monty-thinking-head 3s ease-in-out infinite}
+@keyframes monty-thinking-tail{0%{transform:translate(0px, 0px) rotate(-4deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(6deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(-4deg) scale(1, 1);opacity:1}}
+.monty[data-mood="thinking"] .m-tail{animation:monty-thinking-tail 3s ease-in-out infinite}
+@keyframes monty-thinking-eyes{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}86%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}90%{transform:translate(0px, 0px) rotate(0deg) scale(1, 0.1);opacity:1}94%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="thinking"] .m-eyes{animation:monty-thinking-eyes 3s ease-in-out infinite}
+@keyframes monty-thinking-earL{0%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}40%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}45%{transform:translate(0px, 0px) rotate(-9deg) scale(1, 1);opacity:1}50%{transform:translate(0px, 0px) rotate(2deg) scale(1, 1);opacity:1}55%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(1, 1);opacity:1}}
+.monty[data-mood="thinking"] .m-ear-l{animation:monty-thinking-earL 3s ease-in-out infinite}
+@keyframes monty-thinking-fx{0%{transform:translate(0px, 0px) rotate(0deg) scale(0.96, 0.96);opacity:1}50%{transform:translate(0px, 0px) rotate(0deg) scale(1.05, 1.05);opacity:1}100%{transform:translate(0px, 0px) rotate(0deg) scale(0.96, 0.96);opacity:1}}
+.monty[data-mood="thinking"] .m-fx{animation:monty-thinking-fx 1.5s ease-in-out infinite}
+.monty.monty-still *{animation:none!important}
+@media (prefers-reduced-motion: reduce){.monty *{animation:none!important}}</style><defs>
+<radialGradient id="monty-sleepy-head" cx="42%" cy="34%" r="72%"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#eff0ff"/><stop offset="1" stop-color="#b6bbf6"/></radialGradient>
+<radialGradient id="monty-sleepy-body" cx="50%" cy="22%" r="85%"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#e8eaff"/><stop offset="1" stop-color="#a3a9f2"/></radialGradient>
+<radialGradient id="monty-sleepy-paw" cx="45%" cy="30%" r="80%"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#eef0ff"/><stop offset="1" stop-color="#bfc3f7"/></radialGradient>
+<linearGradient id="monty-sleepy-ear" x1="0" y1="1" x2=".4" y2="0"><stop offset="0" stop-color="#8e95f4"/><stop offset="1" stop-color="#cfd4ff"/></linearGradient>
+<linearGradient id="monty-sleepy-inner" x1="0" y1="1" x2=".3" y2="0"><stop offset="0" stop-color="#4f55e6"/><stop offset="1" stop-color="#7d84f5"/></linearGradient>
+<linearGradient id="monty-sleepy-tail" gradientUnits="userSpaceOnUse" x1="36" y1="98" x2="76" y2="168"><stop offset="0" stop-color="#c9dcff"/><stop offset=".5" stop-color="#6c74f1"/><stop offset="1" stop-color="#4338ca"/></linearGradient>
+<radialGradient id="monty-sleepy-shadow"><stop offset="0" stop-color="#5b5bd6" stop-opacity=".28"/><stop offset="1" stop-color="#5b5bd6" stop-opacity="0"/></radialGradient>
+</defs><g class="m-shadow"><ellipse cx="104" cy="177" rx="54" ry="7" fill="url(#monty-sleepy-shadow)"/></g><g class="m-all"><g class="m-tail"><path d="M82 164 C 56 167, 45 151, 45 135 C 45 121, 39 112, 34 104" fill="none" stroke="url(#monty-sleepy-tail)" stroke-width="16" stroke-linecap="round"/></g><g class="m-body"><path d="M72 172 C 63 167, 61 140, 78 128 C 91 119, 121 119, 134 128 C 149 140, 147 167, 138 172 Z" fill="url(#monty-sleepy-body)"/><ellipse cx="92" cy="167" rx="12.5" ry="9.5" fill="url(#monty-sleepy-paw)" stroke="#5b5bd6" stroke-opacity=".14" stroke-width="1.5"/><ellipse cx="120" cy="167" rx="12.5" ry="9.5" fill="url(#monty-sleepy-paw)" stroke="#5b5bd6" stroke-opacity=".14" stroke-width="1.5"/></g><g class="m-head"><g class="m-ear-l"><path d="M58 86 C 53 61, 57 37, 70 28 C 79 23, 93 39, 105 53 Z" fill="url(#monty-sleepy-ear)"/><path d="M67 72 C 64 56, 67 44, 73 39 C 79 38, 88 47, 96 56 Z" fill="url(#monty-sleepy-inner)"/></g><g class="m-ear-r"><path d="M115 52 C 128 40, 141 26, 150 28 C 161 32, 165 60, 161 84 Z" fill="url(#monty-sleepy-ear)"/><path d="M125 52 C 133 44, 142 37, 148 39 C 154 43, 156 58, 155 70 Z" fill="url(#monty-sleepy-inner)"/></g><ellipse cx="108" cy="92" rx="54" ry="42" fill="url(#monty-sleepy-head)"/><ellipse cx="96" cy="66" rx="22" ry="9" fill="#fff" opacity=".55"/><path d="M80 96 Q88 102.5 96 96" fill="none" stroke="#1e1b4b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M120 92 Q128 98.5 136 92" fill="none" stroke="#1e1b4b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="78" cy="109" rx="8" ry="4.5" fill="#ff8fbf" opacity="0.32"/><ellipse cx="140" cy="104" rx="8" ry="4.5" fill="#ff8fbf" opacity="0.32"/><ellipse cx="110" cy="110" rx="3" ry="2.4" fill="#1e1b4b" opacity=".85"/></g><g class="m-fx"><path d="M160 56 h8 l-8 8.8 h8" fill="none" stroke="#5b5bd6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/><path d="M170 38 h11 l-11 12.100000000000001 h11" fill="none" stroke="#5b5bd6" stroke-width="3.3000000000000003" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/><path d="M181 15 h13 l-13 14.3 h13" fill="none" stroke="#5b5bd6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity="1"/></g></g></svg>

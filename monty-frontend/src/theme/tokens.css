@@ -19,6 +19,9 @@
   --fb-destructive: #e5484d;
   --fb-header: #f2f2f7;
   --monty-segment-indicator: var(--monty-surface);
+  /* Mantine's size="auto" drawers point at this variable without defining it, which made every
+     bottom sheet fall back to full screen height. */
+  --drawer-size-auto: auto;
 
   /* Data viz — categorical slots 1–3 validated all-pairs for CVD on #fff (dataviz skill). */
   --viz-1: #2a78d6;

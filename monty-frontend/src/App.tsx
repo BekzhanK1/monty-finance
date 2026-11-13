@@ -9,6 +9,7 @@ import { AnalyticsPage } from './features/analytics/AnalyticsPage';
 import { HistoryPage } from './features/history/HistoryPage';
 import { DeferredPage } from './features/deferred/DeferredPage';
 import { AllServicesPage } from './pages/AllServicesPage';
+import { BudgetsPage } from './features/finance/BudgetsPage';
 import { Layout } from './components/Layout';
 import { FoodLayout } from './features/food/components/FoodLayout';
 import { TodayPage } from './features/food/TodayPage';
@@ -60,6 +61,7 @@ function App() {
         <Route path="deferred" element={<DeferredPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="services" element={<AllServicesPage />} />
+        <Route path="budgets" element={<BudgetsPage />} />
         <Route path="food" element={<FoodLayout />}>
           <Route index element={<TodayPage />} />
           <Route path="menu" element={<MenuPage />} />
