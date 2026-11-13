@@ -38,6 +38,9 @@ def db():
                   FoodPantryItem, FoodWarehouse, FoodMealSlot, FoodDishIngredient, FoodDish, FoodMealCategory,
                   FoodIngredient):
         session.query(model).delete()
+    from app.journal.models import JournalEntry, JournalSettings
+    session.query(JournalEntry).delete()
+    session.query(JournalSettings).delete()
     session.query(Transaction).execution_options(**{INCLUDE_HIDDEN: True}).delete()
     session.query(MonthlyBudget).delete()
     session.query(Settings).delete()

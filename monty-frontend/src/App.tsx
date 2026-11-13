@@ -21,6 +21,12 @@ import { RecipePage } from './features/food/RecipePage';
 import { RecipeEditorPage } from './features/food/RecipeEditorPage';
 import { TransferNewPage } from './features/food/TransferNewPage';
 import { TransfersPage } from './features/food/TransfersPage';
+import { JournalLayout } from './features/journal/components/JournalLayout';
+import { JournalTodayPage } from './features/journal/TodayPage';
+import { JournalHistoryPage } from './features/journal/HistoryPage';
+import { JournalEntryPage } from './features/journal/EntryPage';
+import { JournalAnalyticsPage } from './features/journal/AnalyticsPage';
+import { JournalSettingsPage } from './features/journal/SettingsPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -70,6 +76,13 @@ function App() {
           {/* Old Food v1 routes */}
           <Route path="catalog" element={<Navigate to="/food/recipes" replace />} />
           <Route path="guide" element={<Navigate to="/food/recipes" replace />} />
+        </Route>
+        <Route path="journal" element={<JournalLayout />}>
+          <Route index element={<JournalTodayPage />} />
+          <Route path="history" element={<JournalHistoryPage />} />
+          <Route path="analytics" element={<JournalAnalyticsPage />} />
+          <Route path="settings" element={<JournalSettingsPage />} />
+          <Route path="entries/:id" element={<JournalEntryPage />} />
         </Route>
       </Route>
       <Route

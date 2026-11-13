@@ -42,7 +42,8 @@ export function Layout() {
   const { pathname } = useLocation();
   const openVoice = useVoiceInput();
   // Food has its own bottom tabs.
-  const showTabBar = !pathname.startsWith('/food');
+  // Food and Journal render their own bottom tabs.
+  const showTabBar = !pathname.startsWith('/food') && !pathname.startsWith('/journal');
 
   const go = (path: string) => {
     if (path !== pathname) haptic('selection');

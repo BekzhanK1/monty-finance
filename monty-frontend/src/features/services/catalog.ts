@@ -29,15 +29,7 @@ export const SERVICES: ServiceDef[] = [
   { key: 'kitchen', title: 'Кухня', icon: IconToolsKitchen2, tint: '#eb6834', to: '/food' },
   { key: 'shopping', title: 'Покупки', icon: IconShoppingCart, tint: '#1baf7a', to: '/food/shopping' },
   { key: 'recipes', title: 'Рецепты', icon: IconChefHat, tint: '#e0a100', to: '/food/recipes' },
-  {
-    key: 'journal',
-    title: 'Дневник',
-    icon: IconBook2,
-    tint: '#a855f7',
-    comingSoon: true,
-    soonBlurb: 'Пара строк в день о том, как прошёл день, — Monty напомнит и сохранит.',
-    soonTeaser: ['Записи с настроением', 'Напоминание вечером', 'Связь с тратами дня'],
-  },
+  { key: 'journal', title: 'Дневник', icon: IconBook2, tint: '#a855f7', to: '/journal' },
   {
     key: 'health',
     title: 'Здоровье',

@@ -16,6 +16,7 @@ import {
   IconArrowDownLeft,
   IconArrowUpRight,
   IconBasket,
+  IconBook2,
   IconChevronRight,
   IconLayoutGrid,
   IconMicrophone,
@@ -34,6 +35,8 @@ import { CatalogTile, ServiceTile } from '../services/ServiceTile';
 import { ComingSoonSheet } from '../services/ComingSoonSheet';
 import { WarehouseProvider } from '../food/WarehouseContext';
 import { useToday } from '../food/queries';
+import { useJournalOverview } from '../journal/queries';
+import { streakLabel } from '../journal/mood';
 import { computeHomeSummary, type HomeSummary } from './summary';
 import { montySays, type MontySays } from './montyMood';
 
@@ -123,6 +126,8 @@ export function HomePage() {
             <ServiceTile title="Все" icon={IconLayoutGrid} tint="#8e8e93" onClick={() => navigate('/services')} />
           </SimpleGrid>
         </Section>
+
+        <JournalWidget />
 
         <WarehouseProvider>
           <KitchenWidget />
@@ -375,6 +380,43 @@ function KitchenWidget() {
               {[planned > 0 && `${cooked} из ${planned} приготовлено`, ...facts].filter(Boolean).join(' · ')}
             </Text>
           </Stack>
+          <IconChevronRight size={18} style={{ color: 'var(--monty-hint)', flexShrink: 0 }} />
+        </Group>
+      </UnstyledButton>
+    </Section>
+  );
+}
+
+/** Nudge towards today's journal entry and show the streak. */
+function JournalWidget() {
+  const navigate = useNavigate();
+  const { data } = useJournalOverview();
+  if (!data) return null;
+
+  const { current, today_done } = data.me;
+  const title = today_done ? 'Запись за сегодня есть' : 'Как прошёл день?';
+  const subtitle = current > 0
+    ? `Серия ${streakLabel(current)}${today_done ? '' : ' — не прерывайте её'}`
+    : 'Пара строк — и день сохранён';
+
+  return (
+    <Section title="Дневник">
+      <UnstyledButton
+        onClick={() => navigate('/journal')}
+        className="monty-pressable"
+        style={{ display: 'block', width: '100%' }}
+      >
+        <Group wrap="nowrap" gap={12} px={16} py={12}>
+          <Box style={{ width: 40, height: 40, borderRadius: 12, display: 'grid', placeItems: 'center', background: 'color-mix(in srgb, #a855f7 15%, var(--monty-surface))', color: '#a855f7', flexShrink: 0 }}>
+            <IconBook2 size={22} />
+          </Box>
+          <Stack gap={0} style={{ flex: 1, minWidth: 0 }}>
+            <Text fw={500} lineClamp={1}>{title}</Text>
+            <Text size="xs" lineClamp={1} style={{ color: 'var(--monty-hint)' }}>{subtitle}</Text>
+          </Stack>
+          {current > 0 && (
+            <Text fw={700} fz={15} className="monty-tabular" style={{ color: '#a855f7', flexShrink: 0 }}>🔥 {current}</Text>
+          )}
           <IconChevronRight size={18} style={{ color: 'var(--monty-hint)', flexShrink: 0 }} />
         </Group>
       </UnstyledButton>

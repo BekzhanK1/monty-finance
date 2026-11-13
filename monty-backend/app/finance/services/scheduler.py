@@ -8,6 +8,7 @@ from app.finance.services.digest_service import send_evening_summary, send_morni
 from app.finance.services.notification_settings import NOTIFICATIONS, get_notification, parse_time
 from app.food.models._constants import MVP_HOUSEHOLD_ID
 from app.food.services.telegram_reminder import send_tomorrow_food_telegram_reminder
+from app.journal.services.reminders import apply_journal_reminders
 
 TIMEZONE = pytz.timezone("Asia/Almaty")
 scheduler = AsyncIOScheduler(timezone=TIMEZONE)
@@ -63,6 +64,7 @@ def setup_scheduler():
     db = SessionLocal()
     try:
         apply_notification_schedule(db)
+        apply_journal_reminders(scheduler, db)
     finally:
         db.close()
 

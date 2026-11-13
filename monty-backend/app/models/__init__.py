@@ -6,6 +6,7 @@ Prefer importing from `app.finance.models` or `app.food.models` in new code.
 
 from app.finance import models as _finance_models  # noqa: F401
 from app.food import models as _food_models  # noqa: F401
+from app.journal import models as _journal_models  # noqa: F401
 
 from app.finance.models import (
     Category,
