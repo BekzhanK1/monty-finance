@@ -3,8 +3,8 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { AppShell, Box, Button, Stack, Text, UnstyledButton } from '@mantine/core';
 import {
   IconChartPie,
-  IconDots,
   IconHome,
+  IconLayoutGrid,
   IconListDetails,
   IconMicrophone,
   IconPlus,
@@ -22,12 +22,12 @@ interface NavItem {
 }
 
 const leftTabs: NavItem[] = [
-  { icon: IconHome, label: 'Главная', path: '/' },
+  { icon: IconHome, label: 'Главная', path: '/', match: ['/budgets'] },
   { icon: IconListDetails, label: 'История', path: '/transactions' },
 ];
 const rightTabs: NavItem[] = [
   { icon: IconChartPie, label: 'Анализ', path: '/analytics' },
-  { icon: IconDots, label: 'Ещё', path: '/services', match: ['/settings'] },
+  { icon: IconLayoutGrid, label: 'Сервисы', path: '/services', match: ['/settings'] },
 ];
 const allTabs = [...leftTabs, ...rightTabs];
 
